@@ -1,0 +1,23 @@
+{
+  "name": "sub-hdc-import",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "import:f43": "node scripts/import_f43_node.js",
+    "check:node": "node --check scripts/import_f43_node.js"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "iconv-lite": "^0.6.3",
+    "mysql2": "^3.14.1",
+    "next": "^16.2.9",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "playwright": "^1.61.1"
+  }
+}
