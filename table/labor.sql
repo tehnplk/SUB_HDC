@@ -1,0 +1,21 @@
+CREATE TABLE `labor` (
+  `hospcode` varchar(5) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `pid` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `gravida` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `lmp` varchar(255) NOT NULL DEFAULT '',
+  `edc` varchar(255) NOT NULL DEFAULT '',
+  `bdate` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `bresult` varchar(255) NOT NULL DEFAULT '',
+  `bplace` varchar(255) NOT NULL DEFAULT '',
+  `bhosp` varchar(255) NOT NULL DEFAULT '',
+  `btype` varchar(255) NOT NULL DEFAULT '',
+  `bdoctor` varchar(255) NOT NULL DEFAULT '',
+  `lborn` varchar(255) NOT NULL DEFAULT '',
+  `sborn` varchar(255) NOT NULL DEFAULT '',
+  `d_update` varchar(255) NOT NULL DEFAULT '',
+  `cid` varchar(255) NOT NULL DEFAULT '',
+  `cid_aes` varchar(255) NOT NULL DEFAULT '',
+  `file_name` varchar(255) NOT NULL DEFAULT '',
+  `import_date_time` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`hospcode`,`pid`,`gravida`,`bdate`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;

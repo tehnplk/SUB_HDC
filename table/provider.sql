@@ -1,0 +1,22 @@
+CREATE TABLE `provider` (
+  `hospcode` varchar(5) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `provider` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `registerno` varchar(255) NOT NULL DEFAULT '',
+  `council` varchar(255) NOT NULL DEFAULT '',
+  `cid` varchar(255) NOT NULL DEFAULT '',
+  `prename` varchar(255) NOT NULL DEFAULT '',
+  `name` varchar(255) NOT NULL DEFAULT '',
+  `lname` varchar(1000) NOT NULL DEFAULT '',
+  `sex` varchar(255) NOT NULL DEFAULT '',
+  `birth` varchar(255) NOT NULL DEFAULT '',
+  `providertype` varchar(255) NOT NULL DEFAULT '',
+  `startdate` varchar(255) NOT NULL DEFAULT '',
+  `outdate` varchar(255) NOT NULL DEFAULT '',
+  `movefrom` varchar(255) NOT NULL DEFAULT '',
+  `moveto` varchar(255) NOT NULL DEFAULT '',
+  `d_update` varchar(255) NOT NULL DEFAULT '',
+  `cid_aes` varchar(1000) NOT NULL DEFAULT '',
+  `file_name` varchar(255) NOT NULL DEFAULT '',
+  `import_date_time` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`hospcode`,`provider`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;

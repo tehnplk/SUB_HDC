@@ -1,0 +1,21 @@
+CREATE TABLE `chronicfu` (
+  `hospcode` varchar(5) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `pid` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `seq` varchar(255) NOT NULL DEFAULT '',
+  `date_serv` varchar(8) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `weight` varchar(255) NOT NULL DEFAULT '',
+  `height` varchar(255) NOT NULL DEFAULT '',
+  `waist_cm` varchar(255) NOT NULL DEFAULT '',
+  `sbp` varchar(255) NOT NULL DEFAULT '',
+  `dbp` varchar(255) NOT NULL DEFAULT '',
+  `foot` varchar(255) NOT NULL DEFAULT '',
+  `retina` varchar(255) NOT NULL DEFAULT '',
+  `provider` varchar(255) NOT NULL DEFAULT '',
+  `d_update` varchar(255) NOT NULL DEFAULT '',
+  `chronicfuplace` varchar(255) NOT NULL DEFAULT '',
+  `cid` varchar(255) NOT NULL DEFAULT '',
+  `cid_aes` varchar(255) NOT NULL DEFAULT '',
+  `file_name` varchar(255) NOT NULL DEFAULT '',
+  `import_date_time` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`hospcode`,`pid`,`date_serv`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
