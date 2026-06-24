@@ -1,4 +1,4 @@
-import { access } from "node:fs/promises";
+import { access, unlink } from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
 
@@ -45,7 +45,7 @@ export async function POST(request) {
 
     const stream = new ReadableStream({
       start(controller) {
-        const scriptPath = path.join(process.cwd(), "scripts", "import_f43_node.js");
+        const scriptPath = path.join(process.cwd(), "lib", "import_f43_node.js");
         const child = spawn(
           process.execPath,
           [
@@ -58,11 +58,12 @@ export async function POST(request) {
             "replace",
             "--concurrency",
             "20",
+            "--truncate-first",
             "--progress",
           ],
           {
-            windowsHide: true,
             stdio: ["ignore", "pipe", "pipe"],
+            ...(process.platform === "win32" && { windowsHide: true }),
           }
         );
 
@@ -89,6 +90,7 @@ export async function POST(request) {
               `${JSON.stringify({ type: "error", message: error.message })}\n`
             )
           );
+          unlink(zipPath).catch(() => {});
           closeStream();
         });
 
@@ -102,11 +104,14 @@ export async function POST(request) {
               )
             );
           }
+          // Delete the uploaded zip file immediately after import
+          unlink(zipPath).catch(() => {});
           closeStream();
         });
 
         request.signal.addEventListener("abort", () => {
           child.kill("SIGTERM");
+          unlink(zipPath).catch(() => {});
           closeStream();
         });
       },

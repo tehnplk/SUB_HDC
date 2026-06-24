@@ -684,3 +684,22 @@ button:disabled {
     justify-content: center;
   }
 }
+
+/* ── Pagination ── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.pagination button {
+  background: var(--accent);
+  color: white;
+  padding: 8px 16px;
+  font-size: 14px;
+}
