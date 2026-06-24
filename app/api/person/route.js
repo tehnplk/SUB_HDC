@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { createDbConnection } from "../../../lib/db";
+import { createDbConnection } from "@/lib/db";
 
 function getAesKey() {
   const raw = process.env.SECRET_KEY || "change_me";

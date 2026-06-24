@@ -58,7 +58,6 @@ export async function POST(request) {
             "replace",
             "--concurrency",
             "20",
-            "--truncate-first",
             "--progress",
           ],
           {
