@@ -11,5 +11,5 @@
 ## testing/investigate by browser
 - use `playwright-cli` skill for testing or investigate
 - Always run cmd `playwright-cli show` when start browser
-- Run cmd `playwright-cli show --anotate` when user ask to anotate and wait for user input
+- Run cmd `playwright-cli show --anotate` when user ask to anotate and wait for user done anotation.
 - If you confuse for this tool  run `playwright-cli --help` to get knowleadge.

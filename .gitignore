@@ -12,3 +12,4 @@ pnpm-debug.log*
 .env
 
 .playwright-cli
+.superpowers/

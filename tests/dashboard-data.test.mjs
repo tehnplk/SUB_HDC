@@ -5,6 +5,8 @@ import {
   datePrefixExpression,
   chooseMonthlyDateColumn,
   chooseSelectedFile,
+  getFileTypeLabel,
+  getMonthlyRowTotal,
   getFiscalYearRange,
   toFiscalYearLabel,
 } from "../lib/dashboard-data.mjs";
@@ -51,4 +53,23 @@ test("chooseSelectedFile defaults to service when no requested file is provided"
 
 test("chooseSelectedFile keeps a valid requested file", () => {
   assert.equal(chooseSelectedFile(["accident", "service"], "accident"), "accident");
+});
+
+test("getMonthlyRowTotal sums only configured month keys", () => {
+  assert.equal(
+    getMonthlyRowTotal(
+      [
+        { key: "oct" },
+        { key: "nov" },
+        { key: "dec" },
+      ],
+      { oct: 4, nov: "5", dec: null, ignored: 100 }
+    ),
+    9
+  );
+});
+
+test("getFileTypeLabel separates service and cumulative files", () => {
+  assert.equal(getFileTypeLabel(true), "ประเภทแฟ้มบริการ");
+  assert.equal(getFileTypeLabel(false), "ประเภทแฟ้มสะสม");
 });

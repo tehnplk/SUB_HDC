@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { getFileTypeLabel, getMonthlyRowTotal } from "../lib/dashboard-data.mjs";
 
 function formatNumber(value) {
   return Number(value || 0).toLocaleString();
@@ -120,7 +121,7 @@ export default function Dashboard() {
         </div>
 
         <div className="tableMeta">
-          {loading ? "กำลังโหลด..." : hasMonthly ? "แสดงรายเดือนตามปีงบประมาณ" : "แฟ้มนี้ไม่มี date_serv/date_admit/datetime_admit/datetime_serv แสดงผลรวมแทน"}
+          {loading ? "กำลังโหลด..." : getFileTypeLabel(hasMonthly)}
         </div>
 
         <div className="tableWrap monthlyTableWrap">
@@ -133,7 +134,11 @@ export default function Dashboard() {
                     <th key={month.key} className="numCol monthCol">
                       {month.label}
                     </th>
-                  ))
+                  )).concat(
+                    <th key="total" className="numCol monthCol totalCol">
+                      รวม
+                    </th>
+                  )
                 ) : (
                   <th className="numCol">รวม</th>
                 )}
@@ -149,7 +154,11 @@ export default function Dashboard() {
                         <td key={month.key} className="numCol monthCol">
                           {formatNumber(row[month.key])}
                         </td>
-                      ))
+                      )).concat(
+                        <td key="total" className="numCol monthCol totalCol">
+                          {formatNumber(getMonthlyRowTotal(months, row))}
+                        </td>
+                      )
                     ) : (
                       <td className="numCol">{formatNumber(row.total)}</td>
                     )}
@@ -157,7 +166,7 @@ export default function Dashboard() {
                 ))
               ) : (
                 <tr>
-                  <td className="emptyCell" colSpan={hasMonthly ? months.length + 1 : 2}>
+                  <td className="emptyCell" colSpan={hasMonthly ? months.length + 2 : 2}>
                     {loading ? "กำลังโหลดข้อมูล..." : "ไม่พบข้อมูล"}
                   </td>
                 </tr>
