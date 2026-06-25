@@ -7,6 +7,7 @@
 ## Database manipulate tool
 - use `db-cli` skill for manipulate database.
 - read @.env  for database credentials.
+- Never delete any data in tabel `c_file`
 
 ## testing/investigate by browser
 - use `playwright-cli` skill for testing or investigate
