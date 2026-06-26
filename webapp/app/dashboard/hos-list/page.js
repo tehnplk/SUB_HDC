@@ -55,8 +55,7 @@ export default function HosListDashboard() {
       <section className="panel panelWide dashboardPanel">
         <div className="headerRow">
           <div>
-            <p className="eyebrow">SUB HDC</p>
-            <h1>Dashboard</h1>
+            <h4 className="pageHeaderTitle">SUB-HDC ศูนย์ข้อมูลอำเภอ</h4>
             <p className="lead">จำนวนข้อมูลแต่ละแฟ้ม แยกตาม HOSCODE</p>
           </div>
           <Link href="/upload" className="navLink">

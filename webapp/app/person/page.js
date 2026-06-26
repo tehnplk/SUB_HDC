@@ -32,8 +32,8 @@ export default function PersonPage() {
       <section className="panel panelWide">
         <div className="headerRow">
           <div>
-            <p className="eyebrow">SUB HDC</p>
-            <h1>PERSON</h1>
+            <h4 className="pageHeaderTitle">SUB-HDC ศูนย์ข้อมูลอำเภอ</h4>
+            <h1 style={{ fontSize: "28px", margin: "0 0 10px" }}>PERSON</h1>
             <p className="lead">{data.total.toLocaleString()} รายการ</p>
           </div>
           <Link href="/" className="navLink">← แดชบอร์ด</Link>

@@ -1009,3 +1009,11 @@ button:disabled {
   background: #ffffff;
   box-shadow: var(--shadow-sm);
 }
+
+.pageHeaderTitle {
+  margin: 0 0 10px;
+  color: var(--accent-strong);
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.2;
+}
