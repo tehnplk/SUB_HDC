@@ -1,8 +1,31 @@
 # SUB HDC Handoff
 
-## Summary
+## System Overview
 
-This update changes the import metadata model, hardens GET API access with an app-issued JWT cookie, and separates AES and JWT secrets.
+### Business Concept
+
+SUB HDC is a local health-data import and inspection web app for HDC/F43 ZIP files. The system lets an operator upload or re-import official F43 text files, stores the rows into the matching F43 database tables, encrypts sensitive household and person-related values, and provides browser views for checking imported data by HOSCODE, fiscal year, and table counts.
+
+### Tech Stack
+
+- Frontend and API: Next.js App Router, React, JavaScript route handlers.
+- Runtime: Node.js with npm scripts and Playwright CLI for browser verification.
+- Database: MySQL/MariaDB running in Docker.
+- Data import: Node.js importer using ZIP and text-file parsing utilities.
+- Security: AES encryption for sensitive data and JWT cookies for app-scoped GET API access.
+
+### Architecture
+
+The browser UI calls local Next.js API routes for upload, import, dashboard, and person/home lookups. Upload routes save the selected F43 ZIP file, then the import route runs the Node importer. The importer reads each F43 text entry, maps it to the configured main table, encrypts configured fields, writes imported rows, and attaches the generated import log id. `proxy.js` protects GET API routes by issuing and validating an HttpOnly JWT cookie for requests that originate from this web app.
+
+### Database Schema
+
+- `c_file` is the registry of importable F43 table names and must not be cleared.
+- `log_import_file` stores one row per import file: `id` integer, `file_name`, and `import_date_time`.
+- Main F43 tables no longer store `file_name` or `import_date_time`; they store `log_import_id` integer instead.
+- `log_import_id` links imported rows back to `log_import_file.id`.
+- AES-protected fields include `home.house_id`, `home.house`, and `home.telephone`; other encrypted fields follow the project encryption configuration.
+- `.env` separates `ENCRYPT_KEY` for AES from `JWT_KEY` for JWT signing.
 
 ## Main Changes
 
