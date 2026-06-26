@@ -4,10 +4,6 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import DashboardTabs from "@/components/dashboard-tabs";
 
-function formatNumber(value) {
-  return Number(value || 0).toLocaleString();
-}
-
 function formatDateTime(isoString) {
   if (!isoString) return "-";
   try {
@@ -66,11 +62,6 @@ export default function LogImportDashboard() {
 
   const centerSuffix = data?.centerName ? ` ${data.centerName}` : "";
 
-  // Stats calculation
-  const totalImports = rows.length;
-  const latestFile = rows[0]?.file_name || "-";
-  const latestTime = rows[0]?.import_date_time ? formatDateTime(rows[0].import_date_time) : "-";
-
   return (
     <div className="main dashboardMain">
       <section className="panel panelWide dashboardPanel">
@@ -122,25 +113,6 @@ export default function LogImportDashboard() {
           </label>
         </div>
 
-        <div className="statGrid">
-          <div className="statCard">
-            <span className="statValue">{loading ? "..." : formatNumber(totalImports)}</span>
-            <span className="statLabel">จำนวนครั้งที่นำเข้า</span>
-          </div>
-          <div className="statCard">
-            <span className="statValue" style={{ fontSize: "16px", height: "38px", display: "flex", alignItems: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={latestFile}>
-              {loading ? "..." : latestFile}
-            </span>
-            <span className="statLabel">ไฟล์ล่าสุด</span>
-          </div>
-          <div className="statCard">
-            <span className="statValue" style={{ fontSize: "16px", height: "38px", display: "flex", alignItems: "center" }}>
-              {loading ? "..." : latestTime}
-            </span>
-            <span className="statLabel">นำเข้าล่าสุดเมื่อ</span>
-          </div>
-        </div>
-
         <div className="tableMeta">
           {loading ? "กำลังโหลด..." : `รายการประวัติการนำเข้าทั้งหมด (${filteredRows.length} รายการ)`}
         </div>
@@ -149,7 +121,7 @@ export default function LogImportDashboard() {
           <table className="fileTable">
             <thead>
               <tr>
-                <th style={{ width: "120px" }}>ไอดีนำเข้า</th>
+                <th style={{ width: "120px" }}>#</th>
                 <th>ชื่อไฟล์ที่นำเข้า</th>
                 <th style={{ width: "250px" }}>วันที่-เวลานำเข้า</th>
               </tr>
@@ -158,7 +130,7 @@ export default function LogImportDashboard() {
               {filteredRows.length ? (
                 filteredRows.map((row) => (
                   <tr key={row.id}>
-                    <td className="fileCol" style={{ color: "var(--accent-strong)" }}>#{row.id}</td>
+                    <td className="fileCol" style={{ color: "var(--accent-strong)" }}>{row.id}</td>
                     <td style={{ wordBreak: "break-all" }}>{row.file_name}</td>
                     <td>{formatDateTime(row.import_date_time)}</td>
                   </tr>
