@@ -228,25 +228,27 @@ export default function ZipImporter() {
     if (files?.length) handleFiles(files);
   }, []);
 
-  // ── Sequential Import All ──
+  // ── Parallel Import All ──
   async function handleImportAll() {
     setImportRunning(true);
-    setGlobalMsg("");
+    setGlobalMsg("กำลังนำเข้าทั้งหมด...");
 
     const pending = entries.filter(
       (e) => e.uploadStatus === "done" && e.uploadResult && e.importStatus !== "done" && e.importStatus !== "importing"
     );
-    const results = [];
 
-    for (let i = 0; i < pending.length; i++) {
-      const entry = pending[i];
-      setGlobalMsg(`กำลังนำเข้า ${i + 1} / ${pending.length}: ${entry.file.name}`);
-      const ok = await importZip(entry);
-      results.push({ ok });
+    try {
+      const promises = pending.map(async (entry) => {
+        const ok = await importZip(entry);
+        return { ok };
+      });
+      const results = await Promise.all(promises);
+      setGlobalMsg(summarizeImportResults(results));
+    } catch (error) {
+      setGlobalMsg(`เกิดข้อผิดพลาด: ${error.message}`);
+    } finally {
+      setImportRunning(false);
     }
-
-    setGlobalMsg(summarizeImportResults(results));
-    setImportRunning(false);
   }
 
   function removeEntry(key) {
