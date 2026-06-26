@@ -9,7 +9,7 @@ export default function UploadPage() {
       <section className="panel">
         <div className="headerRow">
           <div>
-            <h4 className="pageHeaderTitle">SUB-HDC ศูนย์ข้อมูล{centerName}</h4>
+            <h4 className="pageHeaderTitle">SUB-HDC {centerName}</h4>
             <h1 style={{ fontSize: "28px", margin: "0 0 10px" }}>นำเข้าไฟล์ข้อมูล</h1>
             <p className="lead">
               เลือกไฟล์ .zip — อัปโหลดอัตโนมัติ แล้วกดนำเข้า

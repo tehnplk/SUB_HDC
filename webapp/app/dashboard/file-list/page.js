@@ -43,7 +43,7 @@ export default function FileListDashboard() {
       <section className="panel panelWide dashboardPanel">
         <div className="headerRow">
           <div>
-            <h4 className="pageHeaderTitle">SUB-HDC ศูนย์ข้อมูล{centerName}</h4>
+            <h4 className="pageHeaderTitle">SUB-HDC {centerName}</h4>
             <p className="lead">จำนวนข้อมูลสะสมในระบบแยกตามรายแฟ้ม</p>
           </div>
           <Link href="/upload" className="navLink">
