@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  mariadb:
+    image: mariadb:10.6
+    container_name: sub_hdc_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-112233}
+      MYSQL_DATABASE: ${DB_DATABASE:-sub_hdc}
+    ports:
+      - "3308:3306"
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+      - ./init_db:/docker-entrypoint-initdb.d
+    networks:
+      - sub_hdc_net
+
+  webapp:
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+    container_name: sub_hdc_web
+    restart: always
+    ports:
+      - "80:3000"
+    env_file:
+      - ./webapp/.env
+    environment:
+      - DB_HOST=mariadb
+      - DB_PORT=3306
+    volumes:
+      - ./webapp/tmp:/app/tmp
+    depends_on:
+      - mariadb
+    networks:
+      - sub_hdc_net
+
+networks:
+  sub_hdc_net:
+    driver: bridge

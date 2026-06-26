@@ -13,3 +13,16 @@ pnpm-debug.log*
 
 .playwright-cli
 .superpowers/
+
+# Docker local data directories
+mysql_data/
+webapp/tmp/
+
+# Webapp secrets
+webapp/.env
+webapp/.env*.local
+
+# Documentation ignored
+/docs
+
+

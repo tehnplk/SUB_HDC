@@ -1,0 +1,9 @@
+node_modules
+.next
+tmp
+mysql_data
+web
+.env
+.env.local
+.env.development
+.env.production
