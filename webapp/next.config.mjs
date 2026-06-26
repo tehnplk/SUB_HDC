@@ -23,6 +23,16 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: "/dashbord/quality",
+        destination: "/dashboard/quality",
+        permanent: true,
+      },
+      {
+        source: "/dasboard/quality",
+        destination: "/dashboard/quality",
+        permanent: true,
+      },
+      {
         source: "/dashboard",
         destination: "/dashboard/hos-list",
         permanent: true,

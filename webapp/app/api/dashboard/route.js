@@ -119,6 +119,52 @@ export async function GET(request) {
       });
     }
 
+    const isQuality = url.searchParams.get("quality") === "true";
+    if (isQuality) {
+      const [hospcodeRows] = await conn.query("SELECT DISTINCT hospcode FROM data_correct WHERE hospcode IS NOT NULL AND hospcode != '' ORDER BY hospcode");
+      const [tablenameRows] = await conn.query("SELECT DISTINCT tablename FROM data_correct WHERE tablename IS NOT NULL AND tablename != '' ORDER BY tablename");
+
+      const requestedHospcode = url.searchParams.get("hospcode");
+      const requestedTablename = url.searchParams.get("tablename");
+
+      let queryParams = [];
+      let queryConditions = [];
+      if (requestedHospcode) {
+        queryConditions.push("hospcode = ?");
+        queryParams.push(requestedHospcode);
+      }
+      if (requestedTablename) {
+        queryConditions.push("tablename = ?");
+        queryParams.push(requestedTablename);
+      }
+
+      const whereClause = queryConditions.length > 0 ? `WHERE ${queryConditions.join(" AND ")}` : "";
+
+      const [rows] = await conn.query(
+        `SELECT hospcode, tablename, data_correct, d_update, log_import_id 
+         FROM data_correct 
+         ${whereClause} 
+         ORDER BY d_update DESC`,
+        queryParams
+      );
+
+      const [[{ uniqueHospcodes }]] = await conn.query("SELECT COUNT(DISTINCT hospcode) AS uniqueHospcodes FROM data_correct");
+      const [[{ uniqueTablenames }]] = await conn.query("SELECT COUNT(DISTINCT tablename) AS uniqueTablenames FROM data_correct");
+
+      return Response.json({
+        rows: rows.map((r) => ({
+          ...r,
+          log_import_id: r.log_import_id ? Number(r.log_import_id) : null,
+        })),
+        hospcodes: hospcodeRows.map((r) => r.hospcode),
+        tablenames: tablenameRows.map((r) => r.tablename),
+        totalRows: rows.length,
+        uniqueHospcodes: Number(uniqueHospcodes || 0),
+        uniqueTablenames: Number(uniqueTablenames || 0),
+        centerName: process.env.CENTER_NAME || "เมือง",
+      });
+    }
+
     const [fileRows] = await conn.query("SELECT file_name FROM c_file ORDER BY file_name");
     const files = fileRows.map((row) => row.file_name);
     const requestedFile = url.searchParams.get("file");

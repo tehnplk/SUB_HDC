@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import DashboardTabs from "@/components/dashboard-tabs";
 import { getFileTypeLabel, getMonthlyRowTotal } from "@/lib/dashboard-data.mjs";
 
 function formatNumber(value) {
@@ -65,15 +66,7 @@ export default function HosListDashboard() {
           </Link>
         </div>
 
-        {/* Tab Selection */}
-        <div className="tabsContainer">
-          <Link href="/dashboard/hos-list" className="tabButton tabButtonActive">
-            รายหน่วยงาน
-          </Link>
-          <Link href="/dashboard/file-list" className="tabButton">
-            รายแฟ้ม
-          </Link>
-        </div>
+        <DashboardTabs />
 
         {error ? <div className="error">{error}</div> : null}
 

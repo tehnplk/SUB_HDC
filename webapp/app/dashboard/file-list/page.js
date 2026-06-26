@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import DashboardTabs from "@/components/dashboard-tabs";
 
 function formatNumber(value) {
   return Number(value || 0).toLocaleString();
@@ -51,15 +52,7 @@ export default function FileListDashboard() {
           </Link>
         </div>
 
-        {/* Tab Selection */}
-        <div className="tabsContainer">
-          <Link href="/dashboard/hos-list" className="tabButton">
-            รายหน่วยงาน
-          </Link>
-          <Link href="/dashboard/file-list" className="tabButton tabButtonActive">
-            รายแฟ้ม
-          </Link>
-        </div>
+        <DashboardTabs />
 
         {error ? <div className="error">{error}</div> : null}
 
