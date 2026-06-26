@@ -93,6 +93,31 @@ export async function GET(request) {
     const url = new URL(request.url);
     conn = await createDbConnection();
 
+    const isSummary = url.searchParams.get("summary") === "true";
+    if (isSummary) {
+      const [fileRows] = await conn.query("SELECT file_name FROM c_file ORDER BY file_name");
+      const filesSummary = await Promise.all(
+        fileRows.map(async (row) => {
+          const [cntRows] = await conn.query(`SELECT COUNT(*) AS cnt FROM \`${row.file_name}\``);
+          return {
+            filename: row.file_name,
+            row_count: Number(cntRows[0].cnt || 0),
+          };
+        })
+      );
+
+      const totalFiles = filesSummary.length;
+      const filesWithData = filesSummary.filter((f) => f.row_count > 0).length;
+      const totalRows = filesSummary.reduce((sum, f) => sum + f.row_count, 0);
+
+      return Response.json({
+        totalFiles,
+        filesWithData,
+        totalRows,
+        files: filesSummary,
+      });
+    }
+
     const [fileRows] = await conn.query("SELECT file_name FROM c_file ORDER BY file_name");
     const files = fileRows.map((row) => row.file_name);
     const requestedFile = url.searchParams.get("file");
