@@ -1,12 +1,9 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { createFileKey, fileLabel, summarizeImportResults } from "../lib/zip-import-client.mjs";
 
 const MAX_FILES = 12;
-
-function fileLabel(file) {
-  return `${file.name} (${(file.size / 1024).toFixed(0)} KB)`;
-}
 
 function statusIcon(status) {
   if (status === "uploading") return "⬆";
@@ -30,12 +27,7 @@ export default function ZipImporter() {
 
   const uploadXhrRefs = useRef({});
   const importAbortRefs = useRef({});
-  const runIdsRef = useRef({});
   const fileInputRef = useRef(null);
-
-  function getFileKey(file) {
-    return `${file.name}_${file.size}_${file.lastModified}`;
-  }
 
   function updateEntry(key, patch) {
     setEntries((prev) =>
@@ -166,10 +158,12 @@ export default function ZipImporter() {
       if (tail) handleLine(tail);
 
       updateEntry(key, { importStatus: "done", importPercent: 100 });
+      return true;
     } catch (error) {
-      if (error.name === "AbortError") return;
+      if (error.name === "AbortError") return false;
       updateEntry(key, { importStatus: "error", importPercent: 0 });
       appendLog(key, `❌ ${error.message}`);
+      return false;
     } finally {
       importAbortRefs.current[key] = null;
     }
@@ -181,14 +175,16 @@ export default function ZipImporter() {
     if (!fileList.length) return;
 
     setGlobalMsg("");
-    const newEntries = fileList.map((file) => {
-      const key = getFileKey(file);
+    const timestamp = Date.now();
+    const newEntries = fileList.map((file, index) => {
+      const key = createFileKey(file, index, timestamp);
       return {
         key,
         file,
         label: fileLabel(file),
         uploadStatus: "uploading",
         uploadPercent: 0,
+        uploadError: "",
         uploadResult: null,
         importStatus: "idle",
         importPercent: 0,
@@ -205,7 +201,7 @@ export default function ZipImporter() {
         const result = await uploadZip(entry.file, entry.key);
         updateEntry(entry.key, { uploadStatus: "done", uploadPercent: 100, uploadResult: result });
       } catch (error) {
-        updateEntry(entry.key, { uploadStatus: "error", uploadPercent: 0 });
+        updateEntry(entry.key, { uploadStatus: "error", uploadPercent: 0, uploadError: error.message });
       }
     });
 
@@ -217,6 +213,7 @@ export default function ZipImporter() {
   function handleFilePick(event) {
     const files = event.target.files;
     if (files?.length) handleFiles(files);
+    event.target.value = "";
   }
 
   const onDragOver = useCallback((e) => {
@@ -237,16 +234,18 @@ export default function ZipImporter() {
     setGlobalMsg("");
 
     const pending = entries.filter(
-      (e) => e.uploadStatus === "done" && e.importStatus !== "done" && e.importStatus !== "importing"
+      (e) => e.uploadStatus === "done" && e.uploadResult && e.importStatus !== "done" && e.importStatus !== "importing"
     );
+    const results = [];
 
     for (let i = 0; i < pending.length; i++) {
       const entry = pending[i];
       setGlobalMsg(`กำลังนำเข้า ${i + 1} / ${pending.length}: ${entry.file.name}`);
-      await importZip(entry);
+      const ok = await importZip(entry);
+      results.push({ ok });
     }
 
-    setGlobalMsg("นำเข้าทั้งหมดเสร็จสิ้น ✅");
+    setGlobalMsg(summarizeImportResults(results));
     setImportRunning(false);
   }
 
@@ -266,11 +265,12 @@ export default function ZipImporter() {
     setEntries([]);
     setGlobalMsg("");
     setImportRunning(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  const allDone = entries.length > 0 && entries.every((e) => e.importStatus === "done");
+  const allDone = entries.length > 0 && entries.every((e) => e.uploadStatus === "done" && e.importStatus === "done");
   const canImport = entries.some(
-    (e) => e.uploadStatus === "done" && e.importStatus !== "done" && e.importStatus !== "importing"
+    (e) => e.uploadStatus === "done" && e.uploadResult && e.importStatus !== "done" && e.importStatus !== "importing"
   );
 
   return (
@@ -354,7 +354,7 @@ export default function ZipImporter() {
               )}
 
               {entry.uploadStatus === "error" && (
-                <span className="miniError">อัปโหลดล้มเหลว</span>
+                <span className="miniError">{entry.uploadError || "อัปโหลดล้มเหลว"}</span>
               )}
 
               {/* Import status */}

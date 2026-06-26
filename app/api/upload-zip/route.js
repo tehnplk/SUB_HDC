@@ -1,11 +1,20 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import AdmZip from "adm-zip";
 
 export const runtime = "nodejs";
 
 function safeName(name) {
   return path.basename(name).replace(/[^A-Za-z0-9._-]/g, "_");
+}
+
+function assertReadableZip(buffer) {
+  try {
+    new AdmZip(buffer).getEntries();
+  } catch {
+    throw new Error("Invalid zip file");
+  }
 }
 
 export async function POST(request) {
@@ -22,6 +31,12 @@ export async function POST(request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
+    try {
+      assertReadableZip(buffer);
+    } catch (error) {
+      return Response.json({ error: error.message }, { status: 400 });
+    }
+
     const uploadsDir = path.join(process.cwd(), "tmp", "uploads");
     await mkdir(uploadsDir, { recursive: true });
 
