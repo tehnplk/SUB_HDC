@@ -27,6 +27,10 @@ test("chooseMonthlyDateColumn falls back to datetime_serv", () => {
   assert.equal(chooseMonthlyDateColumn(["hospcode", "datetime_serv"]), "datetime_serv");
 });
 
+test("chooseMonthlyDateColumn falls back to bdate", () => {
+  assert.equal(chooseMonthlyDateColumn(["hospcode", "bdate"]), "bdate");
+});
+
 test("chooseMonthlyDateColumn returns null when monthly date columns are missing", () => {
   assert.equal(chooseMonthlyDateColumn(["hospcode", "d_update"]), null);
 });

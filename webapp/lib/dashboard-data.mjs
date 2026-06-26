@@ -28,6 +28,7 @@ export function chooseMonthlyDateColumn(columns) {
   if (names.has("date_admit")) return "date_admit";
   if (names.has("datetime_admit")) return "datetime_admit";
   if (names.has("datetime_serv")) return "datetime_serv";
+  if (names.has("bdate")) return "bdate";
   return null;
 }
 
