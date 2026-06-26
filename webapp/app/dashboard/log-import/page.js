@@ -1,0 +1,179 @@
+"use client";
+
+import { useEffect, useState, useMemo } from "react";
+import Link from "next/link";
+import DashboardTabs from "@/components/dashboard-tabs";
+
+function formatNumber(value) {
+  return Number(value || 0).toLocaleString();
+}
+
+function formatDateTime(isoString) {
+  if (!isoString) return "-";
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return isoString;
+    return d.toLocaleString("th-TH", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  } catch (e) {
+    return isoString;
+  }
+}
+
+export default function LogImportDashboard() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setError(null);
+
+    fetch("/api/dashboard?logImport=true", { signal: controller.signal })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load log import data");
+        return res.json();
+      })
+      .then((payload) => {
+        setData(payload);
+      })
+      .catch((err) => {
+        if (err.name !== "AbortError") setError(err.message);
+      })
+      .finally(() => setLoading(false));
+
+    return () => controller.abort();
+  }, []);
+
+  const rows = data?.rows || [];
+
+  const filteredRows = useMemo(() => {
+    if (!searchTerm.trim()) return rows;
+    const term = searchTerm.toLowerCase();
+    return rows.filter((row) => 
+      row.file_name.toLowerCase().includes(term) ||
+      String(row.id).includes(term)
+    );
+  }, [rows, searchTerm]);
+
+  const centerSuffix = data?.centerName ? ` ${data.centerName}` : "";
+
+  // Stats calculation
+  const totalImports = rows.length;
+  const latestFile = rows[0]?.file_name || "-";
+  const latestTime = rows[0]?.import_date_time ? formatDateTime(rows[0].import_date_time) : "-";
+
+  return (
+    <div className="main dashboardMain">
+      <section className="panel panelWide dashboardPanel">
+        <div className="headerRow">
+          <div>
+            <h4 className="pageHeaderTitle">SUB-HDC{centerSuffix}</h4>
+            <p className="lead">ประวัติการนำเข้าไฟล์ข้อมูลและรายงานสถิติ</p>
+          </div>
+          <Link href="/upload" className="navLink">
+            นำเข้าไฟล์
+          </Link>
+        </div>
+
+        <DashboardTabs />
+
+        {error ? <div className="error">{error}</div> : null}
+
+        <div className="filterGrid" style={{ gridTemplateColumns: "1fr" }}>
+          <label className="field">
+            <span>ค้นหาตามชื่อไฟล์ / ไอดีนำเข้า</span>
+            <input
+              type="text"
+              placeholder="พิมพ์ชื่อไฟล์หรือไอดีนำเข้าเพื่อค้นหา..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: "100%",
+                minHeight: "44px",
+                border: "1px solid var(--border-strong)",
+                borderRadius: "var(--radius-sm)",
+                background: "#ffffff",
+                color: "var(--foreground)",
+                font: "inherit",
+                fontSize: "15px",
+                fontWeight: "650",
+                padding: "0 12px",
+                outline: "none",
+                transition: "border-color 0.15s, box-shadow 0.15s, background 0.15s",
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = "var(--accent)";
+                e.target.style.boxShadow = "0 0 0 4px var(--accent-glow)";
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = "var(--border-strong)";
+                e.target.style.boxShadow = "none";
+              }}
+            />
+          </label>
+        </div>
+
+        <div className="statGrid">
+          <div className="statCard">
+            <span className="statValue">{loading ? "..." : formatNumber(totalImports)}</span>
+            <span className="statLabel">จำนวนครั้งที่นำเข้า</span>
+          </div>
+          <div className="statCard">
+            <span className="statValue" style={{ fontSize: "16px", height: "38px", display: "flex", alignItems: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={latestFile}>
+              {loading ? "..." : latestFile}
+            </span>
+            <span className="statLabel">ไฟล์ล่าสุด</span>
+          </div>
+          <div className="statCard">
+            <span className="statValue" style={{ fontSize: "16px", height: "38px", display: "flex", alignItems: "center" }}>
+              {loading ? "..." : latestTime}
+            </span>
+            <span className="statLabel">นำเข้าล่าสุดเมื่อ</span>
+          </div>
+        </div>
+
+        <div className="tableMeta">
+          {loading ? "กำลังโหลด..." : `รายการประวัติการนำเข้าทั้งหมด (${filteredRows.length} รายการ)`}
+        </div>
+
+        <div className="tableWrap">
+          <table className="fileTable">
+            <thead>
+              <tr>
+                <th style={{ width: "120px" }}>ไอดีนำเข้า</th>
+                <th>ชื่อไฟล์ที่นำเข้า</th>
+                <th style={{ width: "250px" }}>วันที่-เวลานำเข้า</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredRows.length ? (
+                filteredRows.map((row) => (
+                  <tr key={row.id}>
+                    <td className="fileCol" style={{ color: "var(--accent-strong)" }}>#{row.id}</td>
+                    <td style={{ wordBreak: "break-all" }}>{row.file_name}</td>
+                    <td>{formatDateTime(row.import_date_time)}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td className="emptyCell" colSpan={3}>
+                    {loading ? "กำลังโหลดข้อมูล..." : "ไม่พบประวัติการนำเข้า"}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
+}

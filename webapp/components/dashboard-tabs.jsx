@@ -7,6 +7,7 @@ const TABS = [
   { href: "/dashboard/hos-list", label: "รายหน่วยงาน" },
   { href: "/dashboard/file-list", label: "รายแฟ้ม" },
   { href: "/dashboard/quality", label: "คุณภาพ" },
+  { href: "/dashboard/log-import", label: "ประวัติการนำเข้า" },
 ];
 
 export default function DashboardTabs() {

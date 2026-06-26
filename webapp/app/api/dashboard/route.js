@@ -119,6 +119,21 @@ export async function GET(request) {
       });
     }
 
+    const isLogImport = url.searchParams.get("logImport") === "true";
+    if (isLogImport) {
+      const [rows] = await conn.query(
+        "SELECT id, file_name, import_date_time FROM log_import_file ORDER BY id DESC LIMIT 500"
+      );
+      return Response.json({
+        rows: rows.map((r) => ({
+          id: Number(r.id),
+          file_name: r.file_name,
+          import_date_time: r.import_date_time,
+        })),
+        centerName: process.env.CENTER_NAME || "เมือง",
+      });
+    }
+
     const isQuality = url.searchParams.get("quality") === "true";
     if (isQuality) {
       const [hospcodeRows] = await conn.query("SELECT DISTINCT hospcode FROM data_correct WHERE hospcode IS NOT NULL AND hospcode != '' ORDER BY hospcode");
