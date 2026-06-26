@@ -26,8 +26,15 @@
 - Web UI: http://localhost (พอร์ต 80)
 - Database: localhost:3308 (พอร์ต 3308)
 
+## การตั้งค่าสิทธิ์เข้าถึง (สำหรับ Linux เท่านั้น)
+หากพบปัญหาในการเขียนไฟล์หรือฐานข้อมูลไม่เริ่มทำงาน ให้รันคำสั่งกำหนดสิทธิ์โฟลเดอร์:
+```bash
+chmod -R 777 webapp/tmp mysql_data
+```
+
 ## วิธีการอัปเดตระบบ
 ```bash
 git pull
 docker compose up -d --build webapp
 ```
+
