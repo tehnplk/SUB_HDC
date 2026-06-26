@@ -1,4 +1,4 @@
-import { access, unlink } from "node:fs/promises";
+import { access, unlink, open, stat } from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
 
@@ -6,6 +6,29 @@ export const runtime = "nodejs";
 
 function uploadsRoot() {
   return path.join(process.cwd(), "tmp", "uploads");
+}
+
+async function secureDelete(filePath) {
+  try {
+    const fileStat = await stat(filePath);
+    const size = fileStat.size;
+    if (size > 0) {
+      const handle = await open(filePath, "r+");
+      const buffer = Buffer.alloc(Math.min(size, 64 * 1024), 0);
+      let written = 0;
+      while (written < size) {
+        const toWrite = Math.min(buffer.length, size - written);
+        await handle.write(buffer, 0, toWrite, written);
+        written += toWrite;
+      }
+      await handle.sync();
+      await handle.close();
+    }
+  } catch (error) {
+    console.error("Error during secure delete:", error);
+  } finally {
+    await unlink(filePath).catch(() => {});
+  }
 }
 
 function resolveUploadedPath(storedName) {
@@ -89,7 +112,7 @@ export async function POST(request) {
               `${JSON.stringify({ type: "error", message: error.message })}\n`
             )
           );
-          unlink(zipPath).catch(() => {});
+          secureDelete(zipPath);
           closeStream();
         });
 
@@ -104,13 +127,13 @@ export async function POST(request) {
             );
           }
           // Delete the uploaded zip file immediately after import
-          unlink(zipPath).catch(() => {});
+          secureDelete(zipPath);
           closeStream();
         });
 
         request.signal.addEventListener("abort", () => {
           child.kill("SIGTERM");
-          unlink(zipPath).catch(() => {});
+          secureDelete(zipPath);
           closeStream();
         });
       },
