@@ -39,6 +39,9 @@ const nextConfig = {
       },
     ];
   },
+  env: {
+    CENTER_NAME: process.env.CENTER_NAME || "เมือง",
+  },
 };
 
 export default nextConfig;

@@ -115,6 +115,7 @@ export async function GET(request) {
         filesWithData,
         totalRows,
         files: filesSummary,
+        centerName: process.env.CENTER_NAME || "เมือง",
       });
     }
 
@@ -178,6 +179,7 @@ export async function GET(request) {
       months: MONTHS,
       rows,
       totalRows,
+      centerName: process.env.CENTER_NAME || "เมือง",
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

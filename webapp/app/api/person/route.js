@@ -44,7 +44,13 @@ export async function GET(request) {
       lname: decryptAes(r.lname, aesKey),
     }));
 
-    return Response.json({ total, page, limit, rows: decrypted });
+    return Response.json({
+      total,
+      page,
+      limit,
+      rows: decrypted,
+      centerName: process.env.CENTER_NAME || "เมือง",
+    });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

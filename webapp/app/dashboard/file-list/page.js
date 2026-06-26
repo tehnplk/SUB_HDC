@@ -36,12 +36,14 @@ export default function FileListDashboard() {
   const hasData = data && !error;
   const files = data?.files || [];
 
+  const centerName = data?.centerName || process.env.CENTER_NAME || "เมือง";
+
   return (
     <div className="main dashboardMain">
       <section className="panel panelWide dashboardPanel">
         <div className="headerRow">
           <div>
-            <h4 className="pageHeaderTitle">SUB-HDC ศูนย์ข้อมูลอำเภอ</h4>
+            <h4 className="pageHeaderTitle">SUB-HDC ศูนย์ข้อมูล{centerName}</h4>
             <p className="lead">จำนวนข้อมูลสะสมในระบบแยกตามรายแฟ้ม</p>
           </div>
           <Link href="/upload" className="navLink">
