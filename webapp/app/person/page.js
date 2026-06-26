@@ -27,14 +27,14 @@ export default function PersonPage() {
 
   const totalPages = Math.ceil(data.total / PAGE_SIZE);
 
-  const centerName = data?.centerName || process.env.CENTER_NAME || "เมือง";
+  const centerSuffix = data?.centerName ? ` ${data.centerName}` : "";
 
   return (
     <div className="main">
       <section className="panel panelWide">
         <div className="headerRow">
           <div>
-            <h4 className="pageHeaderTitle">SUB-HDC {centerName}</h4>
+            <h4 className="pageHeaderTitle">SUB-HDC{centerSuffix}</h4>
             <h1 style={{ fontSize: "28px", margin: "0 0 10px" }}>PERSON</h1>
             <p className="lead">{data.total.toLocaleString()} รายการ</p>
           </div>
