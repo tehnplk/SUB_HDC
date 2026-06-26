@@ -1,8 +1,9 @@
 import crypto from "node:crypto";
+import { requireApiJwt } from "@/lib/api-auth.mjs";
 import { createDbConnection } from "@/lib/db";
 
 function getAesKey() {
-  const raw = process.env.SECRET_KEY || "change_me";
+  const raw = process.env.ENCRYPT_KEY || "change_me";
   return crypto.createHash("sha256").update(raw).digest();
 }
 
@@ -22,6 +23,9 @@ function decryptAes(hex, key) {
 }
 
 export async function GET(request) {
+  const unauthorized = await requireApiJwt(request);
+  if (unauthorized) return unauthorized;
+
   try {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get("page") || "1");

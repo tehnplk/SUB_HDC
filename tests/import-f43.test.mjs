@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import crypto from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -53,7 +54,7 @@ test("readF43Files parses nested F43 text files", async () => {
   );
 });
 
-test("importFile writes metadata file_name once using the source zip name", async () => {
+test("importFile writes log_import_id metadata instead of source file columns", async () => {
   const importer = require("../lib/import_f43_node.js");
   const executed = [];
   const connection = {
@@ -64,8 +65,7 @@ test("importFile writes metadata file_name once using the source zip name", asyn
             { Field: "hospcode" },
             { Field: "seq" },
             { Field: "date_serv" },
-            { Field: "file_name" },
-            { Field: "import_date_time" },
+            { Field: "log_import_id" },
           ],
         ];
       }
@@ -83,14 +83,71 @@ test("importFile writes metadata file_name once using the source zip name", asyn
       rows: [["11251", "1", "20260101", "inside.txt"]],
     },
     500,
-    "error"
+    "error",
+    undefined,
+    42
   );
 
   assert.equal(result.rows, 1);
   assert.equal(executed.length, 1);
-  assert.match(executed[0].sql, /`hospcode`, `seq`, `date_serv`, `file_name`/);
+  assert.match(executed[0].sql, /`hospcode`, `seq`, `date_serv`, `log_import_id`/);
   assert.doesNotMatch(executed[0].sql, /`file_name`, `file_name`/);
-  assert.deepEqual(executed[0].values, ["11251", "1", "20260101", "source.zip"]);
+  assert.doesNotMatch(executed[0].sql, /`file_name`/);
+  assert.deepEqual(executed[0].values, ["11251", "1", "20260101", 42]);
+});
+
+test("createLogImportFile stores the imported source zip name", async () => {
+  const importer = require("../lib/import_f43_node.js");
+  const executed = [];
+  const connection = {
+    async execute(sql, values) {
+      executed.push({ sql, values });
+      return [{ insertId: 42 }];
+    },
+  };
+
+  const id = await importer.createLogImportFile(connection, "source.zip");
+
+  assert.equal(id, 42);
+  assert.equal(executed.length, 1);
+  assert.match(executed[0].sql, /^INSERT INTO `log_import_file`/);
+  assert.deepEqual(executed[0].values, ["source.zip"]);
+});
+
+test("encryptFileRows encrypts HOME house_id house and telephone with AES", () => {
+  const importer = require("../lib/import_f43_node.js");
+  const aesKey = Buffer.alloc(32, 1);
+
+  const encrypted = importer.encryptFileRows(
+    {
+      tableName: "home",
+      columns: ["hospcode", "hid", "house_id", "house", "telephone", "road"],
+      rows: [["11251", "1", "HOUSE-1", "99/1", "0123456789", "main road"]],
+    },
+    aesKey
+  );
+
+  const [row] = encrypted.rows;
+  assert.equal(row[0], "11251");
+  assert.equal(row[1], "1");
+  assert.notEqual(row[2], "HOUSE-1");
+  assert.notEqual(row[3], "99/1");
+  assert.notEqual(row[4], "0123456789");
+  assert.equal(row[5], "main road");
+  assert.match(row[2], /^[0-9a-f]+$/);
+  assert.match(row[3], /^[0-9a-f]+$/);
+  assert.match(row[4], /^[0-9a-f]+$/);
+});
+
+test("getAesKey uses ENCRYPT_KEY instead of SECRET_KEY", () => {
+  const importer = require("../lib/import_f43_node.js");
+  const key = importer.getAesKey({
+    ENCRYPT_KEY: "encrypt-test-secret",
+    SECRET_KEY: "old-secret",
+  });
+  const expected = crypto.createHash("sha256").update("encrypt-test-secret").digest();
+
+  assert.deepEqual(key, expected);
 });
 
 test("parseArgs requires an explicit zip path and validates numeric options", () => {
