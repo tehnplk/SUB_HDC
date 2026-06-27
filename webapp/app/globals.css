@@ -375,6 +375,26 @@ button:disabled {
   opacity: 1;
 }
 
+.reportSearchInput {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 650;
+  padding: 0 12px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.reportSearchInput:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-glow);
+}
+
 /* Dashboard stats and tables */
 .statGrid {
   display: grid;
@@ -555,6 +575,131 @@ button:disabled {
   width: 16px;
   height: 16px;
   color: var(--accent-strong);
+}
+
+.reportNameButton {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--accent-strong);
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.45;
+  text-align: left;
+  white-space: normal;
+}
+
+.reportNameButton:hover:not(:disabled) {
+  color: var(--foreground);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.reportNameButton .lucide {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.reportModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.reportModal {
+  display: grid;
+  width: min(1080px, 100%);
+  max-height: min(760px, calc(100vh - 44px));
+  gap: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: #ffffff;
+  padding: 20px;
+  box-shadow: 0 22px 70px rgba(15, 23, 42, 0.24);
+}
+
+.reportModalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.reportModalActions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.reportExportButton {
+  min-height: 36px;
+  padding: 8px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 13px;
+  box-shadow: 0 8px 16px rgba(21, 128, 61, 0.16);
+}
+
+.reportExportButton:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+.reportModalHeader h2 {
+  margin: 0 0 4px;
+  color: var(--foreground);
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+.reportModalClose {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--muted-strong);
+}
+
+.reportModalClose:hover:not(:disabled) {
+  background: var(--panel-soft);
+  color: var(--foreground);
+}
+
+.reportResultWrap {
+  max-height: 560px;
+  overflow: auto;
+}
+
+.reportResultWrap .fileTable {
+  min-width: 720px;
+}
+
+.reportLimitNotice {
+  padding: 10px 12px;
+  border: 1px solid #fed7aa;
+  border-radius: var(--radius-sm);
+  background: var(--warning-soft);
+  color: #9a3412;
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .emptyCell {
@@ -1196,6 +1341,19 @@ button:disabled {
   .fileTable th,
   .fileTable td {
     padding: 9px 12px;
+  }
+
+  .reportModalHeader {
+    flex-direction: column;
+  }
+
+  .reportModalActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .reportExportButton {
+    flex: 1;
   }
 }
 

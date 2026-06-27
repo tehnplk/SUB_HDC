@@ -1,44 +1,198 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   CalendarDays,
+  Download,
   FileText,
   Search,
   TableProperties,
-  Tags,
   UploadCloud,
+  X,
 } from "lucide-react";
 import DashboardHeaderImage from "@/components/dashboard-header-image";
 import DashboardPageTitle from "@/components/dashboard-page-title";
 import DashboardTabs from "@/components/dashboard-tabs";
 
-const REPORT_ROWS = [
-  { id: 1, name: "รายงานจำนวนประชากรแยกตามหน่วยบริการ", type: "ทะเบียน", date: "27 มิ.ย. 2569" },
-  { id: 2, name: "รายงานการรับบริการผู้ป่วยนอก", type: "บริการ", date: "27 มิ.ย. 2569" },
-  { id: 3, name: "รายงานการรับบริการผู้ป่วยใน", type: "บริการ", date: "26 มิ.ย. 2569" },
-  { id: 4, name: "รายงานการตรวจคัดกรองโรคเรื้อรัง", type: "คัดกรอง", date: "26 มิ.ย. 2569" },
-  { id: 5, name: "รายงานการฝากครรภ์", type: "ส่งเสริมสุขภาพ", date: "25 มิ.ย. 2569" },
-  { id: 6, name: "รายงานวัคซีนและการสร้างเสริมภูมิคุ้มกัน", type: "ส่งเสริมสุขภาพ", date: "25 มิ.ย. 2569" },
-  { id: 7, name: "รายงานทันตกรรม", type: "บริการ", date: "24 มิ.ย. 2569" },
-  { id: 8, name: "รายงานการจ่ายยา", type: "ยา", date: "24 มิ.ย. 2569" },
-  { id: 9, name: "รายงานการส่งต่อ", type: "ส่งต่อ", date: "23 มิ.ย. 2569" },
-  { id: 10, name: "รายงานคุณภาพข้อมูลสะสม", type: "คุณภาพข้อมูล", date: "23 มิ.ย. 2569" },
-];
+function formatDate(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString("th-TH", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function formatCell(value) {
+  if (value === null || value === undefined || value === "") return "-";
+  if (typeof value === "number") return value.toLocaleString();
+  return String(value);
+}
+
+function escapeXml(value) {
+  if (value === null || value === undefined) return "";
+  const text = String(value);
+  const safeText = /^[=+\-@]/.test(text) ? `'${text}` : text;
+  return safeText
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function makeReportFilename(reportName) {
+  const safeName = String(reportName || "report")
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .replace(/\s+/g, "-")
+    .slice(0, 80);
+  return `${safeName || "report"}.xls`;
+}
+
+function makeExcelXml(columns, rows) {
+  const headerCells = columns
+    .map((column) => `<Cell><Data ss:Type="String">${escapeXml(column)}</Data></Cell>`)
+    .join("");
+  const dataRows = rows
+    .map((row) => {
+      const cells = columns
+        .map((column) => `<Cell><Data ss:Type="String">${escapeXml(row[column])}</Data></Cell>`)
+        .join("");
+      return `<Row>${cells}</Row>`;
+    })
+    .join("");
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+  xmlns:o="urn:schemas-microsoft-com:office:office"
+  xmlns:x="urn:schemas-microsoft-com:office:excel"
+  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+  <Worksheet ss:Name="Report">
+    <Table>
+      <Row>${headerCells}</Row>
+      ${dataRows}
+    </Table>
+  </Worksheet>
+</Workbook>`;
+}
 
 export default function ReportDashboard() {
+  const [reports, setReports] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const filteredRows = REPORT_ROWS.filter((report) => {
-    const term = searchTerm.trim().toLowerCase();
-    if (!term) return true;
-    return (
-      report.name.toLowerCase().includes(term) ||
-      report.type.toLowerCase().includes(term) ||
-      report.date.toLowerCase().includes(term) ||
-      String(report.id).includes(term)
-    );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [modalState, setModalState] = useState({
+    open: false,
+    loading: false,
+    error: null,
+    report: null,
+    columns: [],
+    rows: [],
+    limited: false,
   });
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setError(null);
+
+    fetch("/api/report", { signal: controller.signal })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load reports");
+        return res.json();
+      })
+      .then((payload) => setReports(payload.rows || []))
+      .catch((err) => {
+        if (err.name !== "AbortError") setError(err.message);
+      })
+      .finally(() => setLoading(false));
+
+    return () => controller.abort();
+  }, []);
+
+  const filteredRows = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return reports;
+    return reports.filter((report) => (
+      report.name.toLowerCase().includes(term) ||
+      formatDate(report.date_update).toLowerCase().includes(term) ||
+      String(report.id).includes(term)
+    ));
+  }, [reports, searchTerm]);
+
+  async function openReport(report) {
+    setModalState({
+      open: true,
+      loading: true,
+      error: null,
+      report,
+      columns: [],
+      rows: [],
+      limited: false,
+    });
+
+    try {
+      const res = await fetch("/api/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: report.id }),
+      });
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload.error || "Failed to run report");
+
+      setModalState({
+        open: true,
+        loading: false,
+        error: null,
+        report: payload.report,
+        columns: payload.columns || [],
+        rows: payload.rows || [],
+        limited: Boolean(payload.limited),
+      });
+    } catch (err) {
+      setModalState((current) => ({
+        ...current,
+        loading: false,
+        error: err.message,
+      }));
+    }
+  }
+
+  function closeModal() {
+    setModalState({
+      open: false,
+      loading: false,
+      error: null,
+      report: null,
+      columns: [],
+      rows: [],
+      limited: false,
+    });
+  }
+
+  function exportReport() {
+    if (!modalState.columns.length || !modalState.rows.length) return;
+
+    const excelXml = makeExcelXml(modalState.columns, modalState.rows);
+    const blob = new Blob([excelXml], {
+      type: "application/vnd.ms-excel;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = makeReportFilename(modalState.report?.name);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="main dashboardMain">
       <section className="panel panelWide dashboardPanel">
@@ -47,7 +201,7 @@ export default function ReportDashboard() {
             <DashboardHeaderImage />
             <div className="titleText">
               <DashboardPageTitle />
-              <p className="lead">รายการรายงานตัวอย่าง</p>
+              <p className="lead">รายการรายงานจากตาราง report</p>
             </div>
           </div>
           <Link href="/upload" className="navLink">
@@ -58,6 +212,8 @@ export default function ReportDashboard() {
 
         <DashboardTabs />
 
+        {error ? <div className="error">{error}</div> : null}
+
         <div className="filterGrid" style={{ gridTemplateColumns: "1fr" }}>
           <div className="field">
             <div className="inputWithIcon">
@@ -65,32 +221,10 @@ export default function ReportDashboard() {
               <input
                 type="text"
                 aria-label="ค้นหารายงาน"
-                placeholder="พิมพ์ชื่อรายงาน วันที่ หมายเลข"
-                className="fieldInput"
+                placeholder="พิมพ์ชื่อรายงาน วันที่ หรือหมายเลข"
+                className="fieldInput reportSearchInput"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                style={{
-                  width: "100%",
-                  minHeight: "44px",
-                  border: "1px solid var(--border-strong)",
-                  borderRadius: "var(--radius-sm)",
-                  background: "#ffffff",
-                  color: "var(--foreground)",
-                  font: "inherit",
-                  fontSize: "15px",
-                  fontWeight: "650",
-                  padding: "0 12px",
-                  outline: "none",
-                  transition: "border-color 0.15s, box-shadow 0.15s, background 0.15s",
-                }}
-                onFocus={(event) => {
-                  event.target.style.borderColor = "var(--accent)";
-                  event.target.style.boxShadow = "0 0 0 4px var(--accent-glow)";
-                }}
-                onBlur={(event) => {
-                  event.target.style.borderColor = "var(--border-strong)";
-                  event.target.style.boxShadow = "none";
-                }}
               />
             </div>
           </div>
@@ -98,7 +232,7 @@ export default function ReportDashboard() {
 
         <div className="tableMeta metaLine">
           <TableProperties aria-hidden="true" />
-          รายงานทั้งหมด ({filteredRows.length} รายการ)
+          {loading ? "กำลังโหลดรายงาน..." : `รายงานทั้งหมด (${filteredRows.length} รายการ)`}
         </div>
 
         <div className="tableWrap">
@@ -107,8 +241,7 @@ export default function ReportDashboard() {
               <tr>
                 <th style={{ width: "90px" }}>#</th>
                 <th>ชื่อรายงาน</th>
-                <th style={{ width: "180px" }}>ประเภท</th>
-                <th style={{ width: "220px" }}>วันที่</th>
+                <th style={{ width: "230px" }}>ปรับปรุงล่าสุด</th>
               </tr>
             </thead>
             <tbody>
@@ -117,29 +250,27 @@ export default function ReportDashboard() {
                   <tr key={report.id}>
                     <td className="fileCol">{report.id}</td>
                     <td>
-                      <span className="tableCellIcon">
+                      <button
+                        type="button"
+                        className="reportNameButton"
+                        onClick={() => openReport(report)}
+                      >
                         <FileText aria-hidden="true" />
                         {report.name}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="tableCellIcon">
-                        <Tags aria-hidden="true" />
-                        {report.type}
-                      </span>
+                      </button>
                     </td>
                     <td>
                       <span className="tableCellIcon">
                         <CalendarDays aria-hidden="true" />
-                        {report.date}
+                        {formatDate(report.date_update)}
                       </span>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td className="emptyCell" colSpan={4}>
-                    ไม่พบรายงาน
+                  <td className="emptyCell" colSpan={3}>
+                    {loading ? "กำลังโหลดข้อมูล..." : "ไม่พบรายงาน"}
                   </td>
                 </tr>
               )}
@@ -147,6 +278,85 @@ export default function ReportDashboard() {
           </table>
         </div>
       </section>
+
+      {modalState.open ? (
+        <div className="reportModalBackdrop" role="presentation" onClick={closeModal}>
+          <section
+            className="reportModal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="report-modal-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="reportModalHeader">
+              <div>
+                <h2 id="report-modal-title">{modalState.report?.name || "รายงาน"}</h2>
+                <p>
+                  {modalState.loading
+                    ? "กำลังประมวลผลรายงาน..."
+                    : `${modalState.rows.length.toLocaleString()} รายการ`}
+                </p>
+              </div>
+              <div className="reportModalActions">
+                <button
+                  type="button"
+                  className="reportExportButton"
+                  onClick={exportReport}
+                  disabled={modalState.loading || !modalState.rows.length}
+                >
+                  <Download aria-hidden="true" />
+                  Export Excel
+                </button>
+                <button type="button" className="reportModalClose" onClick={closeModal} aria-label="ปิด">
+                  <X aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+
+            {modalState.error ? <div className="error">{modalState.error}</div> : null}
+            {modalState.limited ? (
+              <div className="reportLimitNotice">แสดงผลสูงสุด 500 รายการแรก</div>
+            ) : null}
+
+            <div className="tableWrap reportResultWrap">
+              <table className="fileTable">
+                <thead>
+                  <tr>
+                    {modalState.columns.length ? (
+                      modalState.columns.map((column) => <th key={column}>{column}</th>)
+                    ) : (
+                      <th>ผลลัพธ์</th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {modalState.loading ? (
+                    <tr>
+                      <td className="emptyCell" colSpan={Math.max(modalState.columns.length, 1)}>
+                        กำลังโหลดข้อมูล...
+                      </td>
+                    </tr>
+                  ) : modalState.rows.length ? (
+                    modalState.rows.map((row, rowIndex) => (
+                      <tr key={rowIndex}>
+                        {modalState.columns.map((column) => (
+                          <td key={column}>{formatCell(row[column])}</td>
+                        ))}
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td className="emptyCell" colSpan={Math.max(modalState.columns.length, 1)}>
+                        ไม่พบข้อมูล
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
