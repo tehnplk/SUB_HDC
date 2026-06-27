@@ -60,43 +60,46 @@ export async function GET(request) {
 
     const allColumns = await getTableColumns(conn, file);
     const dateColumn = chooseMonthlyDateColumn(allColumns);
-    if (!dateColumn) {
-      return Response.json(
-        { error: "No date column found in table" },
-        { status: 400 }
-      );
-    }
-
-    const fiscalYearAd = normalizeFiscalYear(fiscalYear);
-    if (!fiscalYearAd) {
-      return Response.json(
-        { error: "Invalid fiscalYear" },
-        { status: 400 }
-      );
-    }
-
-    const range = getFiscalYearRange(fiscalYearAd);
-    const dateSql = datePrefixExpression(dateColumn);
     const tableSql = quoteIdentifier(file);
 
     const columns = allColumns.filter((col) => !EXCLUDED_COLUMNS.has(col));
     const columnList = columns.map((col) => quoteIdentifier(col)).join(", ");
 
-    const whereConditions = [
-      "hospcode = ?",
-      `${dateSql} REGEXP '^[0-9]{8}$'`,
-      `${dateSql} >= ?`,
-      `${dateSql} < ?`,
-    ];
+    let whereClause;
+    let whereParams;
 
-    const whereParams = [hospcode, range.start, range.end];
+    if (dateColumn) {
+      const fiscalYearAd = normalizeFiscalYear(fiscalYear);
+      if (!fiscalYearAd) {
+        return Response.json(
+          { error: "Invalid fiscalYear" },
+          { status: 400 }
+        );
+      }
 
-    if (hasMonthFilter) {
-      whereConditions.splice(1, 0, `SUBSTRING(${dateSql}, 5, 2) = ?`);
-      whereParams.splice(1, 0, monthValue);
+      const range = getFiscalYearRange(fiscalYearAd);
+      const dateSql = datePrefixExpression(dateColumn);
+
+      const conditions = [
+        "hospcode = ?",
+        `${dateSql} REGEXP '^[0-9]{8}$'`,
+        `${dateSql} >= ?`,
+        `${dateSql} < ?`,
+      ];
+
+      const params = [hospcode, range.start, range.end];
+
+      if (hasMonthFilter) {
+        conditions.splice(1, 0, `SUBSTRING(${dateSql}, 5, 2) = ?`);
+        params.splice(1, 0, monthValue);
+      }
+
+      whereClause = conditions.join(" AND ");
+      whereParams = params;
+    } else {
+      whereClause = "hospcode = ?";
+      whereParams = [hospcode];
     }
-
-    const whereClause = whereConditions.join(" AND ");
 
     const [[{ total }]] = await conn.query(
       `SELECT COUNT(*) AS total FROM ${tableSql} WHERE ${whereClause}`,

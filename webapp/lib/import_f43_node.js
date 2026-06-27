@@ -62,6 +62,8 @@ const ENCRYPT_RULES = {
     ADDRESS: ["houseno"],
     HOME: ["house_id", "house", "telephone"],
     PROVIDER: ["lname"],
+    SERVICE: ["insid"],
+    CARD: ["insid"],
   },
 };
 

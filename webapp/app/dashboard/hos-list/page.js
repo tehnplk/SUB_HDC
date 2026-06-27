@@ -339,7 +339,16 @@ export default function HosListDashboard() {
                     {hasMonthly ? (
                       renderMonthlyCells(row)
                     ) : (
-                      <td className="numCol">{formatNumber(row.total)}</td>
+                      row.total > 0 ? (
+                        <td
+                          className="numCol clickableMonthCol"
+                          onClick={() => openRawModal(row.hospcode, "total", null, null)}
+                        >
+                          {formatNumber(row.total)}
+                        </td>
+                      ) : (
+                        <td className="numCol">{formatNumber(row.total)}</td>
+                      )
                     )}
                   </tr>
                 ))
