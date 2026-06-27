@@ -2,6 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import {
+  Building2,
+  CalendarDays,
+  Database,
+  FileText,
+  LoaderCircle,
+  TableProperties,
+  UploadCloud,
+} from "lucide-react";
 import DashboardPageTitle from "@/components/dashboard-page-title";
 import DashboardTabs from "@/components/dashboard-tabs";
 import { getFileTypeLabel, getMonthlyRowTotal } from "@/lib/dashboard-data.mjs";
@@ -56,11 +65,17 @@ export default function HosListDashboard() {
     <div className="main dashboardMain">
       <section className="panel panelWide dashboardPanel">
         <div className="headerRow">
-          <div>
-            <DashboardPageTitle />
-            <p className="lead">จำนวนข้อมูลแต่ละแฟ้ม แยกตาม HOSCODE</p>
+          <div className="titleRow">
+            <span className="iconBadge">
+              <Building2 aria-hidden="true" />
+            </span>
+            <div className="titleText">
+              <DashboardPageTitle />
+              <p className="lead">จำนวนข้อมูลแต่ละแฟ้ม แยกตาม HOSCODE</p>
+            </div>
           </div>
           <Link href="/upload" className="navLink">
+            <UploadCloud aria-hidden="true" />
             นำเข้าไฟล์
           </Link>
         </div>
@@ -71,7 +86,10 @@ export default function HosListDashboard() {
 
         <div className="filterGrid">
           <label className="field">
-            <span>ชื่อแฟ้ม</span>
+            <span>
+              <FileText aria-hidden="true" />
+              ชื่อแฟ้ม
+            </span>
             <select
               value={data?.selectedFile || selectedFile}
               disabled={!hasData || loading}
@@ -89,7 +107,10 @@ export default function HosListDashboard() {
           </label>
 
           <label className="field">
-            <span>ปีงบประมาณ</span>
+            <span>
+              <CalendarDays aria-hidden="true" />
+              ปีงบประมาณ
+            </span>
             <select
               value={data?.selectedFiscalYear || selectedFiscalYear}
               disabled={!hasData || loading || !hasMonthly}
@@ -110,20 +131,24 @@ export default function HosListDashboard() {
 
         <div className="statGrid statGridCompact">
           <div className="statCard">
+            <span className="statIcon"><Database aria-hidden="true" /></span>
             <span className="statValue">{formatNumber(data?.totalRows)}</span>
             <span className="statLabel">จำนวนรวม</span>
           </div>
           <div className="statCard">
+            <span className="statIcon"><Building2 aria-hidden="true" /></span>
             <span className="statValue">{formatNumber(rows.length)}</span>
             <span className="statLabel">HOSCODE</span>
           </div>
           <div className="statCard">
+            <span className="statIcon"><CalendarDays aria-hidden="true" /></span>
             <span className="statValue">{hasMonthly ? data?.dateColumn : "รวม"}</span>
             <span className="statLabel">รูปแบบข้อมูล</span>
           </div>
         </div>
 
-        <div className="tableMeta">
+        <div className="tableMeta metaLine">
+          <TableProperties aria-hidden="true" />
           {loading ? "กำลังโหลด..." : getFileTypeLabel(hasMonthly)}
         </div>
 
@@ -170,7 +195,10 @@ export default function HosListDashboard() {
               ) : (
                 <tr>
                   <td className="emptyCell" colSpan={hasMonthly ? months.length + 2 : 2}>
-                    {loading ? "กำลังโหลดข้อมูล..." : "ไม่พบข้อมูล"}
+                    <span className="emptyState">
+                      {loading ? <LoaderCircle aria-hidden="true" /> : <TableProperties aria-hidden="true" />}
+                      {loading ? "กำลังโหลดข้อมูล..." : "ไม่พบข้อมูล"}
+                    </span>
                   </td>
                 </tr>
               )}

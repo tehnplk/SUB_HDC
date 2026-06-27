@@ -2,6 +2,17 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import {
+  BarChart3,
+  Building2,
+  CalendarClock,
+  FileText,
+  Gauge,
+  PieChart,
+  ShieldCheck,
+  TableProperties,
+  UploadCloud,
+} from "lucide-react";
 import DashboardPageTitle from "@/components/dashboard-page-title";
 import DashboardTabs from "@/components/dashboard-tabs";
 
@@ -206,11 +217,17 @@ export default function QualityDashboard() {
     <div className="main dashboardMain">
       <section className="panel panelWide dashboardPanel">
         <div className="headerRow">
-          <div>
-            <DashboardPageTitle />
-            <p className="lead">คุณภาพ/ความถูกต้องของข้อมูลรายแฟ้มและหน่วยงาน</p>
+          <div className="titleRow">
+            <span className="iconBadge">
+              <ShieldCheck aria-hidden="true" />
+            </span>
+            <div className="titleText">
+              <DashboardPageTitle />
+              <p className="lead">คุณภาพ/ความถูกต้องของข้อมูลรายแฟ้มและหน่วยงาน</p>
+            </div>
           </div>
           <Link href="/upload" className="navLink">
+            <UploadCloud aria-hidden="true" />
             นำเข้าไฟล์
           </Link>
         </div>
@@ -221,7 +238,10 @@ export default function QualityDashboard() {
 
         <div className="filterGrid">
           <label className="field">
-            <span>หน่วยงาน (HOSCODE)</span>
+            <span>
+              <Building2 aria-hidden="true" />
+              หน่วยงาน (HOSCODE)
+            </span>
             <select
               value={selectedHospcode}
               disabled={!hasData || loading}
@@ -239,7 +259,10 @@ export default function QualityDashboard() {
           </label>
 
           <label className="field">
-            <span>ชื่อแฟ้ม</span>
+            <span>
+              <FileText aria-hidden="true" />
+              ชื่อแฟ้ม
+            </span>
             <select
               value={selectedTablename}
               disabled={!hasData || loading}
@@ -275,18 +298,27 @@ export default function QualityDashboard() {
         {/* Charts Section */}
         <div className="chartsGrid">
           <div className="chartCard">
+            <div className="chartTitle">
+              <BarChart3 aria-hidden="true" />
+              เธเธธเธ“เธ เธฒเธเธฃเธฒเธขเนเธเนเธก
+            </div>
             <div className="chartContainer">
               <canvas ref={barChartRef} />
             </div>
           </div>
           <div className="chartCard">
+            <div className="chartTitle">
+              <PieChart aria-hidden="true" />
+              เธชเธฑเธ”เธชเนเธงเธเธเธธเธ“เธ เธฒเธ
+            </div>
             <div className="chartContainer">
               <canvas ref={pieChartRef} />
             </div>
           </div>
         </div>
 
-        <div className="tableMeta">
+        <div className="tableMeta metaLine">
+          <TableProperties aria-hidden="true" />
           {loading ? "กำลังโหลด..." : "ตารางแสดงคุณภาพความถูกต้องของข้อมูล"}
         </div>
 
@@ -308,12 +340,30 @@ export default function QualityDashboard() {
                   const isPassed = val >= 95;
                   return (
                     <tr key={idx}>
-                      <td className="fileCol">{row.hospcode}</td>
-                      <td>{row.tablename}</td>
-                      <td className="numCol" style={{ color: isPassed ? "var(--accent-strong)" : "#d97706", fontWeight: "bold" }}>
-                        {row.data_correct}
+                      <td className="fileCol">
+                        <span className="tableCellIcon">
+                          <Building2 aria-hidden="true" />
+                          {row.hospcode}
+                        </span>
                       </td>
-                      <td>{row.d_update}</td>
+                      <td>
+                        <span className="tableCellIcon">
+                          <FileText aria-hidden="true" />
+                          {row.tablename}
+                        </span>
+                      </td>
+                      <td className="numCol" style={{ color: isPassed ? "var(--accent-strong)" : "#d97706", fontWeight: "bold" }}>
+                        <span className="tableCellIcon">
+                          <Gauge aria-hidden="true" />
+                          {row.data_correct}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="tableCellIcon">
+                          <CalendarClock aria-hidden="true" />
+                          {row.d_update}
+                        </span>
+                      </td>
                       <td className="numCol">{row.log_import_id ?? "-"}</td>
                     </tr>
                   );

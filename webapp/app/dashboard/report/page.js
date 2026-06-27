@@ -2,6 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import {
+  CalendarDays,
+  ClipboardList,
+  FileText,
+  Search,
+  TableProperties,
+  Tags,
+  UploadCloud,
+} from "lucide-react";
 import DashboardPageTitle from "@/components/dashboard-page-title";
 import DashboardTabs from "@/components/dashboard-tabs";
 
@@ -34,11 +43,17 @@ export default function ReportDashboard() {
     <div className="main dashboardMain">
       <section className="panel panelWide dashboardPanel">
         <div className="headerRow">
-          <div>
-            <DashboardPageTitle />
-            <p className="lead">รายการรายงานตัวอย่าง</p>
+          <div className="titleRow">
+            <span className="iconBadge">
+              <ClipboardList aria-hidden="true" />
+            </span>
+            <div className="titleText">
+              <DashboardPageTitle />
+              <p className="lead">รายการรายงานตัวอย่าง</p>
+            </div>
           </div>
           <Link href="/upload" className="navLink">
+            <UploadCloud aria-hidden="true" />
             นำเข้าไฟล์
           </Link>
         </div>
@@ -47,40 +62,46 @@ export default function ReportDashboard() {
 
         <div className="filterGrid" style={{ gridTemplateColumns: "1fr" }}>
           <div className="field">
-            <input
-              type="text"
-              aria-label="ค้นหารายงาน"
-              placeholder="พิมพ์ชื่อรายงาน วันที่ หมายเลข"
-              className="fieldInput"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              style={{
-                width: "100%",
-                minHeight: "44px",
-                border: "1px solid var(--border-strong)",
-                borderRadius: "var(--radius-sm)",
-                background: "#ffffff",
-                color: "var(--foreground)",
-                font: "inherit",
-                fontSize: "15px",
-                fontWeight: "650",
-                padding: "0 12px",
-                outline: "none",
-                transition: "border-color 0.15s, box-shadow 0.15s, background 0.15s",
-              }}
-              onFocus={(event) => {
-                event.target.style.borderColor = "var(--accent)";
-                event.target.style.boxShadow = "0 0 0 4px var(--accent-glow)";
-              }}
-              onBlur={(event) => {
-                event.target.style.borderColor = "var(--border-strong)";
-                event.target.style.boxShadow = "none";
-              }}
-            />
+            <div className="inputWithIcon">
+              <Search aria-hidden="true" />
+              <input
+                type="text"
+                aria-label="ค้นหารายงาน"
+                placeholder="พิมพ์ชื่อรายงาน วันที่ หมายเลข"
+                className="fieldInput"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                style={{
+                  width: "100%",
+                  minHeight: "44px",
+                  border: "1px solid var(--border-strong)",
+                  borderRadius: "var(--radius-sm)",
+                  background: "#ffffff",
+                  color: "var(--foreground)",
+                  font: "inherit",
+                  fontSize: "15px",
+                  fontWeight: "650",
+                  padding: "0 12px",
+                  outline: "none",
+                  transition: "border-color 0.15s, box-shadow 0.15s, background 0.15s",
+                }}
+                onFocus={(event) => {
+                  event.target.style.borderColor = "var(--accent)";
+                  event.target.style.boxShadow = "0 0 0 4px var(--accent-glow)";
+                }}
+                onBlur={(event) => {
+                  event.target.style.borderColor = "var(--border-strong)";
+                  event.target.style.boxShadow = "none";
+                }}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="tableMeta">รายงานทั้งหมด ({filteredRows.length} รายการ)</div>
+        <div className="tableMeta metaLine">
+          <TableProperties aria-hidden="true" />
+          รายงานทั้งหมด ({filteredRows.length} รายการ)
+        </div>
 
         <div className="tableWrap">
           <table className="fileTable">
@@ -97,9 +118,24 @@ export default function ReportDashboard() {
                 filteredRows.map((report) => (
                   <tr key={report.id}>
                     <td className="fileCol">{report.id}</td>
-                    <td>{report.name}</td>
-                    <td>{report.type}</td>
-                    <td>{report.date}</td>
+                    <td>
+                      <span className="tableCellIcon">
+                        <FileText aria-hidden="true" />
+                        {report.name}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="tableCellIcon">
+                        <Tags aria-hidden="true" />
+                        {report.type}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="tableCellIcon">
+                        <CalendarDays aria-hidden="true" />
+                        {report.date}
+                      </span>
+                    </td>
                   </tr>
                 ))
               ) : (

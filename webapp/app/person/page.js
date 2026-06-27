@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { ArrowLeft, ChevronLeft, ChevronRight, TableProperties, UsersRound } from "lucide-react";
 
 const PAGE_SIZE = 50;
 
@@ -33,12 +34,25 @@ export default function PersonPage() {
     <div className="main">
       <section className="panel panelWide">
         <div className="headerRow">
-          <div>
-            <h4 className="pageHeaderTitle">SUB-HDC{centerSuffix}</h4>
-            <h1 style={{ fontSize: "28px", margin: "0 0 10px" }}>PERSON</h1>
-            <p className="lead">{data.total.toLocaleString()} รายการ</p>
+          <div className="titleRow">
+            <span className="iconBadge">
+              <UsersRound aria-hidden="true" />
+            </span>
+            <div className="titleText">
+              <h4 className="pageHeaderTitle">SUB-HDC{centerSuffix}</h4>
+              <h1 style={{ fontSize: "28px", margin: "0 0 10px" }}>PERSON</h1>
+              <p className="lead">{data.total.toLocaleString()} รายการ</p>
+            </div>
           </div>
-          <Link href="/" className="navLink">← แดชบอร์ด</Link>
+          <Link href="/" className="navLink">
+            <ArrowLeft aria-hidden="true" />
+            แดชบอร์ด
+          </Link>
+        </div>
+
+        <div className="tableMeta metaLine">
+          <TableProperties aria-hidden="true" />
+          PERSON rows {((page - 1) * PAGE_SIZE) + 1}-{Math.min(page * PAGE_SIZE, data.total)} / {data.total.toLocaleString()}
         </div>
 
         <div className="tableWrap" style={{ maxHeight: "70vh" }}>
@@ -66,9 +80,15 @@ export default function PersonPage() {
 
         {totalPages > 1 && (
           <div className="pagination">
-            <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>‹ ก่อน</button>
+            <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+              <ChevronLeft aria-hidden="true" />
+              ก่อน
+            </button>
             <span>หน้า {page} / {totalPages}</span>
-            <button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>ถัดไป ›</button>
+            <button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+              ถัดไป
+              <ChevronRight aria-hidden="true" />
+            </button>
           </div>
         )}
       </section>

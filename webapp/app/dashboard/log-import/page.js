@@ -2,6 +2,14 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import {
+  CalendarClock,
+  FileText,
+  History,
+  Search,
+  TableProperties,
+  UploadCloud,
+} from "lucide-react";
 import DashboardPageTitle from "@/components/dashboard-page-title";
 import DashboardTabs from "@/components/dashboard-tabs";
 
@@ -65,11 +73,17 @@ export default function LogImportDashboard() {
     <div className="main dashboardMain">
       <section className="panel panelWide dashboardPanel">
         <div className="headerRow">
-          <div>
-            <DashboardPageTitle />
-            <p className="lead">ประวัติการนำเข้าไฟล์ข้อมูลและรายงานสถิติ</p>
+          <div className="titleRow">
+            <span className="iconBadge">
+              <History aria-hidden="true" />
+            </span>
+            <div className="titleText">
+              <DashboardPageTitle />
+              <p className="lead">ประวัติการนำเข้าไฟล์ข้อมูลและรายงานสถิติ</p>
+            </div>
           </div>
           <Link href="/upload" className="navLink">
+            <UploadCloud aria-hidden="true" />
             นำเข้าไฟล์
           </Link>
         </div>
@@ -80,40 +94,44 @@ export default function LogImportDashboard() {
 
         <div className="filterGrid" style={{ gridTemplateColumns: "1fr" }}>
           <div className="field">
-            <input
-              type="text"
-              aria-label="ค้นหาตามชื่อไฟล์ / ไอดีนำเข้า"
-              placeholder="พิมพ์ชื่อไฟล์ ไอดีนำเข้า"
-              className="fieldInput"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                width: "100%",
-                minHeight: "44px",
-                border: "1px solid var(--border-strong)",
-                borderRadius: "var(--radius-sm)",
-                background: "#ffffff",
-                color: "var(--foreground)",
-                font: "inherit",
-                fontSize: "15px",
-                fontWeight: "650",
-                padding: "0 12px",
-                outline: "none",
-                transition: "border-color 0.15s, box-shadow 0.15s, background 0.15s",
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = "var(--accent)";
-                e.target.style.boxShadow = "0 0 0 4px var(--accent-glow)";
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = "var(--border-strong)";
-                e.target.style.boxShadow = "none";
-              }}
-            />
+            <div className="inputWithIcon">
+              <Search aria-hidden="true" />
+              <input
+                type="text"
+                aria-label="ค้นหาตามชื่อไฟล์ / ไอดีนำเข้า"
+                placeholder="พิมพ์ชื่อไฟล์ ไอดีนำเข้า"
+                className="fieldInput"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{
+                  width: "100%",
+                  minHeight: "44px",
+                  border: "1px solid var(--border-strong)",
+                  borderRadius: "var(--radius-sm)",
+                  background: "#ffffff",
+                  color: "var(--foreground)",
+                  font: "inherit",
+                  fontSize: "15px",
+                  fontWeight: "650",
+                  padding: "0 12px",
+                  outline: "none",
+                  transition: "border-color 0.15s, box-shadow 0.15s, background 0.15s",
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "var(--accent)";
+                  e.target.style.boxShadow = "0 0 0 4px var(--accent-glow)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "var(--border-strong)";
+                  e.target.style.boxShadow = "none";
+                }}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="tableMeta">
+        <div className="tableMeta metaLine">
+          <TableProperties aria-hidden="true" />
           {loading ? "กำลังโหลด..." : `รายการประวัติการนำเข้าทั้งหมด (${filteredRows.length} รายการ)`}
         </div>
 
@@ -131,8 +149,18 @@ export default function LogImportDashboard() {
                 filteredRows.map((row) => (
                   <tr key={row.id}>
                     <td className="fileCol" style={{ color: "var(--accent-strong)" }}>{row.id}</td>
-                    <td style={{ wordBreak: "break-all" }}>{row.file_name}</td>
-                    <td>{formatDateTime(row.import_date_time)}</td>
+                    <td style={{ wordBreak: "break-all" }}>
+                      <span className="tableCellIcon">
+                        <FileText aria-hidden="true" />
+                        {row.file_name}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="tableCellIcon">
+                        <CalendarClock aria-hidden="true" />
+                        {formatDateTime(row.import_date_time)}
+                      </span>
+                    </td>
                   </tr>
                 ))
               ) : (

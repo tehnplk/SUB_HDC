@@ -1,16 +1,27 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  FileArchive,
+  Play,
+  Trash2,
+  UploadCloud,
+  X,
+  Zap,
+} from "lucide-react";
 import { createFileKey, fileLabel, summarizeImportResults } from "../lib/zip-import-client.mjs";
 
 const MAX_FILES = 12;
 
-function statusIcon(status) {
-  if (status === "uploading") return "⬆";
-  if (status === "done") return "✓";
-  if (status === "error") return "✕";
-  if (status === "importing") return "⚡";
-  return "·";
+function StatusIcon({ status }) {
+  if (status === "uploading") return <UploadCloud aria-hidden="true" />;
+  if (status === "done") return <Check aria-hidden="true" />;
+  if (status === "error") return <X aria-hidden="true" />;
+  if (status === "importing") return <Zap aria-hidden="true" />;
+  return <FileArchive aria-hidden="true" />;
 }
 
 function statusClass(status) {
@@ -295,7 +306,9 @@ export default function ZipImporter() {
           className="fileInput"
         />
         <div className="dropzoneInner">
-          <span className="dropIcon">📂</span>
+          <span className="dropIcon">
+            <FileArchive aria-hidden="true" />
+          </span>
           <span className="dropText">
             ลากไฟล์ .zip มาวาง หรือคลิกเลือก (สูงสุด {MAX_FILES} ไฟล์)
           </span>
@@ -308,14 +321,21 @@ export default function ZipImporter() {
         <div className="actionRow">
           {canImport && !importRunning && (
             <button type="button" className="primary" onClick={handleImportAll}>
-              ⚡ นำเข้าทั้งหมด ({entries.filter(e => e.uploadStatus === "done" && e.importStatus !== "done").length} ไฟล์)
+              <Play aria-hidden="true" />
+              นำเข้าทั้งหมด ({entries.filter(e => e.uploadStatus === "done" && e.importStatus !== "done").length} ไฟล์)
             </button>
           )}
           {importRunning && (
             <span className="statusMsg">{globalMsg}</span>
           )}
-          {allDone && <span className="statusMsg statusSuccess">✅ ทั้งหมดเสร็จสิ้น</span>}
+          {allDone && (
+            <span className="statusMsg statusSuccess inlineIconLabel">
+              <Check aria-hidden="true" />
+              ทั้งหมดเสร็จสิ้น
+            </span>
+          )}
           <button type="button" className="secondary" onClick={clearAll}>
+            <Trash2 aria-hidden="true" />
             ล้างทั้งหมด
           </button>
         </div>
@@ -332,7 +352,7 @@ export default function ZipImporter() {
             <div key={entry.key} className="fileCard">
               <div className="fileCardHeader">
                 <span className={`fileCardIcon ${statusClass(entry.uploadStatus)}`}>
-                  {statusIcon(entry.uploadStatus)}
+                  <StatusIcon status={entry.uploadStatus} />
                 </span>
                 <span className="fileCardName">{entry.label}</span>
                 <button
@@ -341,7 +361,7 @@ export default function ZipImporter() {
                   onClick={() => removeEntry(entry.key)}
                   disabled={entry.uploadStatus === "uploading" || entry.importStatus === "importing"}
                 >
-                  ✕
+                  <X aria-hidden="true" />
                 </button>
               </div>
 
@@ -390,7 +410,10 @@ export default function ZipImporter() {
                     className="logToggle mini"
                     onClick={() => updateEntry(entry.key, { logOpen: !entry.logOpen })}
                   >
-                    {entry.logOpen ? "▲" : "▼"} log ({entry.logLines.length})
+                    <span>
+                      {entry.logOpen ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
+                      log ({entry.logLines.length})
+                    </span>
                   </button>
                   {entry.logOpen && (
                     <pre className="logBody mini">{entry.logLines.join("\n")}</pre>

@@ -136,6 +136,65 @@ p {
   transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
 }
 
+.lucide {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  stroke-width: 2.2;
+}
+
+.navLink .lucide,
+.tabButton .lucide,
+button .lucide {
+  width: 17px;
+  height: 17px;
+}
+
+.iconBadge {
+  display: inline-grid;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #ffffff;
+  color: var(--accent-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.iconBadge .lucide {
+  width: 19px;
+  height: 19px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.titleText {
+  min-width: 0;
+}
+
+.inlineIconLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.metaLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.metaLine .lucide {
+  color: var(--accent-strong);
+}
+
 .navLink:hover {
   background: var(--accent-strong);
   box-shadow: 0 12px 24px rgba(21, 128, 61, 0.22);
@@ -146,6 +205,11 @@ p {
 }
 
 .loading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
   padding: 42px 0;
   color: var(--muted);
   font-size: 17px;
@@ -154,6 +218,9 @@ p {
 }
 
 .error {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   margin: 18px 0;
   padding: 12px 14px;
   border: 1px solid #fecaca;
@@ -164,6 +231,10 @@ p {
 }
 
 button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   border: 0;
   border-radius: 999px;
   padding: 12px 20px;
@@ -220,9 +291,33 @@ button:disabled {
 }
 
 .field span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   color: var(--muted-strong);
   font-size: 13px;
   font-weight: 800;
+}
+
+.field span .lucide {
+  color: var(--accent-strong);
+}
+
+.inputWithIcon {
+  position: relative;
+}
+
+.inputWithIcon .lucide {
+  position: absolute;
+  top: 50%;
+  left: 13px;
+  color: var(--muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.inputWithIcon input {
+  padding-left: 40px !important;
 }
 
 .field select {
@@ -277,7 +372,7 @@ button:disabled {
 
 .statCard {
   display: grid;
-  gap: 5px;
+  gap: 8px;
   min-width: 0;
   padding: 18px 16px;
   border: 1px solid var(--border);
@@ -287,6 +382,30 @@ button:disabled {
     var(--panel);
   text-align: left;
   box-shadow: var(--shadow-sm);
+}
+
+.statCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.statIcon {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel-tint);
+  color: var(--accent-strong);
+}
+
+.statIcon .lucide {
+  width: 16px;
+  height: 16px;
 }
 
 .statValue {
@@ -406,11 +525,36 @@ button:disabled {
   font-weight: 800;
 }
 
+.tableCellIcon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tableCellIcon .lucide {
+  width: 16px;
+  height: 16px;
+  color: var(--accent-strong);
+}
+
 .emptyCell {
   padding: 30px 16px !important;
   color: var(--muted) !important;
   font-weight: 700;
   text-align: center;
+}
+
+.emptyState {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.emptyState .lucide {
+  width: 17px;
+  height: 17px;
 }
 
 .dot {
@@ -428,6 +572,26 @@ button:disabled {
 
 .dotGray {
   background: #cdd8d0;
+}
+
+.statusCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 800;
+}
+
+.statusCell .lucide {
+  width: 16px;
+  height: 16px;
+}
+
+.statusOk {
+  color: var(--accent-strong);
+}
+
+.statusMuted {
+  color: var(--muted-strong);
 }
 
 /* Uploader */
@@ -500,8 +664,12 @@ button:disabled {
   border-radius: 14px;
   background: #ffffff;
   box-shadow: var(--shadow-sm);
-  font-size: 28px;
-  line-height: 1;
+  color: var(--accent-strong);
+}
+
+.dropIcon .lucide {
+  width: 26px;
+  height: 26px;
 }
 
 .dropText {
@@ -590,6 +758,12 @@ button:disabled {
   color: var(--muted-strong);
 }
 
+.fileCardIcon .lucide {
+  width: 13px;
+  height: 13px;
+  stroke-width: 3;
+}
+
 .fileCardName {
   flex: 1;
   overflow: hidden;
@@ -609,7 +783,7 @@ button:disabled {
   border-radius: 50%;
   background: transparent;
   color: var(--muted);
-  font-size: 12px;
+  line-height: 1;
 }
 
 .removeBtn:hover:not(:disabled) {
@@ -717,6 +891,12 @@ button:disabled {
   border-radius: var(--radius-sm);
   background: #f6faf7;
   font-size: 11px;
+}
+
+.logToggle > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
 }
 
 .logCount {
@@ -850,6 +1030,9 @@ button:disabled {
 }
 
 .pagination button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   border: 1px solid var(--border-strong);
   background: #ffffff;
   color: var(--accent-strong);
@@ -942,6 +1125,25 @@ button:disabled {
   .pagination {
     flex-wrap: wrap;
     gap: 10px;
+  }
+
+  .tabsContainer {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .tabButton {
+    white-space: nowrap;
+  }
+
+  .titleRow {
+    align-items: flex-start;
+  }
+
+  .iconBadge {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-sm);
   }
 }
 
@@ -1066,6 +1268,22 @@ button:disabled {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+.chartTitle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: var(--accent-strong);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.chartTitle .lucide {
+  width: 17px;
+  height: 17px;
 }
 
 .chartContainer {

@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import {
+  CheckCircle2,
+  Circle,
+  FileStack,
+  TableProperties,
+  UploadCloud,
+} from "lucide-react";
 import DashboardPageTitle from "@/components/dashboard-page-title";
 import DashboardTabs from "@/components/dashboard-tabs";
 
@@ -42,11 +49,17 @@ export default function FileListDashboard() {
     <div className="main dashboardMain">
       <section className="panel panelWide dashboardPanel">
         <div className="headerRow">
-          <div>
-            <DashboardPageTitle />
-            <p className="lead">จำนวนข้อมูลสะสมในระบบแยกตามรายแฟ้ม</p>
+          <div className="titleRow">
+            <span className="iconBadge">
+              <FileStack aria-hidden="true" />
+            </span>
+            <div className="titleText">
+              <DashboardPageTitle />
+              <p className="lead">จำนวนข้อมูลสะสมในระบบแยกตามรายแฟ้ม</p>
+            </div>
           </div>
           <Link href="/upload" className="navLink">
+            <UploadCloud aria-hidden="true" />
             นำเข้าไฟล์
           </Link>
         </div>
@@ -55,7 +68,8 @@ export default function FileListDashboard() {
 
         {error ? <div className="error">{error}</div> : null}
 
-        <div className="tableMeta">
+        <div className="tableMeta metaLine">
+          <TableProperties aria-hidden="true" />
           {loading ? "กำลังโหลด..." : "สรุปข้อมูลสะสมแยกตามแฟ้ม"}
         </div>
 
@@ -65,11 +79,18 @@ export default function FileListDashboard() {
               {files.length ? (
                 files.map((f) => (
                   <tr key={f.filename} className={f.row_count === 0 ? "emptyRow" : ""}>
-                    <td className="fileCol">{f.filename}</td>
+                    <td className="fileCol">
+                      <span className="tableCellIcon">
+                        <FileStack aria-hidden="true" />
+                        {f.filename}
+                      </span>
+                    </td>
                     <td className="numCol">{formatNumber(f.row_count)}</td>
                     <td>
-                      <span className={`dot ${f.row_count > 0 ? "dotGreen" : "dotGray"}`} />
-                      {f.row_count > 0 ? "มีข้อมูล" : "ว่าง"}
+                      <span className={`statusCell ${f.row_count > 0 ? "statusOk" : "statusMuted"}`}>
+                        {f.row_count > 0 ? <CheckCircle2 aria-hidden="true" /> : <Circle aria-hidden="true" />}
+                        {f.row_count > 0 ? "มีข้อมูล" : "ว่าง"}
+                      </span>
                     </td>
                   </tr>
                 ))
