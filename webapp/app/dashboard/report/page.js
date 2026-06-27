@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { utils, writeFileXLSX } from "xlsx";
 import {
   CalendarDays,
   Download,
@@ -34,15 +35,10 @@ function formatCell(value) {
   return String(value);
 }
 
-function escapeXml(value) {
+function excelCell(value) {
   if (value === null || value === undefined) return "";
   const text = String(value);
-  const safeText = /^[=+\-@]/.test(text) ? `'${text}` : text;
-  return safeText
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  return /^[=+\-@]/.test(text) ? `'${text}` : value;
 }
 
 function makeReportFilename(reportName) {
@@ -51,35 +47,7 @@ function makeReportFilename(reportName) {
     .replace(/[\\/:*?"<>|]+/g, "-")
     .replace(/\s+/g, "-")
     .slice(0, 80);
-  return `${safeName || "report"}.xls`;
-}
-
-function makeExcelXml(columns, rows) {
-  const headerCells = columns
-    .map((column) => `<Cell><Data ss:Type="String">${escapeXml(column)}</Data></Cell>`)
-    .join("");
-  const dataRows = rows
-    .map((row) => {
-      const cells = columns
-        .map((column) => `<Cell><Data ss:Type="String">${escapeXml(row[column])}</Data></Cell>`)
-        .join("");
-      return `<Row>${cells}</Row>`;
-    })
-    .join("");
-
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
-  xmlns:o="urn:schemas-microsoft-com:office:office"
-  xmlns:x="urn:schemas-microsoft-com:office:excel"
-  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
-  <Worksheet ss:Name="Report">
-    <Table>
-      <Row>${headerCells}</Row>
-      ${dataRows}
-    </Table>
-  </Worksheet>
-</Workbook>`;
+  return `${safeName || "report"}.xlsx`;
 }
 
 export default function ReportDashboard() {
@@ -179,18 +147,13 @@ export default function ReportDashboard() {
   function exportReport() {
     if (!modalState.columns.length || !modalState.rows.length) return;
 
-    const excelXml = makeExcelXml(modalState.columns, modalState.rows);
-    const blob = new Blob([excelXml], {
-      type: "application/vnd.ms-excel;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = makeReportFilename(modalState.report?.name);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+    const rows = modalState.rows.map((row) => (
+      Object.fromEntries(modalState.columns.map((column) => [column, excelCell(row[column])]))
+    ));
+    const worksheet = utils.json_to_sheet(rows, { header: modalState.columns });
+    const workbook = utils.book_new();
+    utils.book_append_sheet(workbook, worksheet, "Report");
+    writeFileXLSX(workbook, makeReportFilename(modalState.report?.name));
   }
 
   return (
