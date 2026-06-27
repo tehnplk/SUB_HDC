@@ -56,34 +56,12 @@ export default function FileListDashboard() {
 
         {error ? <div className="error">{error}</div> : null}
 
-        <div className="statGrid">
-          <div className="statCard">
-            <span className="statValue">{loading ? "..." : formatNumber(data?.totalFiles)}</span>
-            <span className="statLabel">ไฟล์ทั้งหมด</span>
-          </div>
-          <div className="statCard">
-            <span className="statValue">{loading ? "..." : formatNumber(data?.filesWithData)}</span>
-            <span className="statLabel">มีข้อมูล</span>
-          </div>
-          <div className="statCard">
-            <span className="statValue">{loading ? "..." : formatNumber(data?.totalRows)}</span>
-            <span className="statLabel">แถวทั้งหมด</span>
-          </div>
-        </div>
-
         <div className="tableMeta">
           {loading ? "กำลังโหลด..." : "สรุปข้อมูลสะสมแยกตามแฟ้ม"}
         </div>
 
         <div className="tableWrap">
           <table className="fileTable">
-            <thead>
-              <tr>
-                <th>ไฟล์</th>
-                <th className="numCol">จำนวนแถว</th>
-                <th>สถานะ</th>
-              </tr>
-            </thead>
             <tbody>
               {files.length ? (
                 files.map((f) => (

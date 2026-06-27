@@ -254,6 +254,13 @@ button:disabled {
   color: var(--muted);
 }
 
+.fieldInput::placeholder {
+  color: #2f6fed;
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 1;
+}
+
 /* Dashboard stats and tables */
 .statGrid {
   display: grid;

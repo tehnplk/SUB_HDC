@@ -80,11 +80,12 @@ export default function LogImportDashboard() {
         {error ? <div className="error">{error}</div> : null}
 
         <div className="filterGrid" style={{ gridTemplateColumns: "1fr" }}>
-          <label className="field">
-            <span>ค้นหาตามชื่อไฟล์ / ไอดีนำเข้า</span>
+          <div className="field">
             <input
               type="text"
-              placeholder="พิมพ์ชื่อไฟล์หรือไอดีนำเข้าเพื่อค้นหา..."
+              aria-label="ค้นหาตามชื่อไฟล์ / ไอดีนำเข้า"
+              placeholder="พิมพ์ชื่อไฟล์หรือไอดีนำเข้า"
+              className="fieldInput"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
@@ -110,7 +111,7 @@ export default function LogImportDashboard() {
                 e.target.style.boxShadow = "none";
               }}
             />
-          </label>
+          </div>
         </div>
 
         <div className="tableMeta">
