@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { buildChartFromDbResult } from "@/lib/ai-chart.mjs";
+import { buildChartFromDbResult, userRequestedChart } from "@/lib/ai-chart.mjs";
 import { DB_QUERY_TOOL, DB_QUERY_TOOL_NAME, runDbQueryTool } from "@/lib/db-query-tool.mjs";
 
 export const runtime = "nodejs";
@@ -36,7 +36,8 @@ Use clear visual formatting whenever it improves clarity:
 - Keep table headers human-readable and include units in the header when useful.
 - Use bullets or short paragraphs for explanation-only answers where a table would add noise.
 - Do not use raw HTML, Mermaid, or fenced code blocks for result tables.
-- If the result has a label column and numeric measure, the UI may render a chart below the answer, so keep labels and numeric values clear.
+- Only mention or prepare chart-oriented output when the user explicitly asks for a chart, graph, plot, กราฟ, or แผนภูมิ.
+- When the user asks for a chart, do not draw an ASCII/text chart or fenced code chart. Give a short summary or markdown table; the UI will render the actual chart.
 Keep any intro to one short sentence.`;
 
 function normalizeMessages(input) {
@@ -109,11 +110,21 @@ async function forceFinalAnswer(client, messages) {
 }
 
 async function runChatAgent(client, inputMessages) {
+  const shouldReturnChart = userRequestedChart(inputMessages);
   const messages = [
     {
       role: "system",
       content: SYSTEM_PROMPT,
     },
+    ...(shouldReturnChart
+      ? [
+          {
+            role: "system",
+            content:
+              `The latest user explicitly asked for a chart. If the chart depends on database data, call ${DB_QUERY_TOOL_NAME} to fetch the chart rows even if prior assistant text already contains similar numbers. Do not draw ASCII charts or fenced chart blocks; the UI will render the chart from tool rows.`,
+          },
+        ]
+      : []),
     ...inputMessages,
   ];
   const toolCalls = [];
@@ -176,7 +187,7 @@ async function runChatAgent(client, inputMessages) {
         };
       }
 
-      const resultChart = buildChartFromDbResult(result);
+      const resultChart = shouldReturnChart ? buildChartFromDbResult(result) : null;
       if (resultChart) {
         chart = resultChart;
       }

@@ -1,5 +1,8 @@
 export const MAX_AI_CHART_ROWS = 12;
 const MIN_AI_CHART_ROWS = 2;
+const CHART_REQUEST_PATTERN = /\b(chart|graph|plot|visuali[sz]e|bar chart|line chart|pie chart)\b|กราฟ|แผนภูมิ|ชาร์ต/i;
+const CHART_NEGATION_PATTERN =
+  /\b(no|without|dont|don't|do not|not)\s+(?:show\s+|display\s+|create\s+|make\s+)?(?:a\s+)?(?:chart|graph|plot)\b|ไม่(?:ต้อง|เอา|แสดง|ต้องการ).{0,12}(?:กราฟ|แผนภูมิ|ชาร์ต)/i;
 
 const FIELD_LABELS = new Map([
   ["cnt", "Count"],
@@ -127,4 +130,14 @@ export function buildChartFromDbResult(result) {
     valueField,
     rows: chartRows,
   };
+}
+
+export function userRequestedChart(messages) {
+  const source = Array.isArray(messages) ? messages : [{ content: messages }];
+  const latestUserMessage = source.findLast?.((message) => message?.role === "user" && message?.content)
+    || [...source].reverse().find((message) => message?.role === "user" && message?.content)
+    || source[source.length - 1];
+  const content = String(latestUserMessage?.content || "");
+
+  return CHART_REQUEST_PATTERN.test(content) && !CHART_NEGATION_PATTERN.test(content);
 }

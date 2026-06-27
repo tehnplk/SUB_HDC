@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildChartFromDbResult, MAX_AI_CHART_ROWS } from "../lib/ai-chart.mjs";
+import { buildChartFromDbResult, MAX_AI_CHART_ROWS, userRequestedChart } from "../lib/ai-chart.mjs";
 
 test("buildChartFromDbResult creates a bar chart from count rows", () => {
   const chart = buildChartFromDbResult({
@@ -55,4 +55,11 @@ test("buildChartFromDbResult ignores failed or non-numeric results", () => {
     }),
     null
   );
+});
+
+test("userRequestedChart only enables charts for explicit chart requests", () => {
+  assert.equal(userRequestedChart([{ role: "user", content: "โรคที่พบมากสุด 10 อันดับ ปี 2569" }]), false);
+  assert.equal(userRequestedChart([{ role: "user", content: "show chart โรคที่พบมากสุด 10 อันดับ ปี 2569" }]), true);
+  assert.equal(userRequestedChart([{ role: "user", content: "แสดงกราฟ โรคที่พบมากสุด 10 อันดับ ปี 2569" }]), true);
+  assert.equal(userRequestedChart([{ role: "user", content: "show table only, no chart" }]), false);
 });
