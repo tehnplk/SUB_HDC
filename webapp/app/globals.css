@@ -252,7 +252,6 @@ button {
   padding: 12px 20px;
   font: inherit;
   font-size: 15px;
-  font-weight: 800;
   cursor: pointer;
   transition: background 0.15s, color 0.15s, transform 0.1s, box-shadow 0.15s;
 }
@@ -515,6 +514,7 @@ button:disabled {
   border-bottom: 1px solid #edf4ef;
   color: var(--foreground);
   background: #ffffff;
+  font-weight: normal;
 }
 
 .fileTable tbody tr:hover td {
@@ -557,13 +557,11 @@ button:disabled {
 .totalCol {
   min-width: 86px;
   color: var(--accent-strong);
-  font-weight: 900;
 }
 
 .clickableMonthCol {
   cursor: pointer;
   color: var(--accent);
-  font-weight: 700;
 }
 
 .clickableMonthCol:hover {
@@ -572,7 +570,6 @@ button:disabled {
 }
 
 .fileCol {
-  font-weight: 800;
 }
 
 .tableCellIcon {
@@ -628,7 +625,6 @@ button:disabled {
   background: transparent;
   color: var(--accent-strong);
   font-size: 14px;
-  font-weight: 900;
   line-height: 1.45;
   text-align: left;
   white-space: normal;
@@ -653,7 +649,6 @@ button:disabled {
   background: #ffffff;
   color: var(--accent-strong);
   font-size: 13px;
-  font-weight: 900;
   line-height: 1.45;
   white-space: nowrap;
 }
