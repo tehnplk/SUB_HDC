@@ -6,11 +6,14 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Building2,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   Database,
   FileText,
   LoaderCircle,
   TableProperties,
   UploadCloud,
+  X,
 } from "lucide-react";
 import DashboardHeaderImage from "@/components/dashboard-header-image";
 import DashboardPageTitle from "@/components/dashboard-page-title";
@@ -32,6 +35,21 @@ export default function HosListDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const PAGE_SIZE = 100;
+
+  const [rawModal, setRawModal] = useState({
+    open: false,
+    loading: false,
+    error: null,
+    hospcode: null,
+    monthLabel: null,
+    monthValue: null,
+    columns: [],
+    rows: [],
+    total: 0,
+    page: 1,
+  });
 
   const query = useMemo(() => {
     const params = new URLSearchParams();
@@ -95,6 +113,104 @@ export default function HosListDashboard() {
   const hasMonthly = Boolean(data?.hasMonthly);
   const rows = selectedFile ? data?.rows || [] : [];
   const months = data?.months || [];
+
+  function formatCell(value) {
+    if (value === null || value === undefined || value === "") return "-";
+    if (typeof value === "number") return value.toLocaleString();
+    return String(value);
+  }
+
+  function renderMonthlyCells(row) {
+    const cells = months.map((month) => {
+      const count = row[month.key];
+      if (count > 0) {
+        return (
+          <td
+            key={month.key}
+            className="numCol monthCol clickableMonthCol"
+            onClick={() => openRawModal(row.hospcode, month.key, month.label, month.value)}
+          >
+            {formatNumber(count)}
+          </td>
+        );
+      }
+      return (
+        <td key={month.key} className="numCol monthCol">
+          {formatNumber(count)}
+        </td>
+      );
+    });
+    const total = getMonthlyRowTotal(months, row);
+    cells.push(
+      total > 0 ? (
+        <td
+          key="total"
+          className="numCol monthCol totalCol clickableMonthCol"
+          onClick={() => openRawModal(row.hospcode, "total", null, null)}
+        >
+          {formatNumber(total)}
+        </td>
+      ) : (
+        <td key="total" className="numCol monthCol totalCol">
+          {formatNumber(total)}
+        </td>
+      )
+    );
+    return cells;
+  }
+
+  function fetchRawRecords(hospcode, monthValue, page) {
+    setRawModal((s) => ({ ...s, loading: true, error: null, page }));
+    let url =
+      `/api/raw-records?file=${encodeURIComponent(selectedFile)}`
+      + `&hospcode=${encodeURIComponent(hospcode)}`
+      + `&fiscalYear=${encodeURIComponent(selectedFiscalYear)}`
+      + `&page=${page}&limit=${PAGE_SIZE}`;
+    if (monthValue) {
+      url += `&monthValue=${encodeURIComponent(monthValue)}`;
+    }
+    fetch(url)
+      .then((res) => res.json().then((payload) => ({ ok: res.ok, payload })))
+      .then(({ ok, payload }) => {
+        if (!ok) throw new Error(payload.error || "Failed");
+        setRawModal((s) => ({
+          ...s,
+          loading: false,
+          columns: payload.columns,
+          rows: payload.rows,
+          total: payload.total,
+        }));
+      })
+      .catch((err) =>
+        setRawModal((s) => ({ ...s, loading: false, error: err.message }))
+      );
+  }
+
+  function openRawModal(hospcode, monthKey, monthLabel, monthValue) {
+    setRawModal({
+      open: true,
+      loading: true,
+      error: null,
+      hospcode,
+      monthLabel: monthLabel || null,
+      monthValue: monthValue || null,
+      columns: [],
+      rows: [],
+      total: 0,
+      page: 1,
+    });
+    fetchRawRecords(hospcode, monthValue || null, 1);
+  }
+
+  function closeRawModal() {
+    setRawModal((s) => ({ ...s, open: false }));
+  }
+
+  function goRawPage(dir) {
+    const next = rawModal.page + dir;
+    if (next < 1) return;
+    fetchRawRecords(rawModal.hospcode, rawModal.monthValue || null, next);
+  }
 
   return (
     <div className="main dashboardMain">
@@ -221,15 +337,7 @@ export default function HosListDashboard() {
                   <tr key={row.hospcode}>
                     <td className="fileCol">{row.hospcode}</td>
                     {hasMonthly ? (
-                      months.map((month) => (
-                        <td key={month.key} className="numCol monthCol">
-                          {formatNumber(row[month.key])}
-                        </td>
-                      )).concat(
-                        <td key="total" className="numCol monthCol totalCol">
-                          {formatNumber(getMonthlyRowTotal(months, row))}
-                        </td>
-                      )
+                      renderMonthlyCells(row)
                     ) : (
                       <td className="numCol">{formatNumber(row.total)}</td>
                     )}
@@ -249,6 +357,92 @@ export default function HosListDashboard() {
           </table>
         </div>
       </section>
+
+      {rawModal.open ? (
+        <div className="reportModalBackdrop" role="presentation" onClick={closeRawModal}>
+          <section
+            className="reportModal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="raw-modal-title"
+            onClick={(e) => e.stopPropagation()}
+            style={{ overflow: "auto" }}
+          >
+            <div className="reportModalHeader">
+              <div>
+                <h2 id="raw-modal-title">
+                  {selectedFile} — {rawModal.hospcode}
+                  {rawModal.monthLabel ? ` — ${rawModal.monthLabel}` : " — ทั้งปี"}
+                </h2>
+                <p>
+                  {rawModal.loading
+                    ? "กำลังโหลด..."
+                    : `${rawModal.total.toLocaleString()} รายการ`}
+                </p>
+              </div>
+              <button type="button" className="reportModalClose" onClick={closeRawModal} aria-label="ปิด">
+                <X aria-hidden="true" />
+              </button>
+            </div>
+
+            {rawModal.error ? <div className="error">{rawModal.error}</div> : null}
+
+            <div className="tableWrap reportResultWrap" style={{ maxHeight: "420px" }}>
+              <table className="fileTable">
+                <thead>
+                  <tr>
+                    {rawModal.columns.map((col) => (
+                      <th key={col}>{col}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rawModal.loading ? (
+                    <tr>
+                      <td className="emptyCell" colSpan={rawModal.columns.length || 1}>
+                        กำลังโหลดข้อมูล...
+                      </td>
+                    </tr>
+                  ) : rawModal.rows.length ? (
+                    rawModal.rows.map((row, i) => (
+                      <tr key={i}>
+                        {rawModal.columns.map((col) => (
+                          <td key={col}>{formatCell(row[col])}</td>
+                        ))}
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td className="emptyCell" colSpan={rawModal.columns.length || 1}>
+                        ไม่พบข้อมูล
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {rawModal.total > PAGE_SIZE ? (
+              <div className="pagination">
+                <button disabled={rawModal.page <= 1} onClick={() => goRawPage(-1)}>
+                  <ChevronLeft aria-hidden="true" />
+                  ก่อน
+                </button>
+                <span>
+                  หน้า {rawModal.page} / {Math.ceil(rawModal.total / PAGE_SIZE)}
+                </span>
+                <button
+                  disabled={rawModal.page >= Math.ceil(rawModal.total / PAGE_SIZE)}
+                  onClick={() => goRawPage(1)}
+                >
+                  ถัดไป
+                  <ChevronRight aria-hidden="true" />
+                </button>
+              </div>
+            ) : null}
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }

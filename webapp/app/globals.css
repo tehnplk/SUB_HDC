@@ -560,6 +560,17 @@ button:disabled {
   font-weight: 900;
 }
 
+.clickableMonthCol {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.clickableMonthCol:hover {
+  background: var(--accent-soft);
+  text-decoration: underline;
+}
+
 .fileCol {
   font-weight: 800;
 }
