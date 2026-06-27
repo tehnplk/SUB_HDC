@@ -9,10 +9,10 @@ import {
   FileText,
   Gauge,
   PieChart,
-  ShieldCheck,
   TableProperties,
   UploadCloud,
 } from "lucide-react";
+import DashboardHeaderImage from "@/components/dashboard-header-image";
 import DashboardPageTitle from "@/components/dashboard-page-title";
 import DashboardTabs from "@/components/dashboard-tabs";
 
@@ -218,9 +218,7 @@ export default function QualityDashboard() {
       <section className="panel panelWide dashboardPanel">
         <div className="headerRow">
           <div className="titleRow">
-            <span className="iconBadge">
-              <ShieldCheck aria-hidden="true" />
-            </span>
+            <DashboardHeaderImage />
             <div className="titleText">
               <DashboardPageTitle />
               <p className="lead">คุณภาพ/ความถูกต้องของข้อมูลรายแฟ้มและหน่วยงาน</p>

@@ -11,6 +11,7 @@ import {
   TableProperties,
   UploadCloud,
 } from "lucide-react";
+import DashboardHeaderImage from "@/components/dashboard-header-image";
 import DashboardPageTitle from "@/components/dashboard-page-title";
 import DashboardTabs from "@/components/dashboard-tabs";
 import { getFileTypeLabel, getMonthlyRowTotal } from "@/lib/dashboard-data.mjs";
@@ -66,9 +67,7 @@ export default function HosListDashboard() {
       <section className="panel panelWide dashboardPanel">
         <div className="headerRow">
           <div className="titleRow">
-            <span className="iconBadge">
-              <Building2 aria-hidden="true" />
-            </span>
+            <DashboardHeaderImage />
             <div className="titleText">
               <DashboardPageTitle />
               <p className="lead">จำนวนข้อมูลแต่ละแฟ้ม แยกตาม HOSCODE</p>

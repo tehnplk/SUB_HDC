@@ -9,6 +9,7 @@ import {
   TableProperties,
   UploadCloud,
 } from "lucide-react";
+import DashboardHeaderImage from "@/components/dashboard-header-image";
 import DashboardPageTitle from "@/components/dashboard-page-title";
 import DashboardTabs from "@/components/dashboard-tabs";
 
@@ -50,9 +51,7 @@ export default function FileListDashboard() {
       <section className="panel panelWide dashboardPanel">
         <div className="headerRow">
           <div className="titleRow">
-            <span className="iconBadge">
-              <FileStack aria-hidden="true" />
-            </span>
+            <DashboardHeaderImage />
             <div className="titleText">
               <DashboardPageTitle />
               <p className="lead">จำนวนข้อมูลสะสมในระบบแยกตามรายแฟ้ม</p>

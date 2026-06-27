@@ -5,11 +5,11 @@ import Link from "next/link";
 import {
   CalendarClock,
   FileText,
-  History,
   Search,
   TableProperties,
   UploadCloud,
 } from "lucide-react";
+import DashboardHeaderImage from "@/components/dashboard-header-image";
 import DashboardPageTitle from "@/components/dashboard-page-title";
 import DashboardTabs from "@/components/dashboard-tabs";
 
@@ -74,9 +74,7 @@ export default function LogImportDashboard() {
       <section className="panel panelWide dashboardPanel">
         <div className="headerRow">
           <div className="titleRow">
-            <span className="iconBadge">
-              <History aria-hidden="true" />
-            </span>
+            <DashboardHeaderImage />
             <div className="titleText">
               <DashboardPageTitle />
               <p className="lead">ประวัติการนำเข้าไฟล์ข้อมูลและรายงานสถิติ</p>

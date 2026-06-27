@@ -4,13 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   CalendarDays,
-  ClipboardList,
   FileText,
   Search,
   TableProperties,
   Tags,
   UploadCloud,
 } from "lucide-react";
+import DashboardHeaderImage from "@/components/dashboard-header-image";
 import DashboardPageTitle from "@/components/dashboard-page-title";
 import DashboardTabs from "@/components/dashboard-tabs";
 
@@ -44,9 +44,7 @@ export default function ReportDashboard() {
       <section className="panel panelWide dashboardPanel">
         <div className="headerRow">
           <div className="titleRow">
-            <span className="iconBadge">
-              <ClipboardList aria-hidden="true" />
-            </span>
+            <DashboardHeaderImage />
             <div className="titleText">
               <DashboardPageTitle />
               <p className="lead">รายการรายงานตัวอย่าง</p>

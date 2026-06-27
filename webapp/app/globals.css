@@ -168,9 +168,21 @@ button .lucide {
   height: 19px;
 }
 
+.headerImageBadge {
+  width: 54px;
+  height: 54px;
+  overflow: hidden;
+}
+
+.headerImage {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
+
 .titleRow {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   min-width: 0;
 }

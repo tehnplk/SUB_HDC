@@ -9,6 +9,9 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata = {
   title: "SUB HDC",
   description: "SUB HDC data import workspace",
+  icons: {
+    icon: "/encrypted.png",
+  },
 };
 
 export default function RootLayout({ children }) {
