@@ -95,12 +95,42 @@ export async function GET(request) {
 
     const isSummary = url.searchParams.get("summary") === "true";
     if (isSummary) {
+      const requestedHospcode = url.searchParams.get("hospcode") || "";
       const [fileRows] = await conn.query("SELECT file_name FROM c_file ORDER BY file_name");
-      const filesSummary = await Promise.all(
+      const fileMetas = await Promise.all(
         fileRows.map(async (row) => {
-          const [cntRows] = await conn.query(`SELECT COUNT(*) AS cnt FROM \`${row.file_name}\``);
+          const columns = await getTableColumns(conn, row.file_name);
           return {
             filename: row.file_name,
+            hasHospcode: columns.includes("hospcode"),
+          };
+        })
+      );
+      const hospcodeGroups = await Promise.all(
+        fileMetas
+          .filter((file) => file.hasHospcode)
+          .map(async (file) => {
+            const [rows] = await conn.query(
+              `SELECT DISTINCT hospcode FROM ${quoteIdentifier(file.filename)} WHERE hospcode IS NOT NULL AND hospcode != ''`
+            );
+            return rows.map((row) => row.hospcode);
+          })
+      );
+      const hospcodes = Array.from(new Set(hospcodeGroups.flat())).sort();
+      const selectedHospcode = hospcodes.includes(requestedHospcode) ? requestedHospcode : "";
+      const filesSummary = await Promise.all(
+        fileMetas.map(async (file) => {
+          const canFilterHospcode = selectedHospcode && file.hasHospcode;
+          const tableSql = quoteIdentifier(file.filename);
+          let cntRows = [{ cnt: 0 }];
+          if (!selectedHospcode) {
+            [cntRows] = await conn.query(`SELECT COUNT(*) AS cnt FROM ${tableSql}`);
+          } else if (canFilterHospcode) {
+            [cntRows] = await conn.query(`SELECT COUNT(*) AS cnt FROM ${tableSql} WHERE hospcode = ?`, [selectedHospcode]);
+          }
+
+          return {
+            filename: file.filename,
             row_count: Number(cntRows[0].cnt || 0),
           };
         })
@@ -115,6 +145,8 @@ export async function GET(request) {
         filesWithData,
         totalRows,
         files: filesSummary,
+        hospcodes,
+        selectedHospcode,
         centerName: process.env.CENTER_NAME || "เมือง",
       });
     }

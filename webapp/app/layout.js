@@ -1,9 +1,14 @@
 import "./globals.css";
-import { Space_Grotesk } from "next/font/google";
+import { Noto_Sans_Thai, Space_Grotesk } from "next/font/google";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-space-grotesk",
+});
+
+const notoSansThai = Noto_Sans_Thai({
+  subsets: ["thai"],
+  variable: "--font-noto-sans-thai",
 });
 
 export const metadata = {
@@ -16,7 +21,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="th" className={spaceGrotesk.variable}>
+    <html lang="th" className={`${spaceGrotesk.variable} ${notoSansThai.variable}`}>
       <body>{children}</body>
     </html>
   );

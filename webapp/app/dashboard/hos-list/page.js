@@ -46,8 +46,7 @@ export default function HosListDashboard() {
       })
       .then((payload) => {
         setData(payload);
-        if (!selectedFile) setSelectedFile(payload.selectedFile || "");
-        if (!selectedFiscalYear) setSelectedFiscalYear(payload.selectedFiscalYear || "");
+        if (selectedFile && !selectedFiscalYear) setSelectedFiscalYear(payload.selectedFiscalYear || "");
       })
       .catch((err) => {
         if (err.name !== "AbortError") setError(err.message);
@@ -59,7 +58,7 @@ export default function HosListDashboard() {
 
   const hasData = data && !error;
   const hasMonthly = Boolean(data?.hasMonthly);
-  const rows = data?.rows || [];
+  const rows = selectedFile ? data?.rows || [] : [];
   const months = data?.months || [];
 
   return (
@@ -90,13 +89,14 @@ export default function HosListDashboard() {
               ชื่อแฟ้ม
             </span>
             <select
-              value={data?.selectedFile || selectedFile}
+              value={selectedFile}
               disabled={!hasData || loading}
               onChange={(event) => {
                 setSelectedFile(event.target.value);
                 setSelectedFiscalYear("");
               }}
             >
+              <option value="" disabled>เลือกแฟ้ม</option>
               {(data?.files || []).map((file) => (
                 <option key={file.fileName} value={file.fileName}>
                   {file.fileName}
@@ -111,16 +111,19 @@ export default function HosListDashboard() {
               ปีงบประมาณ
             </span>
             <select
-              value={data?.selectedFiscalYear || selectedFiscalYear}
+              value={selectedFiscalYear}
               disabled={!hasData || loading || !hasMonthly}
               onChange={(event) => setSelectedFiscalYear(event.target.value)}
             >
               {hasMonthly ? (
-                data.fiscalYears.map((year) => (
-                  <option key={year.value} value={year.value}>
-                    {year.label}
-                  </option>
-                ))
+                <>
+                  <option value="" disabled>เลือกปีงบประมาณ</option>
+                  {data.fiscalYears.map((year) => (
+                    <option key={year.value} value={year.value}>
+                      {year.label}
+                    </option>
+                  ))}
+                </>
               ) : (
                 <option value="">ไม่มี date_serv/date_admit/datetime_admit/datetime_serv</option>
               )}

@@ -68,6 +68,7 @@ export default function QualityDashboard() {
     // We dynamically import Chart.js to make sure it runs on the client and is properly registered
     import("chart.js").then(({ Chart, registerables }) => {
       Chart.register(...registerables);
+      Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
 
       const rows = data.rows || [];
       
@@ -298,7 +299,7 @@ export default function QualityDashboard() {
           <div className="chartCard">
             <div className="chartTitle">
               <BarChart3 aria-hidden="true" />
-              เธเธธเธ“เธ เธฒเธเธฃเธฒเธขเนเธเนเธก
+              คุณภาพรายแฟ้ม
             </div>
             <div className="chartContainer">
               <canvas ref={barChartRef} />
@@ -307,7 +308,7 @@ export default function QualityDashboard() {
           <div className="chartCard">
             <div className="chartTitle">
               <PieChart aria-hidden="true" />
-              เธชเธฑเธ”เธชเนเธงเธเธเธธเธ“เธ เธฒเธ
+              สัดส่วนคุณภาพ
             </div>
             <div className="chartContainer">
               <canvas ref={pieChartRef} />

@@ -2,13 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  CheckCircle2,
-  Circle,
-  FileStack,
-  TableProperties,
-  UploadCloud,
-} from "lucide-react";
+import { FileStack, TableProperties, UploadCloud } from "lucide-react";
 import DashboardHeaderImage from "@/components/dashboard-header-image";
 import DashboardPageTitle from "@/components/dashboard-page-title";
 import DashboardTabs from "@/components/dashboard-tabs";
@@ -19,21 +13,26 @@ function formatNumber(value) {
 
 export default function FileListDashboard() {
   const [data, setData] = useState(null);
+  const [selectedHospcode, setSelectedHospcode] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
+    const params = new URLSearchParams({ summary: "true" });
+    if (selectedHospcode) params.set("hospcode", selectedHospcode);
+
     setLoading(true);
     setError(null);
 
-    fetch("/api/dashboard?summary=true", { signal: controller.signal })
+    fetch(`/api/dashboard?${params.toString()}`, { signal: controller.signal })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to load dashboard summary");
         return res.json();
       })
       .then((payload) => {
         setData(payload);
+        setSelectedHospcode(payload.selectedHospcode || "");
       })
       .catch((err) => {
         if (err.name !== "AbortError") setError(err.message);
@@ -41,10 +40,11 @@ export default function FileListDashboard() {
       .finally(() => setLoading(false));
 
     return () => controller.abort();
-  }, []);
+  }, [selectedHospcode]);
 
   const hasData = data && !error;
   const files = data?.files || [];
+  const hospcodes = data?.hospcodes || [];
 
   return (
     <div className="main dashboardMain">
@@ -67,6 +67,26 @@ export default function FileListDashboard() {
 
         {error ? <div className="error">{error}</div> : null}
 
+        <div className="filterGrid" style={{ gridTemplateColumns: "minmax(220px, 320px)" }}>
+          <div className="field">
+            <select
+              id="file-list-hospcode"
+              name="hospcode"
+              aria-label="hospcode"
+              value={selectedHospcode}
+              disabled={!hasData || loading}
+              onChange={(event) => setSelectedHospcode(event.target.value)}
+            >
+              <option value="">เลือก hospcode</option>
+              {hospcodes.map((hospcode) => (
+                <option key={hospcode} value={hospcode}>
+                  {hospcode}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         <div className="tableMeta metaLine">
           <TableProperties aria-hidden="true" />
           {loading ? "กำลังโหลด..." : "สรุปข้อมูลสะสมแยกตามแฟ้ม"}
@@ -74,23 +94,25 @@ export default function FileListDashboard() {
 
         <div className="tableWrap">
           <table className="fileTable">
+            <thead>
+              <tr>
+                <th className="numCol">#</th>
+                <th>แฟ้ม</th>
+                <th className="numCol">จำนวน</th>
+              </tr>
+            </thead>
             <tbody>
               {files.length ? (
-                files.map((f) => (
-                  <tr key={f.filename} className={f.row_count === 0 ? "emptyRow" : ""}>
+                files.map((file, index) => (
+                  <tr key={file.filename} className={file.row_count === 0 ? "emptyRow" : ""}>
+                    <td className="numCol">{index + 1}</td>
                     <td className="fileCol">
                       <span className="tableCellIcon">
                         <FileStack aria-hidden="true" />
-                        {f.filename}
+                        {file.filename}
                       </span>
                     </td>
-                    <td className="numCol">{formatNumber(f.row_count)}</td>
-                    <td>
-                      <span className={`statusCell ${f.row_count > 0 ? "statusOk" : "statusMuted"}`}>
-                        {f.row_count > 0 ? <CheckCircle2 aria-hidden="true" /> : <Circle aria-hidden="true" />}
-                        {f.row_count > 0 ? "มีข้อมูล" : "ว่าง"}
-                      </span>
-                    </td>
+                    <td className="numCol">{formatNumber(file.row_count)}</td>
                   </tr>
                 ))
               ) : (
