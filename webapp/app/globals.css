@@ -106,7 +106,7 @@ p {
 
 .lead {
   max-width: 680px;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
 }
 
 .headerRow {
@@ -1496,7 +1496,7 @@ button:disabled {
 .tabsContainer {
   display: flex;
   gap: 8px;
-  margin: 20px 0 16px;
+  margin: 8px 0 12px;
   padding: 4px;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);

@@ -77,7 +77,7 @@ export default function FileListDashboard() {
               disabled={!hasData || loading}
               onChange={(event) => setSelectedHospcode(event.target.value)}
             >
-              <option value="">เลือก hospcode</option>
+              <option value="">หน่วยบริการทั้งหมด</option>
               {hospcodes.map((hospcode) => (
                 <option key={hospcode} value={hospcode}>
                   {hospcode}
