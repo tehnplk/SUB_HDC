@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import DashboardPageTitle from "@/components/dashboard-page-title";
 import DashboardTabs from "@/components/dashboard-tabs";
 import { getFileTypeLabel, getMonthlyRowTotal } from "@/lib/dashboard-data.mjs";
 
@@ -51,14 +52,12 @@ export default function HosListDashboard() {
   const rows = data?.rows || [];
   const months = data?.months || [];
 
-  const centerSuffix = data?.centerName ? ` ${data.centerName}` : "";
-
   return (
     <div className="main dashboardMain">
       <section className="panel panelWide dashboardPanel">
         <div className="headerRow">
           <div>
-            <h4 className="pageHeaderTitle">SUB-HDC{centerSuffix}</h4>
+            <DashboardPageTitle />
             <p className="lead">จำนวนข้อมูลแต่ละแฟ้ม แยกตาม HOSCODE</p>
           </div>
           <Link href="/upload" className="navLink">

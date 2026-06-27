@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import DashboardPageTitle from "@/components/dashboard-page-title";
 import DashboardTabs from "@/components/dashboard-tabs";
 
 function formatDateTime(isoString) {
@@ -60,14 +61,12 @@ export default function LogImportDashboard() {
     );
   }, [rows, searchTerm]);
 
-  const centerSuffix = data?.centerName ? ` ${data.centerName}` : "";
-
   return (
     <div className="main dashboardMain">
       <section className="panel panelWide dashboardPanel">
         <div className="headerRow">
           <div>
-            <h4 className="pageHeaderTitle">SUB-HDC{centerSuffix}</h4>
+            <DashboardPageTitle />
             <p className="lead">ประวัติการนำเข้าไฟล์ข้อมูลและรายงานสถิติ</p>
           </div>
           <Link href="/upload" className="navLink">
@@ -84,7 +83,7 @@ export default function LogImportDashboard() {
             <input
               type="text"
               aria-label="ค้นหาตามชื่อไฟล์ / ไอดีนำเข้า"
-              placeholder="พิมพ์ชื่อไฟล์หรือไอดีนำเข้า"
+              placeholder="พิมพ์ชื่อไฟล์ ไอดีนำเข้า"
               className="fieldInput"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}

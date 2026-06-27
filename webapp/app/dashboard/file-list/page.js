@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import DashboardPageTitle from "@/components/dashboard-page-title";
 import DashboardTabs from "@/components/dashboard-tabs";
 
 function formatNumber(value) {
@@ -37,14 +38,12 @@ export default function FileListDashboard() {
   const hasData = data && !error;
   const files = data?.files || [];
 
-  const centerSuffix = data?.centerName ? ` ${data.centerName}` : "";
-
   return (
     <div className="main dashboardMain">
       <section className="panel panelWide dashboardPanel">
         <div className="headerRow">
           <div>
-            <h4 className="pageHeaderTitle">SUB-HDC{centerSuffix}</h4>
+            <DashboardPageTitle />
             <p className="lead">จำนวนข้อมูลสะสมในระบบแยกตามรายแฟ้ม</p>
           </div>
           <Link href="/upload" className="navLink">
