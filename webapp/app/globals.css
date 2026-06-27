@@ -577,6 +577,35 @@ button:disabled {
   color: var(--accent-strong);
 }
 
+.reportGridHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.reportCreateButton {
+  min-height: 38px;
+  padding: 8px 14px;
+  font-size: 13px;
+}
+
+.reportCreateButton .lucide {
+  color: currentColor;
+}
+
+.primaryBlue {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.18);
+}
+
+.primaryBlue:hover:not(:disabled) {
+  background: #1d4ed8;
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.22);
+}
+
 .reportNameButton {
   display: inline-flex;
   max-width: 100%;
@@ -600,10 +629,87 @@ button:disabled {
   text-underline-offset: 3px;
 }
 
-.reportNameButton .lucide {
+.reportEditButton {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--accent-strong);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.45;
+  white-space: nowrap;
+}
+
+.reportEditButton:hover:not(:disabled) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.reportEditButton .lucide {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
+}
+
+.reportEditModal {
+  width: min(760px, 100%);
+}
+
+.reportEditForm {
+  display: grid;
+  gap: 14px;
+}
+
+.reportEditField {
+  display: grid;
+  gap: 7px;
+}
+
+.reportEditField span {
+  color: var(--muted-strong);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.reportEditInput,
+.reportSqlInput {
+  width: 100%;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.reportEditInput {
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.reportSqlInput {
+  min-height: 220px;
+  padding: 12px;
+  font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.reportEditInput:focus,
+.reportSqlInput:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-glow);
 }
 
 .reportModalBackdrop {
@@ -643,6 +749,20 @@ button:disabled {
   gap: 8px;
 }
 
+.reportModalActions button {
+  min-height: 36px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+
+.reportModalPrimaryActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
 .reportExportButton {
   min-height: 36px;
   padding: 8px 14px;
@@ -656,6 +776,21 @@ button:disabled {
 
 .reportExportButton:hover:not(:disabled) {
   background: var(--accent-strong);
+}
+
+.reportDeleteButton {
+  min-height: 36px;
+  padding: 8px 14px;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm);
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 13px;
+  box-shadow: 0 8px 16px rgba(220, 38, 38, 0.16);
+}
+
+.reportDeleteButton:hover:not(:disabled) {
+  background: #b91c1c;
 }
 
 .reportModalHeader h2 {

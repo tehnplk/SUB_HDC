@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Building2,
   CalendarDays,
@@ -21,8 +22,13 @@ function formatNumber(value) {
 }
 
 export default function HosListDashboard() {
-  const [selectedFile, setSelectedFile] = useState("");
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const selectedFileQuery = searchParams.get("file") || "service";
+  const selectedFiscalYearQuery = searchParams.get("fiscalYear") || "";
+  const [selectedFile, setSelectedFile] = useState(selectedFileQuery);
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState(selectedFiscalYearQuery);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,6 +39,31 @@ export default function HosListDashboard() {
     if (selectedFiscalYear) params.set("fiscalYear", selectedFiscalYear);
     return params.toString();
   }, [selectedFile, selectedFiscalYear]);
+
+  function updateFilterQuery({ file, fiscalYear }) {
+    const params = new URLSearchParams(searchParams.toString());
+    const nextFile = file ?? selectedFile;
+    const nextFiscalYear = fiscalYear ?? selectedFiscalYear;
+
+    if (nextFile) params.set("file", nextFile);
+    else params.delete("file");
+
+    if (nextFiscalYear) params.set("fiscalYear", nextFiscalYear);
+    else params.delete("fiscalYear");
+
+    const nextQuery = params.toString();
+    router.replace(`${pathname}${nextQuery ? `?${nextQuery}` : ""}`, { scroll: false });
+  }
+
+  useEffect(() => {
+    setSelectedFile(selectedFileQuery);
+    setSelectedFiscalYear(selectedFiscalYearQuery);
+  }, [selectedFileQuery, selectedFiscalYearQuery]);
+
+  useEffect(() => {
+    if (searchParams.get("file")) return;
+    updateFilterQuery({ file: "service", fiscalYear: selectedFiscalYearQuery });
+  }, [searchParams, selectedFiscalYearQuery]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -46,7 +77,11 @@ export default function HosListDashboard() {
       })
       .then((payload) => {
         setData(payload);
-        if (selectedFile && !selectedFiscalYear) setSelectedFiscalYear(payload.selectedFiscalYear || "");
+        if (selectedFile && !selectedFiscalYear) {
+          const nextFiscalYear = payload.selectedFiscalYear || "";
+          if (nextFiscalYear) updateFilterQuery({ file: selectedFile, fiscalYear: nextFiscalYear });
+          else setSelectedFiscalYear("");
+        }
       })
       .catch((err) => {
         if (err.name !== "AbortError") setError(err.message);
@@ -92,8 +127,10 @@ export default function HosListDashboard() {
               value={selectedFile}
               disabled={!hasData || loading}
               onChange={(event) => {
-                setSelectedFile(event.target.value);
+                const nextFile = event.target.value;
+                setSelectedFile(nextFile);
                 setSelectedFiscalYear("");
+                updateFilterQuery({ file: nextFile, fiscalYear: "" });
               }}
             >
               <option value="" disabled>เลือกแฟ้ม</option>
@@ -113,7 +150,11 @@ export default function HosListDashboard() {
             <select
               value={selectedFiscalYear}
               disabled={!hasData || loading || !hasMonthly}
-              onChange={(event) => setSelectedFiscalYear(event.target.value)}
+              onChange={(event) => {
+                const nextFiscalYear = event.target.value;
+                setSelectedFiscalYear(nextFiscalYear);
+                updateFilterQuery({ file: selectedFile, fiscalYear: nextFiscalYear });
+              }}
             >
               {hasMonthly ? (
                 <>
