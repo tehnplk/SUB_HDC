@@ -5,6 +5,7 @@ const PROTECTED_PAGE_PREFIXES = ["/person", "/ai", "/dashboard/report"];
 const PROTECTED_API_PREFIXES = [
   "/api/ai",
   "/api/person",
+  "/api/raw-records",
   "/api/report",
 ];
 

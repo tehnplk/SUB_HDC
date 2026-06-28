@@ -114,6 +114,26 @@ export default function HosListDashboard() {
   const rows = selectedFile ? data?.rows || [] : [];
   const months = data?.months || [];
 
+  function currentUrl() {
+    const currentQuery = searchParams.toString();
+    return `${pathname}${currentQuery ? `?${currentQuery}` : ""}`;
+  }
+
+  function redirectToLogin() {
+    router.push(`/login?callbackUrl=${encodeURIComponent(currentUrl())}`);
+  }
+
+  async function canViewRawRecords() {
+    try {
+      const res = await fetch("/api/auth/session", { cache: "no-store" });
+      if (!res.ok) return false;
+      const session = await res.json();
+      return Boolean(session?.user);
+    } catch {
+      return false;
+    }
+  }
+
   function formatCell(value) {
     if (value === null || value === undefined || value === "") return "-";
     if (typeof value === "number") return value.toLocaleString();
@@ -172,6 +192,11 @@ export default function HosListDashboard() {
     fetch(url)
       .then((res) => res.json().then((payload) => ({ ok: res.ok, payload })))
       .then(({ ok, payload }) => {
+        if (payload?.error === "Unauthorized") {
+          closeRawModal();
+          redirectToLogin();
+          return;
+        }
         if (!ok) throw new Error(payload.error || "Failed");
         setRawModal((s) => ({
           ...s,
@@ -186,7 +211,12 @@ export default function HosListDashboard() {
       );
   }
 
-  function openRawModal(hospcode, monthKey, monthLabel, monthValue) {
+  async function openRawModal(hospcode, monthKey, monthLabel, monthValue) {
+    if (!(await canViewRawRecords())) {
+      redirectToLogin();
+      return;
+    }
+
     setRawModal({
       open: true,
       loading: true,

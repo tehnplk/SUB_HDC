@@ -1,4 +1,5 @@
 import { createDbConnection } from "@/lib/db";
+import { requireAppAuth } from "@/lib/auth-guard.mjs";
 import {
   chooseMonthlyDateColumn,
   datePrefixExpression,
@@ -23,6 +24,9 @@ async function getTableColumns(conn, tableName) {
 export async function GET(request) {
   let conn;
   try {
+    const unauthorized = await requireAppAuth();
+    if (unauthorized) return unauthorized;
+
     const url = new URL(request.url);
     const file = url.searchParams.get("file");
     const hospcode = url.searchParams.get("hospcode");

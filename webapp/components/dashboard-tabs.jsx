@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 import { Building2, ClipboardList, FileStack, History, ShieldCheck, Sparkles } from "lucide-react";
 
 const TABS = [
+  { href: "/dashboard/log-import", label: "ประวัติการนำเข้า", Icon: History },
   { href: "/dashboard/hos-list", label: "รายหน่วยงาน", Icon: Building2 },
   { href: "/dashboard/file-list", label: "รายแฟ้ม", Icon: FileStack },
   { href: "/dashboard/quality", label: "คุณภาพ", Icon: ShieldCheck },
-  { href: "/dashboard/log-import", label: "ประวัติการนำเข้า", Icon: History },
   { href: "/dashboard/report", label: "รายงาน", Icon: ClipboardList },
   { href: "/ai/chat", label: "Ask AI", Icon: Sparkles },
 ];
