@@ -22,13 +22,33 @@ cd SUB_HDC
 cp webapp/.env.example webapp/.env
 ```
 
-แก้ค่าใน `webapp/.env` ให้ตรงเครื่องจริง เช่น `DB_PASSWORD`, `AUTH_SECRET`, `AUTH_URL`, `AUTH_USERNAME`, `AUTH_PASSWORD`, `CENTER_NAME`
+แก้ค่าใน `webapp/.env` ให้ตรงเครื่องจริง เช่น `AUTH_SECRET`, `AUTH_URL`, `AUTH_USERNAME`, `AUTH_PASSWORD`, `CENTER_NAME`
+
+สำหรับ Docker fresh deploy ให้ DB ใน `webapp/.env` เป็นแบบนี้ เพราะ webapp ต่อ MariaDB ผ่าน Docker network:
+
+```env
+DB_HOST=mariadb
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=112233
+DB_DATABASE=sub_hdc
+```
+
+ถ้าจะรัน dev นอก Docker และใช้ MySQL ที่เครื่อง host port `3303` ให้แก้ `webapp/.env` เป็น:
+
+```env
+DB_HOST=localhost
+DB_PORT=3303
+DB_USER=root
+DB_PASSWORD=112233
+DB_DATABASE=sub_hdc
+```
 
 3. Deploy ใหม่ทั้งหมด
 
 ```bash
-docker compose --env-file webapp/.env down -v
-docker compose --env-file webapp/.env up -d --build
+docker compose down -v
+docker compose up -d --build
 ```
 
 คำสั่งนี้จะลบ volume เดิม และสร้างฐานข้อมูลใหม่จากไฟล์ใน `table/*.sql`
@@ -36,24 +56,28 @@ docker compose --env-file webapp/.env up -d --build
 4. ตรวจสถานะ
 
 ```bash
-docker compose --env-file webapp/.env ps
-docker compose --env-file webapp/.env logs -f webapp
+docker compose ps
+docker compose logs -f webapp
 ```
 
 ## URL
 
 - Web: `http://localhost`
-- MariaDB: `localhost:3308`
+- MariaDB จากเครื่อง host: `localhost:3308`
+- MariaDB ภายใน Docker network: `mariadb:3306`
 
 ## Update App Only
 
 ```bash
 git pull
-docker compose --env-file webapp/.env up -d --build webapp
+docker compose up -d --build webapp
 ```
 
 ## หมายเหตุ
 
 - ไฟล์ schema อยู่ใน `table/{table_name}.sql`
 - ไม่ใช้โฟลเดอร์ `init_db` แล้ว
-- ถ้าต้องการเปลี่ยน port ให้ตั้งค่า `WEB_PORT` หรือ `DB_PUBLISHED_PORT` ก่อนรัน compose
+- MariaDB ใน Docker ใช้ root password `112233`, database `sub_hdc`, port ภายนอก `3308`
+- Web ใน Docker เปิดที่ port `80`
+- Webapp อ่านค่า DB จาก `webapp/.env` เท่านั้น
+- Docker Compose ไม่ override ค่า DB ของ webapp แล้ว
