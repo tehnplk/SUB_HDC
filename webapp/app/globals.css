@@ -329,6 +329,37 @@ button:disabled {
   margin-top: 4px;
 }
 
+.loginDashboardLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--accent-strong);
+  font-size: 15px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.loginDashboardLink:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.loginDashboardLink:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.loginDashboardLink .lucide {
+  width: 17px;
+  height: 17px;
+}
+
 .secondary {
   border: 1px solid var(--border-strong);
   background: #ffffff;
@@ -1629,6 +1660,184 @@ button:disabled {
   vertical-align: middle;
 }
 
+/* Floating user menu */
+.floatingUser {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 80;
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.floatingUserMenu,
+.floatingUserButton {
+  pointer-events: auto;
+}
+
+.floatingUserButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 58px;
+  height: 48px;
+  padding: 5px 8px 5px 6px;
+  border: 1px solid rgba(200, 216, 205, 0.9);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--accent-strong);
+  box-shadow: 0 16px 36px rgba(23, 32, 51, 0.14);
+  backdrop-filter: blur(14px);
+}
+
+.floatingUserButton:hover {
+  border-color: var(--accent);
+  background: #ffffff;
+  box-shadow: 0 18px 42px rgba(21, 128, 61, 0.18);
+}
+
+.floatingUserAvatar {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.floatingUserAvatarGuest {
+  border: 1px solid var(--border-strong);
+  background: #f1f5f9;
+  color: var(--muted-strong);
+}
+
+.floatingUserAvatar .lucide {
+  width: 18px;
+  height: 18px;
+}
+
+.floatingUserButtonInitial {
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.floatingUserChevron {
+  width: 15px;
+  height: 15px;
+}
+
+.floatingUserMenu {
+  display: grid;
+  width: min(245px, calc(100vw - 32px));
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 18px 48px rgba(23, 32, 51, 0.16);
+  backdrop-filter: blur(16px);
+}
+
+.floatingUserCard {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+  padding: 6px 7px 9px;
+  border-bottom: 1px solid var(--border);
+}
+
+.floatingUserMiniAvatar {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.floatingUserMiniAvatarGuest {
+  background: #f1f5f9;
+  color: var(--muted-strong);
+}
+
+.floatingUserCard strong,
+.floatingUserCard small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.floatingUserCard strong {
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.floatingUserCard small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.floatingUserLinks {
+  display: grid;
+  gap: 3px;
+}
+
+.floatingUserLink,
+.floatingUserAction {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  min-height: 36px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted-strong);
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.35;
+  text-decoration: none;
+  box-shadow: none;
+}
+
+.floatingUserLink .lucide,
+.floatingUserAction .lucide {
+  width: 16px;
+  height: 16px;
+  color: var(--accent-strong);
+}
+
+.floatingUserLink:hover,
+.floatingUserAction:hover {
+  background: var(--panel-tint);
+  color: var(--foreground);
+}
+
+.floatingUserLinkActive {
+  border-color: var(--border);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.floatingUserAction {
+  border-color: var(--border);
+  background: #ffffff;
+}
+
 /* Quality Dashboard Charts Grid */
 .chartsGrid {
   display: grid;
@@ -2110,6 +2319,20 @@ button:disabled {
 }
 
 @media (max-width: 760px) {
+  .floatingUser {
+    right: 14px;
+    bottom: 14px;
+  }
+
+  .floatingUserButton {
+    height: 44px;
+  }
+
+  .floatingUserAvatar {
+    width: 32px;
+    height: 32px;
+  }
+
   .uploadPanel {
     min-height: calc(100vh - 36px);
     padding: 16px;

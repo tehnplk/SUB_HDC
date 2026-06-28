@@ -1,7 +1,8 @@
 import { AuthError } from "next-auth";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
-import { LockKeyhole, LogIn } from "lucide-react";
+import { LayoutDashboard, LockKeyhole, LogIn } from "lucide-react";
 
 async function loginAction(formData) {
   "use server";
@@ -56,6 +57,10 @@ export default async function LoginPage({ searchParams }) {
             <LogIn aria-hidden="true" />
             Sign in
           </button>
+          <Link href="/" className="loginDashboardLink">
+            <LayoutDashboard aria-hidden="true" />
+            Dashboard
+          </Link>
         </form>
       </section>
     </main>
