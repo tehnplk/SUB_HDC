@@ -7,9 +7,27 @@ import { ArrowLeft, Bot, Download, Send, Sparkles, UserRound } from "lucide-reac
 const INITIAL_MESSAGES = [
   {
     role: "assistant",
-    content: "Ask about SUB HDC data, imports, reports, or anything you want to draft with DeepSeek.",
+    content: "สอบถามข้อมูลกับ AI",
   },
 ];
+
+const QUICK_QUESTIONS = [
+  "นับจำนวนประชากร แยก ชาย หญิง",
+  "โรคที่พบมากสุด 10 อันดับ ปี 2569",
+  "จำนวนผู้มารับบริการ ปี 2569",
+  "สรุปจำนวนข้อมูลในแต่ละตาราง",
+  "จำนวน visit แยกรายเดือน ปี 2569",
+  "รายการตารางที่นำเข้าแล้วมีอะไรบ้าง",
+  "นับจำนวนผู้ป่วย OPD ปี 2569",
+  "export Excel โรคที่พบมากสุด 10 อันดับ ปี 2569",
+  "แสดงกราฟ โรคที่พบมากสุด 10 อันดับ ปี 2569",
+];
+
+function pickQuickQuestions() {
+  return [...QUICK_QUESTIONS]
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3);
+}
 
 function getApiMessages(messages) {
   return messages
@@ -239,6 +257,7 @@ export default function AiChatPage() {
   const chatBoxRef = useRef(null);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
+  const [quickQuestions, setQuickQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -254,11 +273,15 @@ export default function AiChatPage() {
     });
   }, [messages, loading]);
 
-  async function handleSubmit(event) {
-    event.preventDefault();
-    if (!canSend) return;
+  useEffect(() => {
+    setQuickQuestions(pickQuickQuestions());
+  }, []);
 
-    const userMessage = { role: "user", content: input.trim() };
+  async function askAgent(content) {
+    const trimmedContent = String(content || "").trim();
+    if (!trimmedContent || loading) return;
+
+    const userMessage = { role: "user", content: trimmedContent };
     const nextMessages = [...apiMessages, userMessage];
 
     setMessages((current) => [...current, userMessage]);
@@ -291,6 +314,12 @@ export default function AiChatPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    if (!canSend) return;
+    await askAgent(input);
   }
 
   function handleKeyDown(event) {
@@ -360,6 +389,20 @@ export default function AiChatPage() {
         </div>
 
         {error ? <div className="error">{error}</div> : null}
+
+        <div className="chatQuickQuestions" aria-label="Quick questions">
+          {quickQuestions.map((question) => (
+            <button
+              key={question}
+              type="button"
+              className="chatQuickQuestion"
+              onClick={() => askAgent(question)}
+              disabled={loading}
+            >
+              {question}
+            </button>
+          ))}
+        </div>
 
         <form ref={formRef} className="chatComposer" onSubmit={handleSubmit}>
           <textarea
