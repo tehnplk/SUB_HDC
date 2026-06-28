@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "./auth";
 
-const PROTECTED_PAGE_PREFIXES = ["/dashboard", "/ai"];
+const PROTECTED_PAGE_PREFIXES = ["/person", "/ai", "/dashboard/report"];
 const PROTECTED_API_PREFIXES = [
   "/api/ai",
-  "/api/dashboard",
   "/api/person",
-  "/api/raw-records",
   "/api/report",
 ];
 

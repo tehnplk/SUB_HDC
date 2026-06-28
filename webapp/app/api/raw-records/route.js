@@ -1,5 +1,4 @@
 import { createDbConnection } from "@/lib/db";
-import { requireApiJwt } from "@/lib/api-auth.mjs";
 import {
   chooseMonthlyDateColumn,
   datePrefixExpression,
@@ -22,9 +21,6 @@ async function getTableColumns(conn, tableName) {
 }
 
 export async function GET(request) {
-  const unauthorized = await requireApiJwt(request);
-  if (unauthorized) return unauthorized;
-
   let conn;
   try {
     const url = new URL(request.url);
