@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Bot, LoaderCircle, Send, Sparkles, UserRound } from "lucide-react";
+import { ArrowLeft, Bot, Send, Sparkles, UserRound } from "lucide-react";
 
 const INITIAL_MESSAGES = [
   {
@@ -326,8 +326,8 @@ export default function AiChatPage() {
           ))}
           {loading ? (
             <article className="chatMessage assistant">
-              <span className="chatAvatar">
-                <LoaderCircle aria-hidden="true" />
+              <span className="chatAvatar chatAvatarThinking">
+                <Bot aria-hidden="true" />
               </span>
               <div className="chatBubble">
                 <p>Thinking...</p>

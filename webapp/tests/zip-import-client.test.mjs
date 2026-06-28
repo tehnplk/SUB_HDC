@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  createFileIdentity,
   createFileKey,
   fileLabel,
   summarizeImportResults,
@@ -15,6 +16,11 @@ test("fileLabel formats file size in KB", () => {
 
 test("createFileKey stays unique for duplicate file selections", () => {
   assert.notEqual(createFileKey(file, 0, 1000), createFileKey(file, 1, 1000));
+});
+
+test("createFileIdentity stays stable for duplicate file detection", () => {
+  assert.equal(createFileIdentity(file), createFileIdentity({ ...file }));
+  assert.notEqual(createFileIdentity(file), createFileIdentity({ ...file, size: 4096 }));
 });
 
 test("summarizeImportResults reports mixed import outcomes", () => {

@@ -12,7 +12,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { createFileKey, fileLabel, summarizeImportResults } from "../lib/zip-import-client.mjs";
+import { createFileIdentity, createFileKey, fileLabel, summarizeImportResults } from "../lib/zip-import-client.mjs";
 
 const MAX_FILES = 12;
 
@@ -181,16 +181,36 @@ export default function ZipImporter() {
   }
 
   // ── Handle file selection ──
-  function handleFiles(files) {
-    const fileList = Array.from(files).slice(0, MAX_FILES);
-    if (!fileList.length) return;
+  const handleFiles = useCallback((files) => {
+    const remainingSlots = Math.max(0, MAX_FILES - entries.length);
+    const existingIdentities = new Set(entries.map((entry) => entry.identity));
+    const selectedIdentities = new Set();
+    let skippedDuplicates = 0;
 
-    setGlobalMsg("");
+    const fileList = Array.from(files)
+      .filter((file) => {
+        const identity = createFileIdentity(file);
+        if (existingIdentities.has(identity) || selectedIdentities.has(identity)) {
+          skippedDuplicates += 1;
+          return false;
+        }
+        selectedIdentities.add(identity);
+        return true;
+      })
+      .slice(0, remainingSlots);
+
+    if (!fileList.length) {
+      if (skippedDuplicates) setGlobalMsg(`ข้ามไฟล์ซ้ำ ${skippedDuplicates} ไฟล์`);
+      return;
+    }
+
+    setGlobalMsg(skippedDuplicates ? `ข้ามไฟล์ซ้ำ ${skippedDuplicates} ไฟล์` : "");
     const timestamp = Date.now();
     const newEntries = fileList.map((file, index) => {
       const key = createFileKey(file, index, timestamp);
       return {
         key,
+        identity: createFileIdentity(file),
         file,
         label: fileLabel(file),
         uploadStatus: "uploading",
@@ -219,7 +239,7 @@ export default function ZipImporter() {
     Promise.allSettled(uploads).then(() => {
       setGlobalMsg((prev) => prev || "");
     });
-  }
+  }, [entries]);
 
   function handleFilePick(event) {
     const files = event.target.files;
@@ -237,7 +257,7 @@ export default function ZipImporter() {
     e.stopPropagation();
     const files = e.dataTransfer.files;
     if (files?.length) handleFiles(files);
-  }, []);
+  }, [handleFiles]);
 
   // ── Parallel Import All ──
   async function handleImportAll() {

@@ -900,6 +900,18 @@ button:disabled {
 }
 
 /* Uploader */
+.uploadMain {
+  place-items: start center;
+}
+
+.uploadPanel {
+  display: grid;
+  width: min(900px, 100%);
+  gap: 10px;
+  min-height: min(620px, calc(100vh - 64px));
+  padding: 20px;
+}
+
 .uploader {
   display: grid;
   gap: 18px;
@@ -1359,6 +1371,12 @@ button:disabled {
   }
 }
 
+@keyframes botThinkingSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 760px) {
   .main {
     padding: 18px;
@@ -1721,6 +1739,10 @@ button:disabled {
   height: 14px;
 }
 
+.chatAvatarThinking .lucide {
+  animation: botThinkingSpin 1s linear infinite;
+}
+
 .chatBubble {
   width: fit-content;
   max-width: min(760px, 100%);
@@ -1969,6 +1991,11 @@ button:disabled {
 }
 
 @media (max-width: 760px) {
+  .uploadPanel {
+    min-height: calc(100vh - 36px);
+    padding: 16px;
+  }
+
   .chatPanel {
     min-height: calc(100vh - 36px);
     padding: 16px;

@@ -6,6 +6,10 @@ export function createFileKey(file, index, timestamp = Date.now()) {
   return `${file.name}_${file.size}_${file.lastModified}_${timestamp}_${index}`;
 }
 
+export function createFileIdentity(file) {
+  return `${String(file.name || "").toLowerCase()}_${file.size}_${file.lastModified}`;
+}
+
 export function summarizeImportResults(results) {
   const successCount = results.filter((result) => result.ok).length;
   const failedCount = results.length - successCount;

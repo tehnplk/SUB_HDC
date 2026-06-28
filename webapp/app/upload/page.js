@@ -6,8 +6,8 @@ export default function UploadPage() {
   const centerName = process.env.CENTER_NAME || "เมือง";
 
   return (
-    <div className="main">
-      <section className="panel">
+    <div className="main uploadMain">
+      <section className="panel uploadPanel">
         <div className="headerRow">
           <div className="titleRow">
             <span className="iconBadge">
