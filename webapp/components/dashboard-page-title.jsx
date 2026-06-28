@@ -1,11 +1,14 @@
 "use client";
 
+import { Database } from "lucide-react";
 import { useEffect, useState } from "react";
 import packageConfig from "../package.json";
 
 export default function DashboardPageTitle() {
   const [centerName, setCenterName] = useState("");
+  const [dbStatus, setDbStatus] = useState("checking");
   const centerSuffix = centerName ? ` ${centerName}` : "";
+  const dbLabel = dbStatus === "online" ? "Connect" : dbStatus === "error" ? "Disconnect" : "Checking";
 
   useEffect(() => {
     const controller = new AbortController();
@@ -17,9 +20,13 @@ export default function DashboardPageTitle() {
       })
       .then((payload) => {
         setCenterName(payload.centerName || "");
+        setDbStatus("online");
       })
       .catch((err) => {
-        if (err.name !== "AbortError") setCenterName("");
+        if (err.name !== "AbortError") {
+          setCenterName("");
+          setDbStatus("error");
+        }
       });
 
     return () => controller.abort();
@@ -29,6 +36,10 @@ export default function DashboardPageTitle() {
     <h4 className="pageHeaderTitle">
       SUB-HDC{centerSuffix}
       <span className="versionLabel">Version {packageConfig.version}</span>
+      <span className={`dbStatusLabel dbStatusLabel-${dbStatus}`} title={`Database ${dbLabel}`}>
+        <Database aria-hidden="true" />
+        <span>{dbLabel}</span>
+      </span>
     </h4>
   );
 }
