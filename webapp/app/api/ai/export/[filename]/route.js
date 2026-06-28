@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { requireAppAuth } from "../../../../../lib/auth-guard.mjs";
 
 export const runtime = "nodejs";
 
@@ -8,6 +9,9 @@ function isSafeExportFilename(filename) {
 }
 
 export async function GET(_request, context) {
+  const unauthorized = await requireAppAuth();
+  if (unauthorized) return unauthorized;
+
   const params = await context.params;
   const filename = decodeURIComponent(params?.filename || "");
 

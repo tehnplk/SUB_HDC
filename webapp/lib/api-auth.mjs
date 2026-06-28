@@ -1,3 +1,5 @@
+import { requireAppAuth } from "./auth-guard.mjs";
+
 export const AUTH_COOKIE_NAME = "sub_hdc_api_jwt";
 export const API_JWT_TTL_SECONDS = 12 * 60 * 60;
 
@@ -108,11 +110,15 @@ export async function verifyApiJwt(token, options = {}) {
 }
 
 export async function requireApiJwt(request, options = {}) {
-  const token = getCookieValue(request.headers.get("cookie"), AUTH_COOKIE_NAME);
-  if (await verifyApiJwt(token, options)) {
-    return null;
+  if (Object.keys(options).length > 0 || process.env.AUTH_LEGACY_JWT === "1") {
+    const token = getCookieValue(request.headers.get("cookie"), AUTH_COOKIE_NAME);
+    if (await verifyApiJwt(token, options)) {
+      return null;
+    }
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
-  return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+  return requireAppAuth();
 }
 
 export function getApiJwtCookieOptions() {

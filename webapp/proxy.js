@@ -1,43 +1,41 @@
 import { NextResponse } from "next/server";
-import {
-  AUTH_COOKIE_NAME,
-  createApiJwt,
-  getApiJwtCookieOptions,
-  getCookieValue,
-  verifyApiJwt,
-} from "./lib/api-auth.mjs";
+import { auth } from "./auth";
 
-function shouldIssueApiJwt(pathname) {
-  return (
-    !pathname.startsWith("/api/") &&
-    !pathname.startsWith("/_next/") &&
-    !pathname.includes(".")
-  );
+const PROTECTED_PAGE_PREFIXES = ["/dashboard", "/ai"];
+const PROTECTED_API_PREFIXES = [
+  "/api/ai",
+  "/api/dashboard",
+  "/api/person",
+  "/api/raw-records",
+  "/api/report",
+];
+
+function matchesPrefix(pathname, prefixes) {
+  return prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
-export async function proxy(request) {
-  if (request.nextUrl.pathname.startsWith("/api/") && request.method === "GET") {
-    const token = getCookieValue(request.headers.get("cookie"), AUTH_COOKIE_NAME);
-    if (!(await verifyApiJwt(token))) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
+export const proxy = auth((request) => {
+  const { pathname } = request.nextUrl;
+  const isProtectedApi = matchesPrefix(pathname, PROTECTED_API_PREFIXES);
+  const isProtectedPage = matchesPrefix(pathname, PROTECTED_PAGE_PREFIXES);
+
+  if (!isProtectedApi && !isProtectedPage) {
     return NextResponse.next();
   }
 
-  const response = NextResponse.next();
-  if (request.method !== "GET" || !shouldIssueApiJwt(request.nextUrl.pathname)) {
-    return response;
+  if (request.auth?.user) {
+    return NextResponse.next();
   }
 
-  const token = getCookieValue(request.headers.get("cookie"), AUTH_COOKIE_NAME);
-  if (await verifyApiJwt(token)) {
-    return response;
+  if (isProtectedApi) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  response.cookies.set(AUTH_COOKIE_NAME, await createApiJwt(), getApiJwtCookieOptions());
-  return response;
-}
+  const loginUrl = new URL("/login", request.nextUrl.origin);
+  loginUrl.searchParams.set("callbackUrl", `${pathname}${request.nextUrl.search}`);
+  return NextResponse.redirect(loginUrl);
+});
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|encrypted.png).*)"],
 };

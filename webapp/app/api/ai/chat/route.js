@@ -7,6 +7,7 @@ import {
   runExcelExportTool,
   userRequestedExcelExport,
 } from "@/lib/excel-export-tool.mjs";
+import { requireAppAuth } from "../../../../lib/auth-guard.mjs";
 
 export const runtime = "nodejs";
 
@@ -250,6 +251,9 @@ async function runChatAgent(client, inputMessages) {
 }
 
 export async function POST(request) {
+  const unauthorized = await requireAppAuth();
+  if (unauthorized) return unauthorized;
+
   try {
     let payload;
     try {
