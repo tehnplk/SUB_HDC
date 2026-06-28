@@ -1,6 +1,12 @@
 import OpenAI from "openai";
 import { buildChartFromDbResult, userRequestedChart } from "@/lib/ai-chart.mjs";
 import { DB_QUERY_TOOL, DB_QUERY_TOOL_NAME, runDbQueryTool } from "@/lib/db-query-tool.mjs";
+import {
+  EXCEL_EXPORT_TOOL,
+  EXCEL_EXPORT_TOOL_NAME,
+  runExcelExportTool,
+  userRequestedExcelExport,
+} from "@/lib/excel-export-tool.mjs";
 
 export const runtime = "nodejs";
 
@@ -12,6 +18,7 @@ const MAX_TOOL_ROUNDS = 6;
 const SYSTEM_PROMPT = `You are a concise assistant for SUB HDC data work.
 Answer in the same language as the user's question. If the user writes Thai, answer in Thai only. Never mix in Chinese.
 Use the ${DB_QUERY_TOOL_NAME} tool when a user asks questions that need live database data or schema.
+Use the ${EXCEL_EXPORT_TOOL_NAME} tool only when the latest user message explicitly asks to generate, export, download, or create Excel/XLSX/spreadsheet output from database data.
 Only request read-only SQL. Never request INSERT, UPDATE, DELETE, DROP, TRUNCATE, ALTER, CREATE, REPLACE, or other mutation SQL.
 Prefer short aggregate queries and limit result sets. Use c_file to discover imported F43 table names when needed.
 c_file columns are file_name, type, and note. Never query c_file.name.
@@ -38,6 +45,7 @@ Use clear visual formatting whenever it improves clarity:
 - Do not use raw HTML, Mermaid, or fenced code blocks for result tables.
 - Only mention or prepare chart-oriented output when the user explicitly asks for a chart, graph, plot, กราฟ, or แผนภูมิ.
 - When the user asks for a chart, do not draw an ASCII/text chart or fenced code chart. Give a short summary or markdown table; the UI will render the actual chart.
+When the user asks for Excel export, call ${EXCEL_EXPORT_TOOL_NAME} with the same read-only aggregate SQL you would use for the answer, then mention that the Excel file is ready. Do not invent a download URL yourself.
 Keep any intro to one short sentence.`;
 
 function normalizeMessages(input) {
@@ -111,6 +119,8 @@ async function forceFinalAnswer(client, messages) {
 
 async function runChatAgent(client, inputMessages) {
   const shouldReturnChart = userRequestedChart(inputMessages);
+  const shouldExportExcel = userRequestedExcelExport(inputMessages);
+  const availableTools = shouldExportExcel ? [DB_QUERY_TOOL, EXCEL_EXPORT_TOOL] : [DB_QUERY_TOOL];
   const messages = [
     {
       role: "system",
@@ -125,9 +135,19 @@ async function runChatAgent(client, inputMessages) {
           },
         ]
       : []),
+    ...(shouldExportExcel
+      ? [
+          {
+            role: "system",
+            content:
+              `The latest user explicitly asked for Excel export. If the export depends on database data, call ${EXCEL_EXPORT_TOOL_NAME} with one read-only SQL query. Do not invent a download URL; the tool result provides it.`,
+          },
+        ]
+      : []),
     ...inputMessages,
   ];
   const toolCalls = [];
+  const excelExports = [];
   let chart = null;
   let finalCompletion = null;
 
@@ -135,7 +155,7 @@ async function runChatAgent(client, inputMessages) {
     const completion = await client.chat.completions.create({
       model: process.env.DEEPSEEK_MODEL || DEFAULT_MODEL,
       messages,
-      tools: [DB_QUERY_TOOL],
+      tools: availableTools,
       tool_choice: "auto",
       temperature: 0.3,
       max_tokens: 1200,
@@ -153,6 +173,7 @@ async function runChatAgent(client, inputMessages) {
         completion,
         toolCalls,
         chart,
+        excelExports,
       };
     }
 
@@ -162,6 +183,7 @@ async function runChatAgent(client, inputMessages) {
         ...forced,
         toolCalls,
         chart,
+        excelExports,
       };
     }
 
@@ -177,9 +199,13 @@ async function runChatAgent(client, inputMessages) {
 
       try {
         if (toolName !== DB_QUERY_TOOL_NAME) {
-          throw new Error(`Unsupported tool: ${toolName || "unknown"}`);
+          if (toolName !== EXCEL_EXPORT_TOOL_NAME) {
+            throw new Error(`Unsupported tool: ${toolName || "unknown"}`);
+          }
+          result = await runExcelExportTool(parseToolArguments(toolCall));
+        } else {
+          result = await runDbQueryTool(parseToolArguments(toolCall));
         }
-        result = await runDbQueryTool(parseToolArguments(toolCall));
       } catch (error) {
         result = {
           ok: false,
@@ -191,6 +217,14 @@ async function runChatAgent(client, inputMessages) {
       if (resultChart) {
         chart = resultChart;
       }
+      if (toolName === EXCEL_EXPORT_TOOL_NAME && result.ok) {
+        excelExports.push({
+          filename: result.filename,
+          downloadUrl: result.downloadUrl,
+          rowCount: result.rowCount || 0,
+          sheetName: result.sheetName || null,
+        });
+      }
 
       toolCalls.push({
         name: toolName || "unknown",
@@ -199,6 +233,8 @@ async function runChatAgent(client, inputMessages) {
         rowCount: result.rowCount || 0,
         columns: result.columns || [],
         error: result.error || null,
+        downloadUrl: result.downloadUrl || null,
+        filename: result.filename || null,
       });
       messages.push(toolResultMessage(toolCall, result));
     }
@@ -209,6 +245,7 @@ async function runChatAgent(client, inputMessages) {
     completion: finalCompletion,
     toolCalls,
     chart,
+    excelExports,
   };
 }
 
@@ -228,7 +265,7 @@ export async function POST(request) {
     }
 
     const client = getDeepSeekClient();
-    const { answer, completion, toolCalls, chart } = await runChatAgent(client, messages);
+    const { answer, completion, toolCalls, chart, excelExports } = await runChatAgent(client, messages);
 
     if (!answer) {
       return Response.json({ error: "DeepSeek returned an empty response" }, { status: 502 });
@@ -240,6 +277,7 @@ export async function POST(request) {
       usage: completion.usage || null,
       toolCalls,
       chart,
+      excelExports,
     });
   } catch (error) {
     const status = error.status || error.response?.status || 500;

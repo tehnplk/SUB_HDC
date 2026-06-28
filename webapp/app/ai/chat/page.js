@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Bot, Send, Sparkles, UserRound } from "lucide-react";
+import { ArrowLeft, Bot, Download, Send, Sparkles, UserRound } from "lucide-react";
 
 const INITIAL_MESSAGES = [
   {
@@ -213,6 +213,27 @@ function ChatChart({ chart }) {
   );
 }
 
+function ChatExcelExports({ exports }) {
+  if (!exports?.length) return null;
+
+  return (
+    <div className="chatExportList" aria-label="Excel exports">
+      {exports.map((item, index) => (
+        <a
+          key={`${item.downloadUrl}-${index}`}
+          className="chatExportLink"
+          href={item.downloadUrl}
+          download={item.filename}
+        >
+          <Download aria-hidden="true" />
+          <span>{item.filename || "Download Excel"}</span>
+          <small>{new Intl.NumberFormat("th-TH").format(item.rowCount || 0)} rows</small>
+        </a>
+      ))}
+    </div>
+  );
+}
+
 export default function AiChatPage() {
   const formRef = useRef(null);
   const chatBoxRef = useRef(null);
@@ -262,6 +283,7 @@ export default function AiChatPage() {
           model: payload.model,
           toolCalls: payload.toolCalls || [],
           chart: payload.chart || null,
+          excelExports: payload.excelExports || [],
         },
       ]);
     } catch (err) {
@@ -306,6 +328,7 @@ export default function AiChatPage() {
               <div className="chatBubble">
                 <MarkdownContent content={message.content} />
                 <ChatChart chart={message.chart} />
+                <ChatExcelExports exports={message.excelExports} />
                 {message.toolCalls?.length ? (
                   <div className="chatToolList" aria-label="Tool calls">
                     {message.toolCalls.map((tool, toolIndex) => (
