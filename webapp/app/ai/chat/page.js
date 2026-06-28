@@ -23,8 +23,10 @@ const QUICK_QUESTIONS = [
   "แสดงกราฟ โรคที่พบมากสุด 10 อันดับ ปี 2569",
 ];
 
-function pickQuickQuestions() {
-  return [...QUICK_QUESTIONS]
+function pickQuickQuestions(excludeQuestions = []) {
+  const excluded = new Set(excludeQuestions);
+  return QUICK_QUESTIONS
+    .filter((question) => !excluded.has(question))
     .sort(() => Math.random() - 0.5)
     .slice(0, 3);
 }
@@ -322,6 +324,12 @@ export default function AiChatPage() {
     await askAgent(input);
   }
 
+  async function handleQuickQuestion(question) {
+    if (loading) return;
+    setQuickQuestions(pickQuickQuestions([question]));
+    await askAgent(question);
+  }
+
   function handleKeyDown(event) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
@@ -396,7 +404,7 @@ export default function AiChatPage() {
               key={question}
               type="button"
               className="chatQuickQuestion"
-              onClick={() => askAgent(question)}
+              onClick={() => handleQuickQuestion(question)}
               disabled={loading}
             >
               {question}
