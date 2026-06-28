@@ -1,30 +1,21 @@
-# SUB HDC
+# SUB HDC Production Docker Deploy
 
-ระบบนำเข้าและตรวจสอบข้อมูล F43 ZIP ด้วย Next.js และ MariaDB
+คู่มือนี้สำหรับติดตั้ง production ด้วย Docker เท่านั้น
 
-## สิ่งที่ต้องมี
-
-- Docker / Docker Compose
-- Git
-
-## Fresh Deploy
-
-1. Clone repo
+## 1. เข้าโฟลเดอร์โปรเจกต์
 
 ```bash
 git clone https://github.com/tehnplk/SUB_HDC.git
 cd SUB_HDC
 ```
 
-2. สร้างไฟล์ env
+## 2. สร้างไฟล์ .env
 
 ```bash
 cp webapp/.env.example webapp/.env
 ```
 
-แก้ค่าใน `webapp/.env` ให้ตรงเครื่องจริง เช่น `AUTH_SECRET`, `AUTH_URL`, `AUTH_USERNAME`, `AUTH_PASSWORD`, `CENTER_NAME`
-
-สำหรับ Docker fresh deploy ให้ DB ใน `webapp/.env` เป็นแบบนี้ เพราะ webapp ต่อ MariaDB ผ่าน Docker network:
+สำหรับ production Docker ให้ค่า DB ใน `webapp/.env` เป็นแบบนี้เสมอ:
 
 ```env
 DB_HOST=mariadb
@@ -34,50 +25,67 @@ DB_PASSWORD=112233
 DB_DATABASE=sub_hdc
 ```
 
-ถ้าจะรัน dev นอก Docker และใช้ MySQL ที่เครื่อง host port `3303` ให้แก้ `webapp/.env` เป็น:
+ห้ามเปลี่ยน DB เป็น `localhost` ตอน deploy ด้วย Docker
+
+ให้แก้เฉพาะค่าที่เกี่ยวกับเว็บจริง:
 
 ```env
-DB_HOST=localhost
-DB_PORT=3303
-DB_USER=root
-DB_PASSWORD=112233
-DB_DATABASE=sub_hdc
+AUTH_URL=https://your-domain.example
+AUTH_SECRET=change_this_to_a_strong_secret
+AUTH_USERNAME=admin
+AUTH_PASSWORD=change_this_password
+CENTER_NAME=ชื่อหน่วยงาน
+DEEPSEEK_API_KEY=your_deepseek_api_key_here
 ```
 
-3. Deploy ใหม่ทั้งหมด
+`AUTH_URL` ให้ใส่ URL จริงที่ผู้ใช้เปิดเว็บ เช่น:
+
+```env
+AUTH_URL=https://your-domain.example
+```
+
+หรือถ้าใช้เฉพาะ IP ภายใน:
+
+```env
+AUTH_URL=http://192.168.1.10
+```
+
+## 3. Deploy ใหม่ทั้งหมด
 
 ```bash
 docker compose down -v
 docker compose up -d --build
 ```
 
-คำสั่งนี้จะลบ volume เดิม และสร้างฐานข้อมูลใหม่จากไฟล์ใน `table/*.sql`
+คำสั่งนี้จะสร้าง database ใหม่จากไฟล์ `table/*.sql`
 
-4. ตรวจสถานะ
+## 4. ตรวจสถานะ
+
+ต้องรันคำสั่งจากโฟลเดอร์โปรเจกต์ `SUB_HDC`
 
 ```bash
 docker compose ps
 docker compose logs -f webapp
 ```
 
-## URL
+## URL หลัง deploy
 
-- Web: `http://localhost`
-- MariaDB จากเครื่อง host: `localhost:3308`
-- MariaDB ภายใน Docker network: `mariadb:3306`
+- Web: URL ที่ตั้งใน `AUTH_URL`
+- MariaDB ภายใน Docker: `mariadb:3306`
+- MariaDB จากนอก Docker: `SERVER_IP:3308`
 
-## Update App Only
+## Update app ครั้งต่อไป
 
 ```bash
+cd SUB_HDC
 git pull
 docker compose up -d --build webapp
 ```
 
-## หมายเหตุ
+## จำง่าย ๆ
 
-- ไฟล์ schema อยู่ใน `table/{table_name}.sql`
-- ไม่ใช้โฟลเดอร์ `init_db` แล้ว
-- MariaDB ใน Docker ใช้ root password `112233`, database `sub_hdc`, port ภายนอก `3308`
-- Web ใน Docker เปิดที่ port `80`
-- Webapp อ่านค่า DB จาก `webapp/.env` เท่านั้น
-- Docker Compose ไม่ override ค่า DB ของ webapp แล้ว
+- คำสั่ง `docker compose ...` ต้องรันในโฟลเดอร์โปรเจกต์ `SUB_HDC`
+- Production Docker ใช้ `DB_HOST=mariadb`
+- Production Docker ใช้ `DB_PORT=3306`
+- ไม่ต้องใช้ `--env-file`
+- ไม่ต้องแก้ `docker-compose.yml`
