@@ -35,6 +35,12 @@ export default function FloatingUserMenu({ userName, centerName }) {
   const displayName = userName || "Guest";
   const initials = displayName.trim().slice(0, 1).toUpperCase() || "U";
 
+  async function handleSignOut() {
+    setOpen(false);
+    await signOut({ redirect: false, callbackUrl: "/login" });
+    window.location.assign("/login");
+  }
+
   return (
     <div ref={menuRef} className={`floatingUser ${open ? "floatingUserOpen" : ""}`}>
       {open ? (
@@ -71,7 +77,7 @@ export default function FloatingUserMenu({ userName, centerName }) {
             <button
               type="button"
               className="floatingUserAction"
-              onClick={() => signOut({ callbackUrl: "/login" })}
+              onClick={handleSignOut}
               role="menuitem"
             >
               <LogOut />
