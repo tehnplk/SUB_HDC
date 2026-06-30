@@ -14,12 +14,6 @@ services:
     volumes:
       - sub_hdc_mariadb_data:/var/lib/mysql
       - ./table:/docker-entrypoint-initdb.d:ro
-    healthcheck:
-      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -uroot -p\"$${MARIADB_ROOT_PASSWORD}\" --silent"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 30s
 
   webapp:
     build:
@@ -27,20 +21,14 @@ services:
       dockerfile: Dockerfile
     container_name: sub_hdc_web
     restart: unless-stopped
-    network_mode: host
+    ports:
+      - "80:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     env_file:
       - ./webapp/.env
     volumes:
       - ./webapp/tmp:/app/tmp
-    depends_on:
-      mariadb:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:' + (process.env.PORT || 80) + '/login').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
 
 volumes:
   sub_hdc_mariadb_data:
