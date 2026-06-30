@@ -13,10 +13,10 @@ test("import route uses low table concurrency to avoid MariaDB lock pressure", a
   assert.doesNotMatch(source, /"--concurrency",\s*"20"/);
 });
 
-test("import all runs uploaded zips sequentially instead of Promise.all", async () => {
+test("import all runs uploaded zips in parallel after DB table guards are enabled", async () => {
   const source = await readFile(importerComponentPath, "utf8");
   const handleImportAllSource = source.slice(source.indexOf("async function handleImportAll()"));
 
-  assert.match(handleImportAllSource, /for \(const entry of pending\)/);
-  assert.doesNotMatch(handleImportAllSource, /Promise\.all\(promises\)/);
+  assert.match(handleImportAllSource, /Promise\.all\(/);
+  assert.doesNotMatch(handleImportAllSource, /for \(const entry of pending\)/);
 });

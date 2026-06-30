@@ -269,11 +269,11 @@ export default function ZipImporter() {
     );
 
     try {
-      const results = [];
-      for (const entry of pending) {
-        const ok = await importZip(entry);
-        results.push({ ok });
-      }
+      const results = await Promise.all(
+        pending.map(async (entry) => ({
+          ok: await importZip(entry),
+        }))
+      );
       setGlobalMsg(summarizeImportResults(results));
     } catch (error) {
       setGlobalMsg(`เกิดข้อผิดพลาด: ${error.message}`);
@@ -332,7 +332,7 @@ export default function ZipImporter() {
           <span className="dropText">
             ลากไฟล์ .zip มาวาง หรือคลิกเลือก (สูงสุด {MAX_FILES} ไฟล์)
           </span>
-          <span className="dropHint">อัปโหลดพร้อมกัน นำเข้าทีละไฟล์</span>
+          <span className="dropHint">อัปโหลดพร้อมกัน นำเข้าพร้อมกันแบบกันชนตาราง</span>
         </div>
       </div>
 

@@ -166,3 +166,51 @@ test("parseArgs requires an explicit zip path and validates numeric options", ()
     /--concurrency must be a positive integer/
   );
 });
+
+test("withTableImportLock uses MariaDB advisory locks without locking tables", async () => {
+  const importer = require("../lib/import_f43_node.js");
+  const calls = [];
+  const connection = {
+    async execute(sql, values) {
+      calls.push({ sql, values });
+      if (/GET_LOCK/i.test(sql)) return [[{ acquired: 1 }]];
+      if (/RELEASE_LOCK/i.test(sql)) return [[{ released: 1 }]];
+      throw new Error(`Unexpected SQL: ${sql}`);
+    },
+  };
+
+  const result = await importer.withTableImportLock(connection, "sub_hdc", "service", 30, async () => {
+    calls.push({ work: true });
+    return "imported";
+  });
+
+  assert.equal(result, "imported");
+  assert.match(calls[0].sql, /GET_LOCK/);
+  assert.deepEqual(calls[0].values, ["sub_hdc_import_253d2b77edc791032f1af052595254cc5a33f132", 30]);
+  assert.deepEqual(calls[1], { work: true });
+  assert.match(calls[2].sql, /RELEASE_LOCK/);
+  assert.deepEqual(calls[2].values, ["sub_hdc_import_253d2b77edc791032f1af052595254cc5a33f132"]);
+  assert.doesNotMatch(calls.map((call) => call.sql || "").join("\n"), /LOCK TABLES/i);
+});
+
+test("withTableImportLock releases the advisory lock when import work fails", async () => {
+  const importer = require("../lib/import_f43_node.js");
+  const calls = [];
+  const connection = {
+    async execute(sql, values) {
+      calls.push({ sql, values });
+      if (/GET_LOCK/i.test(sql)) return [[{ acquired: 1 }]];
+      if (/RELEASE_LOCK/i.test(sql)) return [[{ released: 1 }]];
+      throw new Error(`Unexpected SQL: ${sql}`);
+    },
+  };
+
+  await assert.rejects(
+    () => importer.withTableImportLock(connection, "sub_hdc", "person", 30, async () => {
+      throw new Error("import failed");
+    }),
+    /import failed/
+  );
+
+  assert.match(calls.at(-1).sql, /RELEASE_LOCK/);
+});

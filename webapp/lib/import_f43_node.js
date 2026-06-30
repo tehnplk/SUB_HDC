@@ -196,6 +196,57 @@ async function createLogImportFile(connection, fileName) {
   return result.insertId;
 }
 
+function tableImportLockName(database, tableName) {
+  const key = `${database || "sub_hdc"}:${tableName}`.toLowerCase();
+  const digest = crypto.createHash("sha1").update(key).digest("hex");
+  return `sub_hdc_import_${digest}`;
+}
+
+async function acquireTableImportLock(connection, database, tableName, timeoutSeconds) {
+  const lockName = tableImportLockName(database, tableName);
+  const [rows] = await connection.execute("SELECT GET_LOCK(?, ?) AS acquired", [
+    lockName,
+    timeoutSeconds,
+  ]);
+  const acquired = Number(rows?.[0]?.acquired);
+  if (acquired !== 1) {
+    throw new Error(`${tableName}: timed out waiting for import lock`);
+  }
+  return lockName;
+}
+
+async function releaseTableImportLock(connection, lockName) {
+  const [rows] = await connection.execute("SELECT RELEASE_LOCK(?) AS released", [lockName]);
+  const released = Number(rows?.[0]?.released);
+  if (released !== 1) {
+    throw new Error(`${lockName}: import lock was not released`);
+  }
+}
+
+async function withTableImportLock(connection, database, tableName, timeoutSeconds, callback) {
+  if (!timeoutSeconds) {
+    return callback();
+  }
+
+  const lockName = await acquireTableImportLock(connection, database, tableName, timeoutSeconds);
+  let callbackError;
+  try {
+    return await callback();
+  } catch (error) {
+    callbackError = error;
+    throw error;
+  } finally {
+    try {
+      await releaseTableImportLock(connection, lockName);
+    } catch (releaseError) {
+      if (!callbackError) {
+        throw releaseError;
+      }
+      console.error(releaseError.message);
+    }
+  }
+}
+
 function buildInsert(tableName, columns, rowCount) {
   const columnSql = columns.map(quoteIdentifier).join(", ");
   const oneRow = `(${columns.map(() => "?").join(", ")})`;
@@ -271,6 +322,7 @@ function parseArgs(argv = process.argv, env = process.env) {
     fileName: "",
     progress: false,
     concurrency: 20,
+    advisoryLockTimeout: Number(env.IMPORT_ADVISORY_LOCK_TIMEOUT || 300),
   };
 
   for (let index = 2; index < argv.length; index += 1) {
@@ -286,6 +338,7 @@ function parseArgs(argv = process.argv, env = process.env) {
     else if (arg === "--on-duplicate") args.onDuplicate = next;
     else if (arg === "--file-name") args.fileName = next;
     else if (arg === "--concurrency") args.concurrency = Number(next);
+    else if (arg === "--advisory-lock-timeout") args.advisoryLockTimeout = Number(next);
     else if (arg === "--progress") args.progress = true;
     else throw new Error(`Unknown argument: ${arg}`);
     if (!["--progress"].includes(arg)) index += 1;
@@ -305,6 +358,9 @@ function parseArgs(argv = process.argv, env = process.env) {
   }
   if (!Number.isInteger(args.concurrency) || args.concurrency <= 0) {
     throw new Error("--concurrency must be a positive integer");
+  }
+  if (!Number.isInteger(args.advisoryLockTimeout) || args.advisoryLockTimeout < 0) {
+    throw new Error("--advisory-lock-timeout must be zero or a positive integer");
   }
   return args;
 }
@@ -372,42 +428,57 @@ async function main() {
 
     const tasks = files.map((file) => async () => {
       const conn = await pool.getConnection();
+      let transactionStarted = false;
       try {
-        await conn.beginTransaction();
-        const item = await importFile(
-          conn,
-          file,
-          args.batchSize,
-          args.onDuplicate,
-          (batchRows, fileImported, fileTotal) => {
-            processedRows += batchRows;
-            const percent = totalRows ? Math.round((processedRows / totalRows) * 100) : 100;
+        await withTableImportLock(conn, args.database, file.tableName, args.advisoryLockTimeout, async () => {
+          await conn.beginTransaction();
+          transactionStarted = true;
+          try {
+            const item = await importFile(
+              conn,
+              file,
+              args.batchSize,
+              args.onDuplicate,
+              (batchRows, fileImported, fileTotal) => {
+                processedRows += batchRows;
+                const percent = totalRows ? Math.round((processedRows / totalRows) * 100) : 100;
+                emitJson(args.progress, {
+                  type: "progress",
+                  table: file.tableName,
+                  fileRows: fileImported,
+                  fileTotal,
+                  processedRows,
+                  totalRows,
+                  percent,
+                });
+              },
+              logImportId
+            );
+            await conn.commit();
+            transactionStarted = false;
+            summary.push(item);
             emitJson(args.progress, {
-              type: "progress",
-              table: file.tableName,
-              fileRows: fileImported,
-              fileTotal,
-              processedRows,
-              totalRows,
-              percent,
+              type: "table",
+              table: item.table,
+              rows: item.rows,
+              missingColumns: item.missingColumns,
             });
-          },
-          logImportId
-        );
-        await conn.commit();
-        summary.push(item);
-        emitJson(args.progress, {
-          type: "table",
-          table: item.table,
-          rows: item.rows,
-          missingColumns: item.missingColumns,
+            if (!args.progress) {
+              const missing = item.missingColumns.length ? ` missing=${item.missingColumns.join(",")}` : "";
+              console.log(`${item.table}: ${item.rows} rows${missing}`);
+            }
+          } catch (error) {
+            if (transactionStarted) {
+              await conn.rollback();
+              transactionStarted = false;
+            }
+            throw error;
+          }
         });
-        if (!args.progress) {
-          const missing = item.missingColumns.length ? ` missing=${item.missingColumns.join(",")}` : "";
-          console.log(`${item.table}: ${item.rows} rows${missing}`);
-        }
       } catch (error) {
-        await conn.rollback();
+        if (transactionStarted) {
+          await conn.rollback();
+        }
         throw error;
       } finally {
         conn.release();
@@ -469,9 +540,11 @@ if (require.main === module) {
 
 module.exports = {
   buildInsert,
+  acquireTableImportLock,
   createLogImportFile,
   decodeText,
   encryptFileRows,
+  releaseTableImportLock,
   getAesKey,
   getExistingColumns,
   importFile,
@@ -480,4 +553,6 @@ module.exports = {
   parseArgs,
   quoteIdentifier,
   readF43Files,
+  tableImportLockName,
+  withTableImportLock,
 };
