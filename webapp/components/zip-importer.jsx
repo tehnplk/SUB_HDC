@@ -137,6 +137,14 @@ export default function ZipImporter() {
           appendLog(key, `📦 ${event.totalFiles} ตาราง`);
           return;
         }
+        if (event.type === "queued") {
+          appendLog(key, `⏳ รอคิว import (${event.active}/${event.concurrency} กำลังทำงาน, รอ ${event.pending})`);
+          return;
+        }
+        if (event.type === "started") {
+          appendLog(key, "▶️ เริ่ม import");
+          return;
+        }
         if (event.type === "progress") {
           updateEntry(key, { importPercent: event.percent });
           return;
