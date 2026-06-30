@@ -24,5 +24,6 @@ webapp/.env*.local
 
 # Documentation ignored
 /docs
+DEPLOY_TO_อ.เมือง.md
 
 
