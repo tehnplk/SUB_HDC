@@ -80,7 +80,7 @@ export async function POST(request) {
             "--on-duplicate",
             "replace",
             "--concurrency",
-            "20",
+            "4",
             "--progress",
           ],
           {

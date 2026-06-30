@@ -269,11 +269,11 @@ export default function ZipImporter() {
     );
 
     try {
-      const promises = pending.map(async (entry) => {
+      const results = [];
+      for (const entry of pending) {
         const ok = await importZip(entry);
-        return { ok };
-      });
-      const results = await Promise.all(promises);
+        results.push({ ok });
+      }
       setGlobalMsg(summarizeImportResults(results));
     } catch (error) {
       setGlobalMsg(`เกิดข้อผิดพลาด: ${error.message}`);
