@@ -10,7 +10,7 @@ services:
       MARIADB_DATABASE: sub_hdc
       TZ: Asia/Bangkok
     ports:
-      - "${DB_PUBLISHED_PORT:-3308}:3306"
+      - "3308:3306"
     volumes:
       - sub_hdc_mariadb_data:/var/lib/mysql
       - ./table:/docker-entrypoint-initdb.d:ro
@@ -27,11 +27,14 @@ services:
       dockerfile: Dockerfile
     container_name: sub_hdc_web
     restart: unless-stopped
-    # Web uses the host network. Set PORT, DB_HOST, and DB_PORT in webapp/.env.
     network_mode: host
     env_file:
       - ./webapp/.env
     environment:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3308
+      PORT: 80
+      HOSTNAME: 0.0.0.0
       NODE_ENV: production
       TZ: Asia/Bangkok
     volumes:
@@ -40,7 +43,7 @@ services:
       mariadb:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/login').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1/login').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 30s
       timeout: 10s
       retries: 5
