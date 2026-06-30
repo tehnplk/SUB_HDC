@@ -27,8 +27,12 @@ services:
       - "host.docker.internal:host-gateway"
     env_file:
       - ./webapp/.env
+    environment:
+      TZ: Asia/Bangkok
+    command: sh -c "node lib/run_migrations.js && npm run start"
     volumes:
       - ./webapp/tmp:/app/tmp
+      - ./table_update:/app/table_update:ro
 
 volumes:
   sub_hdc_mariadb_data:

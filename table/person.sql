@@ -5,7 +5,7 @@ CREATE TABLE `person` (
   `hid` varchar(255) NOT NULL DEFAULT '',
   `prename` varchar(255) NOT NULL DEFAULT '',
   `name` varchar(255) NOT NULL DEFAULT '',
-  `lname` varchar(1000) NOT NULL DEFAULT '',
+  `lname` varchar(2000) NOT NULL DEFAULT '',
   `hn` varchar(255) NOT NULL DEFAULT '',
   `sex` varchar(255) NOT NULL DEFAULT '',
   `birth` varchar(255) NOT NULL DEFAULT '',
@@ -30,9 +30,9 @@ CREATE TABLE `person` (
   `passport` varchar(255) NOT NULL DEFAULT '',
   `typearea` varchar(255) NOT NULL DEFAULT '',
   `d_update` varchar(255) NOT NULL DEFAULT '',
-  `telephone` varchar(1000) NOT NULL DEFAULT '',
-  `mobile` varchar(1000) NOT NULL DEFAULT '',
-  `cid_aes` varchar(1000) NOT NULL DEFAULT '',
+  `telephone` varchar(2000) NOT NULL DEFAULT '',
+  `mobile` varchar(2000) NOT NULL DEFAULT '',
+  `cid_aes` varchar(2000) NOT NULL DEFAULT '',
   `log_import_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`hospcode`,`pid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;

@@ -254,6 +254,40 @@ function buildInsert(tableName, columns, rowCount) {
   return `INSERT INTO ${quoteIdentifier(tableName)} (${columnSql}) VALUES ${valuesSql}`;
 }
 
+function getMysqlErrorText(error) {
+  return String(error?.sqlMessage || error?.message || error || "");
+}
+
+function getMysqlErrorColumn(error) {
+  const message = getMysqlErrorText(error);
+  const match = message.match(/column '([^']+)'/i) || message.match(/column `([^`]+)`/i);
+  return match?.[1] || null;
+}
+
+function getMysqlErrorBatchRow(error) {
+  const message = getMysqlErrorText(error);
+  const match = message.match(/\bat row (\d+)\b/i);
+  return match ? Number(match[1]) : null;
+}
+
+function addImportErrorContext(error, file, batchStart) {
+  const column = getMysqlErrorColumn(error);
+  const batchRow = getMysqlErrorBatchRow(error);
+  const sourceRow = Number.isInteger(batchRow) ? batchStart + batchRow : null;
+  const details = [
+    `file=${file.fileName}`,
+    `table=${file.tableName}`,
+    column ? `column=${column}` : null,
+    sourceRow ? `row=${sourceRow}` : null,
+    batchRow && batchRow !== sourceRow ? `batchRow=${batchRow}` : null,
+  ].filter(Boolean);
+  const wrapped = new Error(`${getMysqlErrorText(error)} [${details.join(", ")}]`, { cause: error });
+  wrapped.code = error?.code;
+  wrapped.errno = error?.errno;
+  wrapped.sqlState = error?.sqlState;
+  return wrapped;
+}
+
 async function importFile(connection, file, batchSize, onDuplicate, onBatchComplete, logImportId) {
   const existingColumns = await getExistingColumns(connection, file.tableName);
   const importColumns = file.columns
@@ -293,7 +327,11 @@ async function importFile(connection, file, batchSize, onDuplicate, onBatchCompl
     } else if (onDuplicate === "replace") {
       sql = sql.replace(/^INSERT INTO/i, "REPLACE INTO");
     }
-    await connection.execute(sql, values);
+    try {
+      await connection.execute(sql, values);
+    } catch (error) {
+      throw addImportErrorContext(error, file, start);
+    }
     imported += batch.length;
     if (onBatchComplete) {
       onBatchComplete(batch.length, imported, file.rows.length);

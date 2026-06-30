@@ -8,7 +8,7 @@ CREATE TABLE `service` (
   `location` varchar(255) NOT NULL DEFAULT '',
   `intime` varchar(255) NOT NULL DEFAULT '',
   `instype` varchar(255) NOT NULL DEFAULT '',
-  `insid` varchar(255) NOT NULL DEFAULT '',
+  `insid` varchar(2000) NOT NULL DEFAULT '',
   `main` varchar(255) NOT NULL DEFAULT '',
   `typein` varchar(255) NOT NULL DEFAULT '',
   `referinhosp` varchar(255) NOT NULL DEFAULT '',
@@ -30,7 +30,7 @@ CREATE TABLE `service` (
   `d_update` varchar(255) NOT NULL DEFAULT '',
   `hsub` varchar(255) NOT NULL DEFAULT '',
   `cid` varchar(255) NOT NULL DEFAULT '',
-  `cid_aes` varchar(255) NOT NULL DEFAULT '',
+  `cid_aes` varchar(2000) NOT NULL DEFAULT '',
   `log_import_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`hospcode`,`seq`,`date_serv`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;

@@ -114,6 +114,48 @@ test("createLogImportFile stores the imported source zip name", async () => {
   assert.deepEqual(executed[0].values, ["source.zip"]);
 });
 
+test("importFile adds table column and row context to MySQL data length errors", async () => {
+  const importer = require("../lib/import_f43_node.js");
+  const rows = Array.from({ length: 500 }, (_, index) => ["11251", String(index + 1), "99/1"]);
+  const connection = {
+    async execute(sql) {
+      if (/^SHOW COLUMNS/i.test(sql)) {
+        return [
+          [
+            { Field: "hospcode" },
+            { Field: "hid" },
+            { Field: "house" },
+          ],
+        ];
+      }
+      const error = new Error("Data too long for column 'house' at row 465");
+      error.code = "ER_DATA_TOO_LONG";
+      throw error;
+    },
+  };
+
+  await assert.rejects(
+    () => importer.importFile(
+      connection,
+      {
+        tableName: "home",
+        fileName: "source.zip",
+        columns: ["hospcode", "hid", "house"],
+        rows,
+      },
+      500,
+      "error"
+    ),
+    (error) => {
+      assert.match(error.message, /table=home/);
+      assert.match(error.message, /column=house/);
+      assert.match(error.message, /row=465/);
+      assert.match(error.message, /Data too long for column 'house' at row 465/);
+      return true;
+    }
+  );
+});
+
 test("encryptFileRows encrypts HOME house_id house and telephone with AES", () => {
   const importer = require("../lib/import_f43_node.js");
   const aesKey = Buffer.alloc(32, 1);

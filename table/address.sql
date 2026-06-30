@@ -6,7 +6,7 @@ CREATE TABLE `address` (
   `housetype` varchar(255) NOT NULL DEFAULT '',
   `roomno` varchar(255) NOT NULL DEFAULT '',
   `condo` varchar(255) NOT NULL DEFAULT '',
-  `houseno` varchar(1000) NOT NULL DEFAULT '',
+  `houseno` varchar(2000) NOT NULL DEFAULT '',
   `soisub` varchar(255) NOT NULL DEFAULT '',
   `soimain` varchar(255) NOT NULL DEFAULT '',
   `road` varchar(255) NOT NULL DEFAULT '',
@@ -17,7 +17,7 @@ CREATE TABLE `address` (
   `changwat` varchar(255) NOT NULL DEFAULT '',
   `d_update` varchar(255) NOT NULL DEFAULT '',
   `cid` varchar(255) NOT NULL DEFAULT '',
-  `cid_aes` varchar(1000) NOT NULL DEFAULT '',
+  `cid_aes` varchar(2000) NOT NULL DEFAULT '',
   `log_import_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`hospcode`,`pid`,`addresstype`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
