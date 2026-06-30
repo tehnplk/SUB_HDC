@@ -15,39 +15,36 @@ cd SUB_HDC
 cp webapp/.env.example webapp/.env
 ```
 
-สำหรับ production Docker ให้ค่า DB ใน `webapp/.env` เป็นแบบนี้เสมอ:
+
+ตั้งค่าในไฟล์ .env
+
 
 ```env
-DB_HOST=mariadb
-DB_PORT=3306
+# DATABASE
+DB_HOST=host.docker.internal
+DB_PORT=3308
 DB_USER=root
 DB_PASSWORD=112233
 DB_DATABASE=sub_hdc
 ```
 
-ห้ามเปลี่ยน DB เป็น `localhost` ตอน deploy ด้วย Docker
-
-ให้แก้เฉพาะค่าที่เกี่ยวกับเว็บจริง:
-
 ```env
-AUTH_URL=https://your-domain.example
-AUTH_SECRET=change_this_to_a_strong_secret
+# SYS
+ENCRYPT_KEY=your_encrypt_key_here
+JWT_KEY=your_jwt_key_here
+AUTH_SECRET=your_auth_secret_here
+AUTH_TRUST_HOST=true
 AUTH_USERNAME=admin
-AUTH_PASSWORD=change_this_password
-CENTER_NAME=ชื่อหน่วยงาน
+AUTH_PASSWORD=your_admin_password_here
+CENTER_NAME=ชื่อศูนย์ข้อมูล
+```
+
+```env
+# AGENT
 DEEPSEEK_API_KEY=your_deepseek_api_key_here
-```
+DEEPSEEK_MODEL=deepseek-v4-flash
+DEEPSEEK_BASE_URL=https://api.deepseek.com
 
-`AUTH_URL` ให้ใส่ URL จริงที่ผู้ใช้เปิดเว็บ เช่น:
-
-```env
-AUTH_URL=https://your-domain.example
-```
-
-หรือถ้าใช้เฉพาะ IP ภายใน:
-
-```env
-AUTH_URL=http://192.168.1.10
 ```
 
 ## 3. Deploy ใหม่ทั้งหมด
@@ -59,33 +56,11 @@ docker compose up -d --build
 
 คำสั่งนี้จะสร้าง database ใหม่จากไฟล์ `table/*.sql`
 
-## 4. ตรวจสถานะ
 
-ต้องรันคำสั่งจากโฟลเดอร์โปรเจกต์ `SUB_HDC`
-
-```bash
-docker compose ps
-docker compose logs -f webapp
-```
-
-## URL หลัง deploy
-
-- Web: URL ที่ตั้งใน `AUTH_URL`
-- MariaDB ภายใน Docker: `mariadb:3306`
-- MariaDB จากนอก Docker: `SERVER_IP:3308`
-
-## Update app ครั้งต่อไป
+## 4. การ UPDATE 
 
 ```bash
 cd SUB_HDC
 git pull
 docker compose up -d --build webapp
 ```
-
-## จำง่าย ๆ
-
-- คำสั่ง `docker compose ...` ต้องรันในโฟลเดอร์โปรเจกต์ `SUB_HDC`
-- Production Docker ใช้ `DB_HOST=mariadb`
-- Production Docker ใช้ `DB_PORT=3306`
-- ไม่ต้องใช้ `--env-file`
-- ไม่ต้องแก้ `docker-compose.yml`
