@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -15,6 +15,14 @@ async function withTempDir(callback) {
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+}
+
+function cFileTableNames(source) {
+  return [...source.matchAll(/VALUES\s*\('([^']+)'/g)].map((match) => match[1]);
+}
+
+function hasHospcodeColumn(source) {
+  return /`\s*hospcode\s*`/i.test(source);
 }
 
 test("listMigrationFiles returns sorted sql files only", async () => {
@@ -76,4 +84,47 @@ test("applyMigrationFile applies sql and records migration id", async () => {
     assert.match(calls[2].sql, /INSERT INTO schema_migrations/);
     assert.deepEqual(calls[2].values, ["20260630_aes_varchar_2000"]);
   });
+});
+
+test("initial table schemas define hospcode columns as varchar 10", async () => {
+  const tableDir = path.resolve(process.cwd(), "..", "table");
+  const files = (await readdir(tableDir)).filter((file) => file.endsWith(".sql"));
+  const offenders = [];
+
+  for (const file of files) {
+    const source = await readFile(path.join(tableDir, file), "utf8");
+    if (!hasHospcodeColumn(source)) continue;
+    if (/`\s*hospcode\s*`\s+varchar\(5\)/i.test(source)) offenders.push(file);
+  }
+
+  assert.deepEqual(offenders, []);
+});
+
+test("hospcode varchar 10 migration covers c_file tables with hospcode", async () => {
+  const tableDir = path.resolve(process.cwd(), "..", "table");
+  const cFileSource = await readFile(path.join(tableDir, "c_file.sql"), "utf8");
+  const migrationPath = path.resolve(
+    process.cwd(),
+    "..",
+    "table_update",
+    "20260701_hospcode_varchar_10.sql"
+  );
+  const source = await readFile(migrationPath, "utf8");
+  const expectedTables = [];
+
+  for (const table of cFileTableNames(cFileSource)) {
+    const tablePath = path.join(tableDir, `${table}.sql`);
+    const tableSource = await readFile(tablePath, "utf8");
+    if (hasHospcodeColumn(tableSource)) expectedTables.push(table);
+  }
+
+  const alterStatements = [
+    ...source.matchAll(
+      /ALTER\s+TABLE\s+`([^`]+)`\s+MODIFY\s+`hospcode`\s+varchar\(10\)\s+NOT\s+NULL\s+DEFAULT\s+'';/gi
+    ),
+  ];
+  const actualTables = alterStatements.map((match) => match[1]);
+
+  assert.deepEqual(actualTables, expectedTables);
+  assert.equal(new Set(actualTables).size, actualTables.length);
 });

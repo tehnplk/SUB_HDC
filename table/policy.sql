@@ -1,5 +1,5 @@
 CREATE TABLE `policy` (
-  `hospcode` varchar(5) NOT NULL DEFAULT '',
+  `hospcode` varchar(10) NOT NULL DEFAULT '',
   `policy_id` varchar(255) NOT NULL DEFAULT '',
   `policy_year` varchar(255) NOT NULL DEFAULT '',
   `policy_data` varchar(255) NOT NULL DEFAULT '',

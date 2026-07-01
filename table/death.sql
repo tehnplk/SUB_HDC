@@ -1,5 +1,5 @@
 CREATE TABLE `death` (
-  `hospcode` varchar(5) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `hospcode` varchar(10) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
   `pid` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
   `hospdeath` varchar(255) NOT NULL DEFAULT '',
   `an` varchar(255) NOT NULL DEFAULT '',
