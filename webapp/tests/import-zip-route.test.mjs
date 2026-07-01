@@ -5,7 +5,9 @@ import test from "node:test";
 
 import {
   buildImportProcessArgs,
+  createImportProgressWriter,
 } from "../app/api/import-zip/route.js";
+import { clearImportProgress, getImportProgressPercent } from "../lib/import-progress.mjs";
 import { logImportOrderClause } from "../lib/log-import.mjs";
 
 const routePath = path.resolve(process.cwd(), "app", "api", "import-zip", "route.js");
@@ -52,4 +54,18 @@ test("import route deletes uploaded zip immediately when the queue rejects impor
 
   assert.match(queueFullBlock, /await secureDelete\(zipPath\)/);
   assert.match(backgroundCatchBlock, /secureDelete\(zipPath\)/);
+});
+
+test("import route captures progress percent from importer stdout", () => {
+  clearImportProgress(42);
+  const output = [];
+  const writeProgress = createImportProgressWriter({
+    logImportId: 42,
+    writeStdout: (chunk) => output.push(chunk),
+  });
+
+  writeProgress('{"type":"progress","percent":64}\n');
+
+  assert.equal(getImportProgressPercent(42), 64);
+  assert.deepEqual(output, ['{"type":"progress","percent":64}\n']);
 });

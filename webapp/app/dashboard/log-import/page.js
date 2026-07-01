@@ -48,9 +48,12 @@ function statusBadgeClass(status) {
   return classes.join(" ");
 }
 
-function statusBadgeLabel(status) {
+function statusBadgeLabel(status, progressPercent = null) {
   if (status === "pending") return "รอนำเข้า";
-  if (status === "processing") return "กำลังนำเข้า";
+  if (status === "processing") {
+    if (Number.isFinite(progressPercent)) return `กำลังนำเข้า ${Math.round(progressPercent)}%`;
+    return "กำลังนำเข้า";
+  }
   if (status === "complete") return "สำเร็จ";
   if (status === "not_complate" || status === "no_complete") return "ไม่สำเร็จ";
   return status || "-";
@@ -209,11 +212,11 @@ export default function LogImportDashboard() {
                           className={`${statusBadgeClass(row.status)} isClickable`}
                           onClick={() => setExpandedErrorId((current) => (current === row.id ? null : row.id))}
                         >
-                          {statusBadgeLabel(row.status)}
+                          {statusBadgeLabel(row.status, row.progress_percent)}
                         </button>
                       ) : (
                         <span className={statusBadgeClass(row.status)}>
-                          {statusBadgeLabel(row.status)}
+                          {statusBadgeLabel(row.status, row.progress_percent)}
                         </span>
                       )}
                     </td>

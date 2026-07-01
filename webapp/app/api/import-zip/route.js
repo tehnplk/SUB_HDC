@@ -3,6 +3,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { createDbConnection } from "../../../lib/db.js";
 import { importQueue, IMPORT_QUEUE_CAPACITY, IMPORT_QUEUE_CONCURRENCY } from "../../../lib/import-queue.mjs";
+import { clearImportProgress, updateImportProgressFromEvent } from "../../../lib/import-progress.mjs";
 import { createPendingLogImportFile } from "../../../lib/log-import.mjs";
 
 export const runtime = "nodejs";
@@ -62,9 +63,32 @@ export function buildImportProcessArgs({ scriptPath, zipPath, originalName, logI
   return args;
 }
 
+export function createImportProgressWriter({ logImportId, writeStdout = () => {} }) {
+  let buffer = "";
+
+  return (chunk) => {
+    writeStdout(chunk);
+    if (!logImportId) return;
+
+    buffer += chunk;
+    const lines = buffer.split(/\r?\n/);
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try {
+        updateImportProgressFromEvent(logImportId, JSON.parse(line));
+      } catch {
+        // Import stdout can include non-JSON output in non-progress modes.
+      }
+    }
+  };
+}
+
 function runImportProcess({ zipPath, originalName, logImportId, writeStdout = () => {}, writeEvent = () => {} }) {
   return new Promise((resolve) => {
     const scriptPath = path.join(process.cwd(), "lib", "import_f43_node.js");
+    const writeProgress = createImportProgressWriter({ logImportId, writeStdout });
     const child = spawn(
       process.execPath,
       buildImportProcessArgs({ scriptPath, zipPath, originalName, logImportId }),
@@ -75,7 +99,7 @@ function runImportProcess({ zipPath, originalName, logImportId, writeStdout = ()
     );
 
     child.stdout.on("data", (chunk) => {
-      writeStdout(chunk.toString("utf8"));
+      writeProgress(chunk.toString("utf8"));
     });
 
     let stderr = "";
@@ -85,6 +109,7 @@ function runImportProcess({ zipPath, originalName, logImportId, writeStdout = ()
 
     child.on("error", (error) => {
       writeEvent({ type: "error", message: error.message });
+      clearImportProgress(logImportId);
       secureDelete(zipPath).finally(resolve);
     });
 
@@ -93,6 +118,7 @@ function runImportProcess({ zipPath, originalName, logImportId, writeStdout = ()
         const message = stderr.trim() || `Import failed with exit code ${code}`;
         writeEvent({ type: "error", message });
       }
+      clearImportProgress(logImportId);
       secureDelete(zipPath).finally(resolve);
     });
   });

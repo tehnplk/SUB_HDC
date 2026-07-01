@@ -1,4 +1,5 @@
 import { createDbConnection } from "@/lib/db";
+import { getImportProgressPercent } from "@/lib/import-progress.mjs";
 import { logImportOrderClause } from "@/lib/log-import.mjs";
 import {
   MONTHS,
@@ -162,6 +163,7 @@ export async function GET(request) {
           file_name: r.file_name,
           import_date_time: r.import_date_time,
           status: r.status,
+          progress_percent: r.status === "processing" ? getImportProgressPercent(r.id) : null,
           finish_date_time: r.finish_date_time,
           not_complete_msg: r.not_complete_msg,
         })),
