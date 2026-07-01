@@ -1,4 +1,5 @@
 import { createDbConnection } from "@/lib/db";
+import { logImportOrderClause } from "@/lib/log-import.mjs";
 import {
   MONTHS,
   buildMonthlyCountExpressions,
@@ -150,13 +151,19 @@ export async function GET(request) {
     const isLogImport = url.searchParams.get("logImport") === "true";
     if (isLogImport) {
       const [rows] = await conn.query(
-        "SELECT id, file_name, import_date_time FROM log_import_file ORDER BY id DESC LIMIT 500"
+        `SELECT id, file_name, import_date_time, status, finish_date_time, not_complete_msg
+         FROM log_import_file
+         ORDER BY ${logImportOrderClause()}
+         LIMIT 500`
       );
       return Response.json({
         rows: rows.map((r) => ({
           id: Number(r.id),
           file_name: r.file_name,
           import_date_time: r.import_date_time,
+          status: r.status,
+          finish_date_time: r.finish_date_time,
+          not_complete_msg: r.not_complete_msg,
         })),
         centerName: process.env.CENTER_NAME || "เมือง",
       });

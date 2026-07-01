@@ -15,8 +15,9 @@ test("import route uses low table concurrency to avoid MariaDB lock pressure", a
 
 test("import route uses the server-side queue before spawning import work", async () => {
   const source = await readFile(routePath, "utf8");
-  const queueIndex = source.indexOf("importQueue.enqueue");
-  const spawnIndex = source.indexOf("spawn(");
+  const postSource = source.slice(source.indexOf("export async function POST"));
+  const queueIndex = postSource.indexOf("importQueue.enqueue");
+  const spawnIndex = postSource.indexOf("spawn(");
 
   assert.notEqual(queueIndex, -1);
   assert.notEqual(spawnIndex, -1);

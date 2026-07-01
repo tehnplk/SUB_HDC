@@ -190,10 +190,23 @@ async function getExistingColumns(connection, tableName) {
 
 async function createLogImportFile(connection, fileName) {
   const [result] = await connection.execute(
-    "INSERT INTO `log_import_file` (`file_name`) VALUES (?)",
-    [fileName]
+    "INSERT INTO `log_import_file` (`file_name`, `status`) VALUES (?, ?)",
+    [fileName, "pending"]
   );
   return result.insertId;
+}
+
+async function updateLogImportFileStatus(connection, id, status, notCompleteMsg = null) {
+  if (!id) return;
+  const shouldFinish = status === "complete" || status === "not_complate";
+  await connection.execute(
+    `UPDATE \`log_import_file\`
+     SET \`status\` = ?,
+         \`finish_date_time\` = ${shouldFinish ? "CURRENT_TIMESTAMP" : "NULL"},
+         \`not_complete_msg\` = ?
+     WHERE \`id\` = ?`,
+    [status, notCompleteMsg, id]
+  );
 }
 
 function tableImportLockName(database, tableName) {
@@ -361,6 +374,7 @@ function parseArgs(argv = process.argv, env = process.env) {
     progress: false,
     concurrency: 20,
     advisoryLockTimeout: Number(env.IMPORT_ADVISORY_LOCK_TIMEOUT || 300),
+    logImportId: null,
   };
 
   for (let index = 2; index < argv.length; index += 1) {
@@ -377,6 +391,7 @@ function parseArgs(argv = process.argv, env = process.env) {
     else if (arg === "--file-name") args.fileName = next;
     else if (arg === "--concurrency") args.concurrency = Number(next);
     else if (arg === "--advisory-lock-timeout") args.advisoryLockTimeout = Number(next);
+    else if (arg === "--log-import-id") args.logImportId = Number(next);
     else if (arg === "--progress") args.progress = true;
     else throw new Error(`Unknown argument: ${arg}`);
     if (!["--progress"].includes(arg)) index += 1;
@@ -399,6 +414,9 @@ function parseArgs(argv = process.argv, env = process.env) {
   }
   if (!Number.isInteger(args.advisoryLockTimeout) || args.advisoryLockTimeout < 0) {
     throw new Error("--advisory-lock-timeout must be zero or a positive integer");
+  }
+  if (args.logImportId !== null && (!Number.isInteger(args.logImportId) || args.logImportId <= 0)) {
+    throw new Error("--log-import-id must be a positive integer");
   }
   return args;
 }
@@ -448,6 +466,7 @@ async function main() {
   }
 
   const summary = [];
+  let logImportId = args.logImportId;
   try {
     emitJson(args.progress, {
       type: "init",
@@ -457,9 +476,11 @@ async function main() {
     });
 
     const logConn = await pool.getConnection();
-    let logImportId;
     try {
-      logImportId = await createLogImportFile(logConn, args.fileName || path.basename(args.zip));
+      if (!logImportId) {
+        logImportId = await createLogImportFile(logConn, args.fileName || path.basename(args.zip));
+      }
+      await updateLogImportFileStatus(logConn, logImportId, "processing");
     } finally {
       logConn.release();
     }
@@ -551,7 +572,21 @@ async function main() {
       processedRows,
       tables: summary.length,
     });
+    const completeConn = await pool.getConnection();
+    try {
+      await updateLogImportFileStatus(completeConn, logImportId, "complete");
+    } finally {
+      completeConn.release();
+    }
   } catch (error) {
+    if (logImportId) {
+      const errorConn = await pool.getConnection();
+      try {
+        await updateLogImportFileStatus(errorConn, logImportId, "not_complate", error.message);
+      } finally {
+        errorConn.release();
+      }
+    }
     emitJson(args.progress, { type: "error", message: error.message });
     throw error;
   } finally {
@@ -592,5 +627,6 @@ module.exports = {
   quoteIdentifier,
   readF43Files,
   tableImportLockName,
+  updateLogImportFileStatus,
   withTableImportLock,
 };

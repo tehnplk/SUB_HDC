@@ -599,6 +599,18 @@ button:disabled {
   font-weight: normal;
 }
 
+.logImportTable {
+  font-size: 12px;
+}
+
+.logImportTable th {
+  font-size: 10px;
+}
+
+.logImportTable .importStatusBadge {
+  font-size: 11px;
+}
+
 .fileTable tbody tr:hover td {
   background: #fbfefc;
 }
@@ -1102,6 +1114,65 @@ button:disabled {
 
 .statusSuccess {
   color: var(--accent-strong);
+}
+
+.importStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  background: #eef3f8;
+  color: var(--muted-strong);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.importStatusBadge.isComplete {
+  background: #e5f6ec;
+  color: #176c3a;
+}
+
+.importStatusBadge.isPending {
+  background: var(--warning-soft);
+  color: #805400;
+}
+
+.importStatusBadge.isProcessing {
+  background: #f0faef;
+  color: #24803f;
+  animation: pulse 1s ease infinite;
+}
+
+.importStatusBadge.isNotComplete {
+  background: var(--error-soft);
+  color: var(--error);
+}
+
+.importStatusBadge.isClickable {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.importStatusBadge.isClickable:hover,
+.importStatusBadge.isClickable:focus-visible {
+  box-shadow: 0 0 0 3px rgba(210, 53, 69, 0.14);
+  outline: none;
+}
+
+.notCompleteMessageRow td {
+  background: #fff7f7;
+  border-top: 0;
+}
+
+.notCompleteMessage {
+  color: var(--error);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .fileList {

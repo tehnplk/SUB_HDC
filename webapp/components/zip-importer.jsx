@@ -113,6 +113,7 @@ export default function ZipImporter() {
         body: JSON.stringify({
           storedName: uploadResult.storedName,
           originalName: uploadResult.originalName,
+          background: true,
         }),
         signal: controller.signal,
       });
@@ -283,6 +284,9 @@ export default function ZipImporter() {
         }))
       );
       setGlobalMsg(summarizeImportResults(results));
+      if (results.every((result) => result.ok)) {
+        window.location.assign("/dashboard/log-import");
+      }
     } catch (error) {
       setGlobalMsg(`เกิดข้อผิดพลาด: ${error.message}`);
     } finally {

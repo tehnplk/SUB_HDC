@@ -96,7 +96,7 @@ test("importFile writes log_import_id metadata instead of source file columns", 
   assert.deepEqual(executed[0].values, ["11251", "1", "20260101", 42]);
 });
 
-test("createLogImportFile stores the imported source zip name", async () => {
+test("createLogImportFile stores the source zip name with pending status", async () => {
   const importer = require("../lib/import_f43_node.js");
   const executed = [];
   const connection = {
@@ -111,7 +111,34 @@ test("createLogImportFile stores the imported source zip name", async () => {
   assert.equal(id, 42);
   assert.equal(executed.length, 1);
   assert.match(executed[0].sql, /^INSERT INTO `log_import_file`/);
-  assert.deepEqual(executed[0].values, ["source.zip"]);
+  assert.match(executed[0].sql, /`status`/);
+  assert.deepEqual(executed[0].values, ["source.zip", "pending"]);
+});
+
+test("updateLogImportFileStatus stamps processing complete and not_complate states", async () => {
+  const importer = require("../lib/import_f43_node.js");
+  const executed = [];
+  const connection = {
+    async execute(sql, values) {
+      executed.push({ sql, values });
+      return [{ affectedRows: 1 }];
+    },
+  };
+
+  await importer.updateLogImportFileStatus(connection, 42, "processing");
+  await importer.updateLogImportFileStatus(connection, 42, "complete");
+  await importer.updateLogImportFileStatus(connection, 42, "not_complate", "home: failed");
+
+  assert.equal(executed.length, 3);
+  assert.match(executed[0].sql, /status` = \?/);
+  assert.match(executed[0].sql, /`finish_date_time` = NULL/);
+  assert.deepEqual(executed[0].values, ["processing", null, 42]);
+
+  assert.match(executed[1].sql, /CURRENT_TIMESTAMP/);
+  assert.deepEqual(executed[1].values, ["complete", null, 42]);
+
+  assert.match(executed[2].sql, /CURRENT_TIMESTAMP/);
+  assert.deepEqual(executed[2].values, ["not_complate", "home: failed", 42]);
 });
 
 test("importFile adds table column and row context to MySQL data length errors", async () => {
@@ -206,6 +233,32 @@ test("parseArgs requires an explicit zip path and validates numeric options", ()
   assert.throws(
     () => importer.parseArgs(["node", "import_f43_node.js", "--zip", "sample.zip", "--concurrency", "0"], {}),
     /--concurrency must be a positive integer/
+  );
+});
+
+test("parseArgs accepts an existing log import id for background imports", () => {
+  const importer = require("../lib/import_f43_node.js");
+
+  const args = importer.parseArgs([
+    "node",
+    "import_f43_node.js",
+    "--zip",
+    "sample.zip",
+    "--log-import-id",
+    "42",
+  ], {});
+
+  assert.equal(args.logImportId, 42);
+  assert.throws(
+    () => importer.parseArgs([
+      "node",
+      "import_f43_node.js",
+      "--zip",
+      "sample.zip",
+      "--log-import-id",
+      "0",
+    ], {}),
+    /--log-import-id must be a positive integer/
   );
 });
 

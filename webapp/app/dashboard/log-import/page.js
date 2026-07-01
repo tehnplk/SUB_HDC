@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import {
   CalendarClock,
@@ -31,18 +31,43 @@ function formatDateTime(isoString) {
   }
 }
 
+function formatDurationSeconds(importDateTime, finishDateTime) {
+  if (!importDateTime || !finishDateTime) return "-";
+  const startMs = new Date(importDateTime).getTime();
+  const finishMs = new Date(finishDateTime).getTime();
+  if (!Number.isFinite(startMs) || !Number.isFinite(finishMs) || finishMs < startMs) return "-";
+  return `${Math.round((finishMs - startMs) / 1000)} วินาที`;
+}
+
+function statusBadgeClass(status) {
+  const classes = ["importStatusBadge"];
+  if (status === "complete") classes.push("isComplete");
+  if (status === "pending") classes.push("isPending");
+  if (status === "processing") classes.push("isProcessing");
+  if (status === "not_complate" || status === "no_complete") classes.push("isNotComplete");
+  return classes.join(" ");
+}
+
+function statusBadgeLabel(status) {
+  if (status === "pending") return "รอนำเข้า";
+  if (status === "processing") return "กำลังนำเข้า";
+  if (status === "complete") return "สำเร็จ";
+  if (status === "not_complate" || status === "no_complete") return "ไม่สำเร็จ";
+  return status || "-";
+}
+
 export default function LogImportDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [expandedErrorId, setExpandedErrorId] = useState(null);
 
-  useEffect(() => {
-    const controller = new AbortController();
+  const loadData = useCallback((signal) => {
     setLoading(true);
     setError(null);
 
-    fetch("/api/dashboard?logImport=true", { signal: controller.signal })
+    return fetch("/api/dashboard?logImport=true", { signal })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to load log import data");
         return res.json();
@@ -54,11 +79,26 @@ export default function LogImportDashboard() {
         if (err.name !== "AbortError") setError(err.message);
       })
       .finally(() => setLoading(false));
-
-    return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    loadData(controller.signal);
+
+    return () => controller.abort();
+  }, [loadData]);
+
   const rows = data?.rows || [];
+
+  useEffect(() => {
+    const shouldRefresh = rows.some((row) => row.status === "processing" || row.status === "pending");
+    if (!shouldRefresh) return undefined;
+    const interval = setInterval(() => {
+      const controller = new AbortController();
+      loadData(controller.signal);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [rows, loadData]);
 
   const filteredRows = useMemo(() => {
     if (!searchTerm.trim()) return rows;
@@ -134,18 +174,21 @@ export default function LogImportDashboard() {
         </div>
 
         <div className="tableWrap">
-          <table className="fileTable">
+          <table className="fileTable logImportTable">
             <thead>
               <tr>
                 <th style={{ width: "120px" }}>#</th>
                 <th>ชื่อไฟล์ที่นำเข้า</th>
                 <th style={{ width: "250px" }}>วันที่-เวลานำเข้า</th>
+                <th style={{ width: "150px" }}>status</th>
+                <th style={{ width: "250px" }}>finish_date_time</th>
+                <th style={{ width: "110px" }}>เวลา</th>
               </tr>
             </thead>
             <tbody>
               {filteredRows.length ? (
-                filteredRows.map((row) => (
-                  <tr key={row.id}>
+                filteredRows.map((row) => [
+                  <tr key={`row-${row.id}`}>
                     <td className="fileCol" style={{ color: "var(--accent-strong)" }}>{row.id}</td>
                     <td style={{ wordBreak: "break-all" }}>
                       <span className="tableCellIcon">
@@ -159,11 +202,40 @@ export default function LogImportDashboard() {
                         {formatDateTime(row.import_date_time)}
                       </span>
                     </td>
-                  </tr>
-                ))
+                    <td>
+                      {row.status === "not_complate" ? (
+                        <button
+                          type="button"
+                          className={`${statusBadgeClass(row.status)} isClickable`}
+                          onClick={() => setExpandedErrorId((current) => (current === row.id ? null : row.id))}
+                        >
+                          {statusBadgeLabel(row.status)}
+                        </button>
+                      ) : (
+                        <span className={statusBadgeClass(row.status)}>
+                          {statusBadgeLabel(row.status)}
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      <span className="tableCellIcon">
+                        <CalendarClock aria-hidden="true" />
+                        {formatDateTime(row.finish_date_time)}
+                      </span>
+                    </td>
+                    <td>{formatDurationSeconds(row.import_date_time, row.finish_date_time)}</td>
+                  </tr>,
+                  expandedErrorId === row.id && row.status === "not_complate" ? (
+                    <tr key={`msg-${row.id}`} className="notCompleteMessageRow">
+                      <td colSpan={6}>
+                        <div className="notCompleteMessage">{row.not_complete_msg || "-"}</div>
+                      </td>
+                    </tr>
+                  ) : null,
+                ])
               ) : (
                 <tr>
-                  <td className="emptyCell" colSpan={3}>
+                  <td className="emptyCell" colSpan={6}>
                     {loading ? "กำลังโหลดข้อมูล..." : "ไม่พบประวัติการนำเข้า"}
                   </td>
                 </tr>
