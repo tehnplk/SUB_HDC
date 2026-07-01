@@ -177,8 +177,8 @@ export default function LogImportDashboard() {
           <table className="fileTable logImportTable">
             <thead>
               <tr>
-                <th style={{ width: "120px" }}>#</th>
-                <th>ชื่อไฟล์ที่นำเข้า</th>
+                <th style={{ width: "70px" }}>#</th>
+                <th>ไฟล์</th>
                 <th style={{ width: "250px" }}>วันที่-เวลานำเข้า</th>
                 <th style={{ width: "150px" }}>status</th>
                 <th style={{ width: "250px" }}>finish_date_time</th>
@@ -190,7 +190,7 @@ export default function LogImportDashboard() {
                 filteredRows.map((row) => [
                   <tr key={`row-${row.id}`}>
                     <td className="fileCol" style={{ color: "var(--accent-strong)" }}>{row.id}</td>
-                    <td style={{ wordBreak: "break-all" }}>
+                    <td className="logImportFileCell">
                       <span className="tableCellIcon">
                         <FileText aria-hidden="true" />
                         {row.file_name}

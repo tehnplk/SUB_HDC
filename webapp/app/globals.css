@@ -607,6 +607,22 @@ button:disabled {
   font-size: 10px;
 }
 
+.logImportTable th:first-child,
+.logImportTable td:first-child {
+  padding-right: 8px;
+}
+
+.logImportTable .logImportFileCell {
+  min-width: 320px;
+  padding-left: 8px;
+  white-space: nowrap;
+  word-break: normal;
+}
+
+.logImportTable .logImportFileCell .tableCellIcon {
+  white-space: nowrap;
+}
+
 .logImportTable .importStatusBadge {
   font-size: 11px;
 }

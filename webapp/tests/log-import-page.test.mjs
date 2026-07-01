@@ -56,3 +56,16 @@ test("log import page reduces data grid font size by two pixels", async () => {
   assert.match(cssSource, /\.logImportTable th\s*\{[\s\S]*font-size:\s*10px/);
   assert.match(cssSource, /\.logImportTable \.importStatusBadge\s*\{[\s\S]*font-size:\s*11px/);
 });
+
+test("log import page keeps the file column close to id and prevents filename wrapping", async () => {
+  const pageSource = await readFile(pagePath, "utf8");
+  const cssSource = await readFile(cssPath, "utf8");
+
+  assert.doesNotMatch(pageSource, />ชื่อไฟล์ที่นำเข้า<\/th>/);
+  assert.match(pageSource, /<th>ไฟล์<\/th>/);
+  assert.match(pageSource, /<th style={{ width: "70px" }}>#<\/th>/);
+  assert.match(pageSource, /className="logImportFileCell"/);
+  assert.doesNotMatch(pageSource, /wordBreak:\s*"break-all"/);
+  assert.match(cssSource, /\.logImportTable \.logImportFileCell\s*\{[\s\S]*white-space:\s*nowrap/);
+  assert.match(cssSource, /\.logImportTable \.logImportFileCell\s*\{[\s\S]*word-break:\s*normal/);
+});
