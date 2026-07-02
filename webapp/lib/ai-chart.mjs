@@ -1,8 +1,12 @@
 export const MAX_AI_CHART_ROWS = 12;
 const MIN_AI_CHART_ROWS = 2;
-const CHART_REQUEST_PATTERN = /\b(chart|graph|plot|visuali[sz]e|bar chart|line chart|pie chart)\b|กราฟ|แผนภูมิ|ชาร์ต/i;
+const CHART_REQUEST_PATTERN = /\b(chart|graph|plot|visuali[sz]e|bar chart|line chart|multi[\s-]?line chart|muti[\s-]?line chart|pie chart|radar chart)\b|กราฟ|แผนภูมิ|ชาร์ต/i;
 const CHART_NEGATION_PATTERN =
   /\b(no|without|dont|don't|do not|not)\s+(?:show\s+|display\s+|create\s+|make\s+)?(?:a\s+)?(?:chart|graph|plot)\b|ไม่(?:ต้อง|เอา|แสดง|ต้องการ).{0,12}(?:กราฟ|แผนภูมิ|ชาร์ต)/i;
+const MULTILINE_CHART_PATTERN = /\b(multi[\s-]?line|muti[\s-]?line|multiple\s+lines?|หลายเส้น)\b/i;
+const PIE_CHART_PATTERN = /\bpie(?:\s+chart)?\b|วงกลม/i;
+const RADAR_CHART_PATTERN = /\bradar(?:\s+chart)?\b|เรดาร์/i;
+const LINE_CHART_PATTERN = /\bline(?:\s+chart)?\b|กราฟเส้น/i;
 
 const FIELD_LABELS = new Map([
   ["cnt", "Count"],
@@ -84,9 +88,44 @@ function pickLabelField(columns, valueField) {
   return columns.find((field) => field !== valueField) || null;
 }
 
+function pickNumericFields(rows, columns) {
+  return columns.filter((field) => rows.some((row) => toNumber(row?.[field]) !== null));
+}
+
+function pickPreferredLabelField(rows, columns, numericFields) {
+  const numericFieldSet = new Set(numericFields);
+  const nonNumericField = columns.find((field) => !numericFieldSet.has(field));
+  if (nonNumericField) return nonNumericField;
+
+  const valueField = pickValueField(rows, columns);
+  return pickLabelField(columns, valueField);
+}
+
+function latestUserContent(messages) {
+  const source = Array.isArray(messages) ? messages : [{ content: messages }];
+  const latestUserMessage = source.findLast?.((message) => message?.role === "user" && message?.content)
+    || [...source].reverse().find((message) => message?.role === "user" && message?.content)
+    || source[source.length - 1];
+
+  return String(latestUserMessage?.content || "");
+}
+
+function requestedChartType(messages) {
+  const content = latestUserContent(messages);
+  if (PIE_CHART_PATTERN.test(content)) return "pie";
+  if (RADAR_CHART_PATTERN.test(content)) return "radar";
+  if (MULTILINE_CHART_PATTERN.test(content) || LINE_CHART_PATTERN.test(content)) return "line";
+  return "bar";
+}
+
 function formatTitle(labelField, valueField) {
   if (!labelField || !valueField) return "DbQuery chart";
   return `${formatFieldLabel(valueField)} by ${formatFieldLabel(labelField)}`;
+}
+
+function formatMultiSeriesTitle(labelField) {
+  if (!labelField) return "DbQuery chart";
+  return `Metrics by ${formatFieldLabel(labelField)}`;
 }
 
 function formatFieldLabel(field) {
@@ -103,11 +142,40 @@ function formatFieldLabel(field) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-export function buildChartFromDbResult(result) {
+export function buildChartFromDbResult(result, messages = []) {
   const rows = Array.isArray(result?.rows) ? result.rows : [];
   if (!result?.ok || !rows.length) return null;
 
   const columns = getColumns(result);
+  const chartType = requestedChartType(messages);
+  const numericFields = pickNumericFields(rows, columns);
+  const labelFieldForSeries = pickPreferredLabelField(rows, columns, numericFields);
+
+  if ((chartType === "line" || chartType === "radar") && numericFields.length >= 2 && labelFieldForSeries) {
+    const chartRows = rows.slice(0, MAX_AI_CHART_ROWS);
+    const labels = chartRows.map((row, index) => String(row?.[labelFieldForSeries] ?? index + 1).slice(0, 90));
+    const datasets = numericFields.map((field) => ({
+      label: formatFieldLabel(field),
+      values: chartRows.map((row) => toNumber(row?.[field])),
+    }));
+
+    if (labels.length < MIN_AI_CHART_ROWS) return null;
+
+    return {
+      type: chartType,
+      title: formatMultiSeriesTitle(labelFieldForSeries),
+      labelField: labelFieldForSeries,
+      valueField: null,
+      seriesFields: numericFields,
+      labels,
+      datasets,
+      rows: labels.map((label, index) => ({
+        label,
+        value: datasets[0]?.values[index] ?? null,
+      })),
+    };
+  }
+
   const valueField = pickValueField(rows, columns);
   const labelField = pickLabelField(columns, valueField);
 
@@ -124,20 +192,24 @@ export function buildChartFromDbResult(result) {
   if (chartRows.length < MIN_AI_CHART_ROWS) return null;
 
   return {
-    type: "bar",
+    type: chartType,
     title: formatTitle(labelField, valueField),
     labelField,
     valueField,
+    seriesFields: [valueField],
+    labels: chartRows.map((row) => row.label),
+    datasets: [
+      {
+        label: formatFieldLabel(valueField),
+        values: chartRows.map((row) => row.value),
+      },
+    ],
     rows: chartRows,
   };
 }
 
 export function userRequestedChart(messages) {
-  const source = Array.isArray(messages) ? messages : [{ content: messages }];
-  const latestUserMessage = source.findLast?.((message) => message?.role === "user" && message?.content)
-    || [...source].reverse().find((message) => message?.role === "user" && message?.content)
-    || source[source.length - 1];
-  const content = String(latestUserMessage?.content || "");
+  const content = latestUserContent(messages);
 
   return CHART_REQUEST_PATTERN.test(content) && !CHART_NEGATION_PATTERN.test(content);
 }

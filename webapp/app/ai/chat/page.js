@@ -23,6 +23,33 @@ const QUICK_QUESTIONS = [
   "แสดงกราฟ โรคที่พบมากสุด 10 อันดับ ปี 2569",
 ];
 
+const CHART_COLORS = [
+  "#0f766e",
+  "#2563eb",
+  "#dc2626",
+  "#ca8a04",
+  "#7c3aed",
+  "#0891b2",
+  "#16a34a",
+  "#db2777",
+  "#ea580c",
+  "#4f46e5",
+  "#65a30d",
+  "#9333ea",
+];
+const SUPPORTED_CHART_TYPES = new Set(["bar", "line", "pie", "radar"]);
+let chartJsPromise = null;
+
+function loadChartJs() {
+  if (!chartJsPromise) {
+    chartJsPromise = import("chart.js").then(({ Chart, registerables }) => {
+      Chart.register(...registerables);
+      return Chart;
+    });
+  }
+  return chartJsPromise;
+}
+
 function pickQuickQuestions(excludeQuestions = []) {
   const excluded = new Set(excludeQuestions);
   return QUICK_QUESTIONS
@@ -199,35 +226,171 @@ function MarkdownContent({ content }) {
   );
 }
 
-function formatChartValue(value) {
-  return new Intl.NumberFormat("th-TH", { maximumFractionDigits: 2 }).format(value);
+function alphaColor(hex, alpha) {
+  const value = hex.replace("#", "");
+  const red = Number.parseInt(value.slice(0, 2), 16);
+  const green = Number.parseInt(value.slice(2, 4), 16);
+  const blue = Number.parseInt(value.slice(4, 6), 16);
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+}
+
+function getChartType(chart) {
+  return SUPPORTED_CHART_TYPES.has(chart?.type) ? chart.type : "bar";
+}
+
+function getChartLabels(chart) {
+  if (Array.isArray(chart?.labels) && chart.labels.length) return chart.labels;
+  return Array.isArray(chart?.rows) ? chart.rows.map((row) => row.label) : [];
+}
+
+function getChartDatasets(chart) {
+  if (Array.isArray(chart?.datasets) && chart.datasets.length) return chart.datasets;
+  if (!Array.isArray(chart?.rows) || !chart.rows.length) return [];
+  return [
+    {
+      label: chart.valueField || "Value",
+      values: chart.rows.map((row) => row.value),
+    },
+  ];
+}
+
+function makeChartData(chart) {
+  const type = getChartType(chart);
+  const labels = getChartLabels(chart);
+  const datasets = getChartDatasets(chart);
+
+  return {
+    labels,
+    datasets: datasets.map((dataset, index) => {
+      const color = CHART_COLORS[index % CHART_COLORS.length];
+      const values = Array.isArray(dataset.values) ? dataset.values : [];
+
+      if (type === "pie") {
+        return {
+          label: dataset.label || "Value",
+          data: values,
+          backgroundColor: values.map((_, valueIndex) => CHART_COLORS[valueIndex % CHART_COLORS.length]),
+          borderColor: "#ffffff",
+          borderWidth: 2,
+          hoverOffset: 4,
+        };
+      }
+
+      return {
+        label: dataset.label || "Value",
+        data: values,
+        fill: type === "radar",
+        backgroundColor: type === "bar" ? alphaColor(color, 0.78) : alphaColor(color, type === "radar" ? 0.18 : 0.12),
+        borderColor: color,
+        borderWidth: type === "radar" ? 2 : 2,
+        pointBackgroundColor: color,
+        pointBorderColor: "#ffffff",
+        tension: type === "line" ? 0.25 : 0,
+      };
+    }),
+  };
+}
+
+function makeChartOptions(chart) {
+  const type = getChartType(chart);
+  const bodyFont = typeof window === "undefined" ? undefined : getComputedStyle(document.body).fontFamily;
+  const hasCartesianScale = type === "bar" || type === "line";
+
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    plugins: {
+      legend: {
+        display: type === "pie" || type === "radar" || getChartDatasets(chart).length > 1,
+        labels: {
+          boxWidth: 12,
+          color: "#344054",
+          font: bodyFont ? { family: bodyFont, size: 11, weight: "700" } : undefined,
+        },
+      },
+      tooltip: {
+        callbacks: {
+          label(context) {
+            const label = context.dataset?.label ? `${context.dataset.label}: ` : "";
+            const parsedValue =
+              typeof context.parsed === "number"
+                ? context.parsed
+                : (context.parsed?.y ?? context.parsed?.r ?? 0);
+            const value = new Intl.NumberFormat("th-TH", { maximumFractionDigits: 2 }).format(parsedValue);
+            return `${label}${value}`;
+          },
+        },
+      },
+    },
+    scales: hasCartesianScale
+      ? {
+          x: {
+            ticks: { color: "#475467", maxRotation: 35, minRotation: 0 },
+            grid: { display: false },
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: "#475467" },
+            grid: { color: "#e9f1ed" },
+          },
+        }
+      : type === "radar"
+        ? {
+            r: {
+              beginAtZero: true,
+              ticks: { backdropColor: "transparent", color: "#475467" },
+              grid: { color: "#d7e8de" },
+              pointLabels: { color: "#344054", font: bodyFont ? { family: bodyFont, size: 11, weight: "700" } : undefined },
+            },
+          }
+        : {},
+  };
 }
 
 function ChatChart({ chart }) {
-  if (!chart?.rows?.length) return null;
+  const canvasRef = useRef(null);
+  const chartInstanceRef = useRef(null);
 
-  const maxValue = Math.max(...chart.rows.map((row) => row.value), 0);
-  if (!maxValue) return null;
+  useEffect(() => {
+    let cancelled = false;
+
+    async function renderChart() {
+      if (!chart?.rows?.length) return;
+
+      const Chart = await loadChartJs();
+      if (cancelled || !canvasRef.current) return;
+
+      if (chartInstanceRef.current) {
+        chartInstanceRef.current.destroy();
+      }
+
+      Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+      chartInstanceRef.current = new Chart(canvasRef.current, {
+        type: getChartType(chart),
+        data: makeChartData(chart),
+        options: makeChartOptions(chart),
+      });
+    }
+
+    renderChart();
+
+    return () => {
+      cancelled = true;
+      if (chartInstanceRef.current) {
+        chartInstanceRef.current.destroy();
+        chartInstanceRef.current = null;
+      }
+    };
+  }, [chart]);
+
+  if (!chart?.rows?.length) return null;
 
   return (
     <div className="chatChart" role="img" aria-label={chart.title || "DbQuery chart"}>
       <div className="chatChartTitle">{chart.title || "DbQuery chart"}</div>
-      <div className="chatChartRows">
-        {chart.rows.map((row, index) => {
-          const width = `${Math.max(3, (row.value / maxValue) * 100)}%`;
-
-          return (
-            <div key={`${row.label}-${index}`} className="chatChartRow">
-              <span className="chatChartLabel" title={row.label}>
-                {row.label}
-              </span>
-              <span className="chatChartTrack" aria-hidden="true">
-                <span className="chatChartBar" style={{ width }} />
-              </span>
-              <span className="chatChartValue">{formatChartValue(row.value)}</span>
-            </div>
-          );
-        })}
+      <div className="chatChartCanvas">
+        <canvas ref={canvasRef} />
       </div>
     </div>
   );

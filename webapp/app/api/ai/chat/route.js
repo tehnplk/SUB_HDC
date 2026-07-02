@@ -45,6 +45,7 @@ Use clear visual formatting whenever it improves clarity:
 - Use bullets or short paragraphs for explanation-only answers where a table would add noise.
 - Do not use raw HTML, Mermaid, or fenced code blocks for result tables.
 - Only mention or prepare chart-oriented output when the user explicitly asks for a chart, graph, plot, กราฟ, or แผนภูมิ.
+- Supported chart prompts are bar chart, line chart, multiline chart, pie chart, and radar chart. If the user asks for a chart without a specific type, the UI defaults to a bar chart.
 - When the user asks for a chart, do not draw an ASCII/text chart or fenced code chart. Give a short summary or markdown table; the UI will render the actual chart.
 When the user asks for Excel export, call ${EXCEL_EXPORT_TOOL_NAME} with the same read-only aggregate SQL you would use for the answer, then mention that the Excel file is ready. Do not invent a download URL yourself.
 Keep any intro to one short sentence.`;
@@ -214,7 +215,7 @@ async function runChatAgent(client, inputMessages) {
         };
       }
 
-      const resultChart = shouldReturnChart ? buildChartFromDbResult(result) : null;
+      const resultChart = shouldReturnChart ? buildChartFromDbResult(result, inputMessages) : null;
       if (resultChart) {
         chart = resultChart;
       }
