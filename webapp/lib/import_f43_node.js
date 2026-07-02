@@ -59,7 +59,7 @@ const ENCRYPT_RULES = {
   },
   aes: {
     PERSON: ["lname", "telephone", "mobile"],
-    ADDRESS: ["houseno"],
+    ADDRESS: ["house_id", "houseno"],
     HOME: ["house_id", "house", "telephone"],
     PROVIDER: ["lname"],
     SERVICE: ["insid"],

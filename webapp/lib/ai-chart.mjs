@@ -1,6 +1,6 @@
 export const MAX_AI_CHART_ROWS = 12;
 const MIN_AI_CHART_ROWS = 2;
-const CHART_REQUEST_PATTERN = /\b(chart|graph|plot|visuali[sz]e|bar chart|line chart|multi[\s-]?line chart|muti[\s-]?line chart|pie chart|radar chart)\b|กราฟ|แผนภูมิ|ชาร์ต/i;
+const CHART_REQUEST_PATTERN = /\b(chart|graph|plot|visuali[sz]e|bar chart|column(?:\s+chart)?|line chart|multi[\s-]?line chart|muti[\s-]?line chart|pie chart|radar chart)\b|กราฟ|แผนภูมิ|ชาร์ต/i;
 const CHART_NEGATION_PATTERN =
   /\b(no|without|dont|don't|do not|not)\s+(?:show\s+|display\s+|create\s+|make\s+)?(?:a\s+)?(?:chart|graph|plot)\b|ไม่(?:ต้อง|เอา|แสดง|ต้องการ).{0,12}(?:กราฟ|แผนภูมิ|ชาร์ต)/i;
 const MULTILINE_CHART_PATTERN = /\b(multi[\s-]?line|muti[\s-]?line|multiple\s+lines?|หลายเส้น)\b/i;

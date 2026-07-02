@@ -35,6 +35,7 @@ test("buildChartFromDbResult uses requested chart type from the latest user prom
   assert.equal(buildChartFromDbResult(result, [{ role: "user", content: "make line chart" }]).type, "line");
   assert.equal(buildChartFromDbResult(result, [{ role: "user", content: "make pie chart" }]).type, "pie");
   assert.equal(buildChartFromDbResult(result, [{ role: "user", content: "make radar chart" }]).type, "radar");
+  assert.equal(buildChartFromDbResult(result, [{ role: "user", content: "make column chart" }]).type, "bar");
   assert.equal(buildChartFromDbResult(result, [{ role: "user", content: "make chart" }]).type, "bar");
 });
 
@@ -101,5 +102,6 @@ test("userRequestedChart only enables charts for explicit chart requests", () =>
   assert.equal(userRequestedChart([{ role: "user", content: "แสดงกราฟ โรคที่พบมากสุด 10 อันดับ ปี 2569" }]), true);
   assert.equal(userRequestedChart([{ role: "user", content: "make radar chart" }]), true);
   assert.equal(userRequestedChart([{ role: "user", content: "show multiline chart" }]), true);
+  assert.equal(userRequestedChart([{ role: "user", content: "show column จำนวน visit แยกรายเดือน" }]), true);
   assert.equal(userRequestedChart([{ role: "user", content: "show table only, no chart" }]), false);
 });

@@ -208,6 +208,29 @@ test("encryptFileRows encrypts HOME house_id house and telephone with AES", () =
   assert.match(row[4], /^[0-9a-f]+$/);
 });
 
+test("encryptFileRows encrypts ADDRESS house_id with AES", () => {
+  const importer = require("../lib/import_f43_node.js");
+  const aesKey = Buffer.alloc(32, 1);
+
+  const encrypted = importer.encryptFileRows(
+    {
+      tableName: "address",
+      columns: ["hospcode", "pid", "addresstype", "house_id", "houseno"],
+      rows: [["11251", "1", "1", "HOUSE-1", "99/1"]],
+    },
+    aesKey
+  );
+
+  const [row] = encrypted.rows;
+  assert.equal(row[0], "11251");
+  assert.equal(row[1], "1");
+  assert.equal(row[2], "1");
+  assert.notEqual(row[3], "HOUSE-1");
+  assert.notEqual(row[4], "99/1");
+  assert.match(row[3], /^[0-9a-f]+$/);
+  assert.match(row[4], /^[0-9a-f]+$/);
+});
+
 test("getAesKey uses ENCRYPT_KEY instead of SECRET_KEY", () => {
   const importer = require("../lib/import_f43_node.js");
   const key = importer.getAesKey({

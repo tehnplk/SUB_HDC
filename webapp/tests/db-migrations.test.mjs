@@ -128,3 +128,21 @@ test("hospcode varchar 10 migration covers c_file tables with hospcode", async (
   assert.deepEqual(actualTables, expectedTables);
   assert.equal(new Set(actualTables).size, actualTables.length);
 });
+
+test("address house_id is AES-sized in initial schema and migration", async () => {
+  const tableDir = path.resolve(process.cwd(), "..", "table");
+  const addressSource = await readFile(path.join(tableDir, "address.sql"), "utf8");
+  const migrationPath = path.resolve(
+    process.cwd(),
+    "..",
+    "table_update",
+    "20260702_address_house_id_aes_varchar_1000.sql"
+  );
+  const migrationSource = await readFile(migrationPath, "utf8");
+
+  assert.match(addressSource, /`house_id`\s+varchar\(1000\)\s+NOT\s+NULL\s+DEFAULT\s+''/i);
+  assert.match(
+    migrationSource,
+    /ALTER\s+TABLE\s+`address`\s+MODIFY\s+`house_id`\s+varchar\(1000\)\s+NOT\s+NULL\s+DEFAULT\s+'';/i
+  );
+});

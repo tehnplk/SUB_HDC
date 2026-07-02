@@ -2,7 +2,7 @@ CREATE TABLE `address` (
   `hospcode` varchar(10) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
   `pid` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
   `addresstype` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `house_id` varchar(255) NOT NULL DEFAULT '',
+  `house_id` varchar(1000) NOT NULL DEFAULT '',
   `housetype` varchar(255) NOT NULL DEFAULT '',
   `roomno` varchar(255) NOT NULL DEFAULT '',
   `condo` varchar(255) NOT NULL DEFAULT '',

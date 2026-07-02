@@ -2373,6 +2373,20 @@ button:disabled {
   margin-top: 7px;
 }
 
+.chatToolButton {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.chatToolButton:focus-visible .chatToolBadge {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .chatToolBadge {
   display: inline-flex;
   align-items: center;
@@ -2391,6 +2405,86 @@ button:disabled {
 .chatToolBadgeError {
   border-color: #fecaca;
   background: var(--error-bg);
+  color: var(--error);
+}
+
+.chatToolModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.chatToolModal {
+  display: grid;
+  width: min(760px, 100%);
+  max-height: min(82vh, 680px);
+  gap: 12px;
+  padding: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow-lg);
+}
+
+.chatToolModalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.chatToolModalHeader h2 {
+  margin: 1px 0 0;
+  color: var(--foreground);
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.chatToolModalClose {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--muted-strong);
+  cursor: pointer;
+}
+
+.chatToolModalClose .lucide {
+  width: 16px;
+  height: 16px;
+}
+
+.chatToolModalCode {
+  max-height: 56vh;
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--foreground);
+  font-size: 12px;
+  line-height: 1.5;
+  user-select: text;
+}
+
+.chatToolModalCode code {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chatToolModalCodeError {
+  border-color: #fecaca;
   color: var(--error);
 }
 

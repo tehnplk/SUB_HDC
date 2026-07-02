@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Bot, Download, Send, Sparkles, UserRound } from "lucide-react";
+import { ArrowLeft, Bot, Download, Send, Sparkles, UserRound, X } from "lucide-react";
 
 const INITIAL_MESSAGES = [
   {
@@ -425,6 +425,7 @@ export default function AiChatPage() {
   const [quickQuestions, setQuickQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [activeToolDetail, setActiveToolDetail] = useState(null);
 
   const canSend = input.trim().length > 0 && !loading;
   const apiMessages = useMemo(() => getApiMessages(messages), [messages]);
@@ -441,6 +442,19 @@ export default function AiChatPage() {
   useEffect(() => {
     setQuickQuestions(pickQuickQuestions());
   }, []);
+
+  useEffect(() => {
+    if (!activeToolDetail) return;
+
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        setActiveToolDetail(null);
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [activeToolDetail]);
 
   async function askAgent(content) {
     const trimmedContent = String(content || "").trim();
@@ -532,14 +546,18 @@ export default function AiChatPage() {
                 {message.toolCalls?.length ? (
                   <div className="chatToolList" aria-label="Tool calls">
                     {message.toolCalls.map((tool, toolIndex) => (
-                      <span
+                      <button
+                        type="button"
                         key={`${tool.name}-${toolIndex}`}
-                        className={tool.ok ? "chatToolBadge" : "chatToolBadge chatToolBadgeError"}
+                        className="chatToolButton"
+                        onClick={() => setActiveToolDetail(tool)}
                         title={tool.sql || tool.error || tool.name}
                       >
-                        {tool.name}
-                        {tool.ok ? ` (${tool.rowCount})` : " failed"}
-                      </span>
+                        <span className={tool.ok ? "chatToolBadge" : "chatToolBadge chatToolBadgeError"}>
+                          {tool.name}
+                          {tool.ok ? ` (${tool.rowCount})` : " failed"}
+                        </span>
+                      </button>
                     ))}
                   </div>
                 ) : null}
@@ -590,6 +608,30 @@ export default function AiChatPage() {
           </button>
         </form>
       </section>
+      {activeToolDetail ? (
+        <div className="chatToolModalBackdrop" onClick={() => setActiveToolDetail(null)}>
+          <div
+            className="chatToolModal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${activeToolDetail.name || "Tool"} code panel`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="chatToolModalHeader">
+              <div>
+                <p className="eyebrow">Tool call</p>
+                <h2>{activeToolDetail.name || "Tool"}</h2>
+              </div>
+              <button type="button" className="chatToolModalClose" onClick={() => setActiveToolDetail(null)} aria-label="Close code panel">
+                <X aria-hidden="true" />
+              </button>
+            </div>
+            <pre className={activeToolDetail.ok ? "chatToolModalCode" : "chatToolModalCode chatToolModalCodeError"}>
+              <code>{activeToolDetail.sql || activeToolDetail.error}</code>
+            </pre>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
