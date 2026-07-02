@@ -96,7 +96,7 @@ test("importFile writes log_import_id metadata instead of source file columns", 
   assert.deepEqual(executed[0].values, ["11251", "1", "20260101", 42]);
 });
 
-test("createLogImportFile stores the source zip name with pending status", async () => {
+test("createLogImportFile stores the source zip name size and pending status", async () => {
   const importer = require("../lib/import_f43_node.js");
   const executed = [];
   const connection = {
@@ -106,13 +106,14 @@ test("createLogImportFile stores the source zip name with pending status", async
     },
   };
 
-  const id = await importer.createLogImportFile(connection, "source.zip");
+  const id = await importer.createLogImportFile(connection, "source.zip", 1536);
 
   assert.equal(id, 42);
   assert.equal(executed.length, 1);
   assert.match(executed[0].sql, /^INSERT INTO `log_import_file`/);
+  assert.match(executed[0].sql, /`file_size`/);
   assert.match(executed[0].sql, /`status`/);
-  assert.deepEqual(executed[0].values, ["source.zip", "pending"]);
+  assert.deepEqual(executed[0].values, ["source.zip", 1536, "pending"]);
 });
 
 test("updateLogImportFileStatus stamps processing complete and not_complate states", async () => {

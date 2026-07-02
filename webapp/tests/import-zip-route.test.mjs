@@ -8,7 +8,7 @@ import {
   createImportProgressWriter,
 } from "../app/api/import-zip/route.js";
 import { clearImportProgress, getImportProgressPercent } from "../lib/import-progress.mjs";
-import { logImportOrderClause } from "../lib/log-import.mjs";
+import { createPendingLogImportFile, logImportOrderClause } from "../lib/log-import.mjs";
 
 const routePath = path.resolve(process.cwd(), "app", "api", "import-zip", "route.js");
 
@@ -39,6 +39,22 @@ test("buildImportProcessArgs passes existing log import id to the importer", () 
 test("logImportOrderClause keeps processing rows above pending rows", () => {
   assert.match(logImportOrderClause(), /WHEN 'processing' THEN 0/);
   assert.match(logImportOrderClause(), /WHEN 'pending' THEN 1/);
+});
+
+test("createPendingLogImportFile stores the queued zip file size", async () => {
+  const executed = [];
+  const connection = {
+    async execute(sql, values) {
+      executed.push({ sql, values });
+      return [{ insertId: 42 }];
+    },
+  };
+
+  const id = await createPendingLogImportFile(connection, "queued.zip", 2048);
+
+  assert.equal(id, 42);
+  assert.match(executed[0].sql, /`file_name`, `file_size`, `status`/);
+  assert.deepEqual(executed[0].values, ["queued.zip", 2048, "pending"]);
 });
 
 test("import route deletes uploaded zip immediately when the queue rejects import", async () => {

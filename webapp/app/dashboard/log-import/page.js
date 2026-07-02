@@ -39,6 +39,21 @@ function formatDurationSeconds(importDateTime, finishDateTime) {
   return `${Math.round((finishMs - startMs) / 1000)} วินาที`;
 }
 
+function formatFileSize(fileSize) {
+  if (fileSize == null || fileSize === "") return "-";
+  const bytes = Number(fileSize);
+  if (!Number.isFinite(bytes) || bytes < 0) return "-";
+  if (bytes < 1024) return `${bytes.toLocaleString("th-TH")} B`;
+  const units = ["KB", "MB", "GB"];
+  let value = bytes / 1024;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  return `${value.toLocaleString("th-TH", { maximumFractionDigits: 1 })} ${units[unitIndex]}`;
+}
+
 function statusBadgeClass(status) {
   const classes = ["importStatusBadge"];
   if (status === "complete") classes.push("isComplete");
@@ -182,6 +197,7 @@ export default function LogImportDashboard() {
               <tr>
                 <th style={{ width: "70px" }}>#</th>
                 <th>ไฟล์</th>
+                <th style={{ width: "110px" }}>Size</th>
                 <th style={{ width: "250px" }}>วันที่-เวลานำเข้า</th>
                 <th style={{ width: "150px" }}>status</th>
                 <th style={{ width: "250px" }}>finish_date_time</th>
@@ -199,6 +215,7 @@ export default function LogImportDashboard() {
                         {row.file_name}
                       </span>
                     </td>
+                    <td>{formatFileSize(row.file_size)}</td>
                     <td>
                       <span className="tableCellIcon">
                         <CalendarClock aria-hidden="true" />
@@ -230,7 +247,7 @@ export default function LogImportDashboard() {
                   </tr>,
                   expandedErrorId === row.id && row.status === "not_complate" ? (
                     <tr key={`msg-${row.id}`} className="notCompleteMessageRow">
-                      <td colSpan={6}>
+                      <td colSpan={7}>
                         <div className="notCompleteMessage">{row.not_complete_msg || "-"}</div>
                       </td>
                     </tr>
@@ -238,7 +255,7 @@ export default function LogImportDashboard() {
                 ])
               ) : (
                 <tr>
-                  <td className="emptyCell" colSpan={6}>
+                  <td className="emptyCell" colSpan={7}>
                     {loading ? "กำลังโหลดข้อมูล..." : "ไม่พบประวัติการนำเข้า"}
                   </td>
                 </tr>

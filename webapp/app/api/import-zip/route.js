@@ -124,10 +124,11 @@ function runImportProcess({ zipPath, originalName, logImportId, writeStdout = ()
   });
 }
 
-async function createPendingLog(originalName) {
+async function createPendingLog(originalName, zipPath) {
   const connection = await createDbConnection();
   try {
-    return await createPendingLogImportFile(connection, originalName);
+    const fileStat = await stat(zipPath);
+    return await createPendingLogImportFile(connection, originalName, fileStat.size);
   } finally {
     await connection.end();
   }
@@ -172,7 +173,7 @@ export async function POST(request) {
     }
 
     if (background) {
-      const logImportId = await createPendingLog(originalName);
+      const logImportId = await createPendingLog(originalName, zipPath);
       importQueue.enqueue(() =>
         runImportProcess({
           zipPath,

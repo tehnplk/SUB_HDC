@@ -188,10 +188,10 @@ async function getExistingColumns(connection, tableName) {
   return new Map(rows.map((row) => [row.Field.toLowerCase(), row.Field]));
 }
 
-async function createLogImportFile(connection, fileName) {
+async function createLogImportFile(connection, fileName, fileSize = null) {
   const [result] = await connection.execute(
-    "INSERT INTO `log_import_file` (`file_name`, `status`) VALUES (?, ?)",
-    [fileName, "pending"]
+    "INSERT INTO `log_import_file` (`file_name`, `file_size`, `status`) VALUES (?, ?, ?)",
+    [fileName, fileSize, "pending"]
   );
   return result.insertId;
 }
@@ -478,7 +478,8 @@ async function main() {
     const logConn = await pool.getConnection();
     try {
       if (!logImportId) {
-        logImportId = await createLogImportFile(logConn, args.fileName || path.basename(args.zip));
+        const zipFileSize = fs.statSync(args.zip).size;
+        logImportId = await createLogImportFile(logConn, args.fileName || path.basename(args.zip), zipFileSize);
       }
       await updateLogImportFileStatus(logConn, logImportId, "processing");
     } finally {

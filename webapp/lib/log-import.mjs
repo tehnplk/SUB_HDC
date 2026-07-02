@@ -11,10 +11,10 @@ export function logImportOrderClause() {
   `;
 }
 
-export async function createPendingLogImportFile(connection, fileName) {
+export async function createPendingLogImportFile(connection, fileName, fileSize = null) {
   const [result] = await connection.execute(
-    "INSERT INTO `log_import_file` (`file_name`, `status`) VALUES (?, ?)",
-    [fileName, "pending"]
+    "INSERT INTO `log_import_file` (`file_name`, `file_size`, `status`) VALUES (?, ?, ?)",
+    [fileName, fileSize, "pending"]
   );
   return result.insertId;
 }

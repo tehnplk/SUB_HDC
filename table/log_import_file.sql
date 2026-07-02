@@ -1,6 +1,7 @@
 CREATE TABLE `log_import_file` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `file_name` varchar(255) NOT NULL DEFAULT '',
+  `file_size` bigint(20) DEFAULT NULL,
   `import_date_time` datetime NOT NULL DEFAULT current_timestamp(),
   `status` enum('pending','processing','complete','not_complate') NOT NULL DEFAULT 'pending',
   `finish_date_time` datetime DEFAULT NULL,

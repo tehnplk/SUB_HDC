@@ -152,7 +152,7 @@ export async function GET(request) {
     const isLogImport = url.searchParams.get("logImport") === "true";
     if (isLogImport) {
       const [rows] = await conn.query(
-        `SELECT id, file_name, import_date_time, status, finish_date_time, not_complete_msg
+        `SELECT id, file_name, file_size, import_date_time, status, finish_date_time, not_complete_msg
          FROM log_import_file
          ORDER BY ${logImportOrderClause()}
          LIMIT 500`
@@ -161,6 +161,7 @@ export async function GET(request) {
         rows: rows.map((r) => ({
           id: Number(r.id),
           file_name: r.file_name,
+          file_size: r.file_size == null ? null : Number(r.file_size),
           import_date_time: r.import_date_time,
           status: r.status,
           progress_percent: r.status === "processing" ? getImportProgressPercent(r.id) : null,

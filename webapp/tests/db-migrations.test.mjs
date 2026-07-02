@@ -146,3 +146,24 @@ test("address house_id is AES-sized in initial schema and migration", async () =
     /ALTER\s+TABLE\s+`address`\s+MODIFY\s+`house_id`\s+varchar\(1000\)\s+NOT\s+NULL\s+DEFAULT\s+'';/i
   );
 });
+
+test("log import file schema stores uploaded file size after file name", async () => {
+  const tableDir = path.resolve(process.cwd(), "..", "table");
+  const schemaSource = await readFile(path.join(tableDir, "log_import_file.sql"), "utf8");
+  const migrationPath = path.resolve(
+    process.cwd(),
+    "..",
+    "table_update",
+    "20260702_log_import_file_file_size.sql"
+  );
+  const migrationSource = await readFile(migrationPath, "utf8");
+
+  assert.match(
+    schemaSource,
+    /`file_name`\s+varchar\(255\)\s+NOT\s+NULL\s+DEFAULT\s+''[\s\S]*`file_size`\s+bigint\(20\)\s+DEFAULT\s+NULL/i
+  );
+  assert.match(
+    migrationSource,
+    /ALTER\s+TABLE\s+`log_import_file`\s+ADD\s+COLUMN\s+IF\s+NOT\s+EXISTS\s+`file_size`\s+bigint\(20\)\s+DEFAULT\s+NULL\s+AFTER\s+`file_name`;/i
+  );
+});

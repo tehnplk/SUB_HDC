@@ -4,6 +4,7 @@ import path from "node:path";
 import test from "node:test";
 
 const pagePath = path.resolve(process.cwd(), "app", "dashboard", "log-import", "page.js");
+const routePath = path.resolve(process.cwd(), "app", "api", "dashboard", "route.js");
 const cssPath = path.resolve(process.cwd(), "app", "globals.css");
 
 test("log import page hides not_complete_msg column and reveals it from not_complate status", async () => {
@@ -44,7 +45,7 @@ test("log import page shows elapsed import time in seconds from start to finish"
   assert.match(source, /Math\.round\(\(finishMs - startMs\) \/ 1000\)/);
   assert.match(source, /<th style={{ width: "110px" }}>เวลา<\/th>/);
   assert.match(source, /formatDurationSeconds\(row\.import_date_time, row\.finish_date_time\)/);
-  assert.match(source, /colSpan=\{6\}/);
+  assert.match(source, /colSpan=\{7\}/);
 });
 
 test("log import page reduces data grid font size by two pixels", async () => {
@@ -77,4 +78,18 @@ test("log import page shows processing percent in the status badge", async () =>
   assert.match(pageSource, /status === "processing"[\s\S]*Number\.isFinite\(progressPercent\)/);
   assert.match(pageSource, /Math\.round\(progressPercent\)/);
   assert.match(pageSource, /statusBadgeLabel\(row\.status, row\.progress_percent\)/);
+});
+
+test("log import grid shows file size after file name and falls back to dash", async () => {
+  const pageSource = await readFile(pagePath, "utf8");
+  const routeSource = await readFile(routePath, "utf8");
+
+  assert.match(routeSource, /SELECT id, file_name, file_size, import_date_time/);
+  assert.match(routeSource, /file_size: r\.file_size == null \? null : Number\(r\.file_size\)/);
+  assert.match(pageSource, /function formatFileSize/);
+  assert.match(pageSource, /if \(fileSize == null \|\| fileSize === ""\) return "-"/);
+  assert.ok(pageSource.indexOf("<th>ไฟล์</th>") < pageSource.indexOf(">Size</th>"));
+  assert.ok(pageSource.indexOf(">Size</th>") < pageSource.indexOf(">status</th>"));
+  assert.match(pageSource, /<td>{formatFileSize\(row\.file_size\)}<\/td>/);
+  assert.match(pageSource, /colSpan=\{7\}/);
 });
