@@ -9,6 +9,7 @@ import {
   datePrefixExpression,
   getCurrentFiscalYearAd,
   getFiscalYearRange,
+  getRecentFiscalYearOptions,
   normalizeFiscalYear,
   quoteIdentifier,
   toFiscalYearLabel,
@@ -246,17 +247,15 @@ export async function GET(request) {
     let rows = [];
 
     if (hasMonthly) {
-      const fiscalYearAds = await getFiscalYears(conn, selectedFile, dateColumn);
-      const fallbackYear = fiscalYearAds[0] || getCurrentFiscalYearAd();
+      const fiscalYearOptions = getRecentFiscalYearOptions();
+      const fiscalYearAds = fiscalYearOptions.map((year) => normalizeFiscalYear(year.value));
+      const fallbackYear = getCurrentFiscalYearAd();
       const requestedFiscalYear = normalizeFiscalYear(url.searchParams.get("fiscalYear")) || fallbackYear;
       const selectedFiscalYearAd = fiscalYearAds.includes(requestedFiscalYear)
         ? requestedFiscalYear
         : fallbackYear;
 
-      fiscalYears = fiscalYearAds.map((year) => ({
-        value: toFiscalYearLabel(year),
-        label: toFiscalYearLabel(year),
-      }));
+      fiscalYears = fiscalYearOptions;
       selectedFiscalYear = toFiscalYearLabel(selectedFiscalYearAd);
       rows = await getMonthlyRows(conn, selectedFile, dateColumn, selectedFiscalYearAd);
     } else {

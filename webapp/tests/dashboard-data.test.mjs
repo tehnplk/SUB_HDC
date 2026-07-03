@@ -8,6 +8,7 @@ import {
   getFileTypeLabel,
   getMonthlyRowTotal,
   getFiscalYearRange,
+  getRecentFiscalYearOptions,
   toFiscalYearLabel,
 } from "../lib/dashboard-data.mjs";
 
@@ -49,6 +50,17 @@ test("getFiscalYearRange supports Thai Buddhist fiscal year labels", () => {
 
 test("toFiscalYearLabel displays fiscal year as Buddhist Era", () => {
   assert.equal(toFiscalYearLabel(2026), "2569");
+});
+
+test("getRecentFiscalYearOptions returns the current fiscal year and five years back", () => {
+  assert.deepEqual(getRecentFiscalYearOptions(2026), [
+    { value: "2569", label: "2569" },
+    { value: "2568", label: "2568" },
+    { value: "2567", label: "2567" },
+    { value: "2566", label: "2566" },
+    { value: "2565", label: "2565" },
+    { value: "2564", label: "2564" },
+  ]);
 });
 
 test("chooseSelectedFile defaults to service when no requested file is provided", () => {

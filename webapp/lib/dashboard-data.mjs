@@ -54,6 +54,13 @@ export function getCurrentFiscalYearAd(date = new Date()) {
   return month >= 10 ? year + 1 : year;
 }
 
+export function getRecentFiscalYearOptions(currentFiscalYearAd = getCurrentFiscalYearAd(), yearsBack = 5) {
+  return Array.from({ length: yearsBack + 1 }, (_, index) => {
+    const label = toFiscalYearLabel(currentFiscalYearAd - index);
+    return { value: label, label };
+  });
+}
+
 export function getFiscalYearRange(value) {
   const fiscalYearAd = normalizeFiscalYear(value);
   if (!fiscalYearAd) {
