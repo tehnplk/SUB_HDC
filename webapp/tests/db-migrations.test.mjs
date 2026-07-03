@@ -167,3 +167,22 @@ test("log import file schema stores uploaded file size after file name", async (
     /ALTER\s+TABLE\s+`log_import_file`\s+ADD\s+COLUMN\s+IF\s+NOT\s+EXISTS\s+`file_size`\s+bigint\(20\)\s+DEFAULT\s+NULL\s+AFTER\s+`file_name`;/i
   );
 });
+
+test("service chiefcomp is text in initial schema and migration", async () => {
+  const tableDir = path.resolve(process.cwd(), "..", "table");
+  const serviceSource = await readFile(path.join(tableDir, "service.sql"), "utf8");
+  const migrationPath = path.resolve(
+    process.cwd(),
+    "..",
+    "table_update",
+    "20260703_service_chiefcomp_text.sql"
+  );
+  const migrationSource = await readFile(migrationPath, "utf8");
+
+  assert.match(serviceSource, /`chiefcomp`\s+text\s+NOT\s+NULL/i);
+  assert.doesNotMatch(serviceSource, /`chiefcomp`\s+varchar\(/i);
+  assert.match(
+    migrationSource,
+    /ALTER\s+TABLE\s+`service`\s+MODIFY\s+`chiefcomp`\s+text\s+NOT\s+NULL;/i
+  );
+});

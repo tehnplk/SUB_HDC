@@ -627,6 +627,40 @@ button:disabled {
   font-size: 11px;
 }
 
+.logImportStatusTabs {
+  display: inline-flex;
+  gap: 4px;
+  margin: 12px 0 10px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #f8fcf9;
+}
+
+.logImportStatusTab {
+  min-width: 156px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted-strong);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.logImportStatusTab:hover {
+  color: var(--foreground);
+  background: rgba(21, 128, 61, 0.06);
+}
+
+.logImportStatusTabActive {
+  color: var(--accent-strong);
+  background: #ffffff;
+  box-shadow: var(--shadow-sm);
+}
+
 .fileTable tbody tr:hover td {
   background: #fbfefc;
 }

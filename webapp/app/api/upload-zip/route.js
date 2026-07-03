@@ -5,6 +5,9 @@ import AdmZip from "adm-zip";
 
 export const runtime = "nodejs";
 
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+const MAX_UPLOAD_LABEL = "50MB";
+
 function safeName(name) {
   return path.basename(name).replace(/[^A-Za-z0-9._-]/g, "_");
 }
@@ -17,8 +20,18 @@ function assertReadableZip(buffer) {
   }
 }
 
+function uploadTooLargeResponse() {
+  return Response.json(
+    { error: `Upload file size limit is ${MAX_UPLOAD_LABEL}` },
+    { status: 413 }
+  );
+}
+
 export async function POST(request) {
   try {
+    const contentLength = Number(request.headers.get("content-length") || 0);
+    if (contentLength > MAX_UPLOAD_BYTES) return uploadTooLargeResponse();
+
     const formData = await request.formData();
     const file = formData.get("file");
 
@@ -30,7 +43,11 @@ export async function POST(request) {
       return Response.json({ error: "Only .zip files are allowed" }, { status: 400 });
     }
 
+    if (file.size > MAX_UPLOAD_BYTES) return uploadTooLargeResponse();
+
     const buffer = Buffer.from(await file.arrayBuffer());
+    if (buffer.length > MAX_UPLOAD_BYTES) return uploadTooLargeResponse();
+
     try {
       assertReadableZip(buffer);
     } catch (error) {
@@ -51,6 +68,9 @@ export async function POST(request) {
       size: file.size,
     });
   } catch (error) {
+    if (/body.*(limit|exceed)|payload.*large/i.test(error?.message || "")) {
+      return uploadTooLargeResponse();
+    }
     return Response.json(
       { error: error?.message || "Upload failed" },
       { status: 500 }

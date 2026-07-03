@@ -80,6 +80,7 @@ export default function LogImportDashboard() {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedErrorId, setExpandedErrorId] = useState(null);
+  const [activeStatusTab, setActiveStatusTab] = useState("success");
 
   const loadData = useCallback((signal) => {
     setLoading(true);
@@ -118,14 +119,18 @@ export default function LogImportDashboard() {
     return () => clearInterval(interval);
   }, [rows, loadData]);
 
+  const successRows = useMemo(() => rows.filter((row) => row.status === "complete"), [rows]);
+  const notSuccessRows = useMemo(() => rows.filter((row) => row.status !== "complete"), [rows]);
+  const tabRows = activeStatusTab === "success" ? successRows : notSuccessRows;
+
   const filteredRows = useMemo(() => {
-    if (!searchTerm.trim()) return rows;
+    if (!searchTerm.trim()) return tabRows;
     const term = searchTerm.toLowerCase();
-    return rows.filter((row) => 
+    return tabRows.filter((row) => 
       row.file_name.toLowerCase().includes(term) ||
       String(row.id).includes(term)
     );
-  }, [rows, searchTerm]);
+  }, [tabRows, searchTerm]);
 
   return (
     <div className="main dashboardMain">
@@ -184,6 +189,25 @@ export default function LogImportDashboard() {
               />
             </div>
           </div>
+        </div>
+
+        <div className="logImportStatusTabs" role="group" aria-label="log import status">
+          <button
+            type="button"
+            className={`logImportStatusTab${activeStatusTab === "success" ? " logImportStatusTabActive" : ""}`}
+            aria-pressed={activeStatusTab === "success"}
+            onClick={() => setActiveStatusTab("success")}
+          >
+            นำเข้าสำเร็จ ({successRows.length})
+          </button>
+          <button
+            type="button"
+            className={`logImportStatusTab${activeStatusTab === "not-success" ? " logImportStatusTabActive" : ""}`}
+            aria-pressed={activeStatusTab === "not-success"}
+            onClick={() => setActiveStatusTab("not-success")}
+          >
+            ไม่สำเร็จ ({notSuccessRows.length})
+          </button>
         </div>
 
         <div className="tableMeta metaLine">

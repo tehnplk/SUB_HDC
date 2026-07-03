@@ -13,7 +13,7 @@ CREATE TABLE `service` (
   `typein` varchar(255) NOT NULL DEFAULT '',
   `referinhosp` varchar(255) NOT NULL DEFAULT '',
   `causein` varchar(255) NOT NULL DEFAULT '',
-  `chiefcomp` varchar(255) NOT NULL DEFAULT '',
+  `chiefcomp` text NOT NULL,
   `servplace` varchar(255) NOT NULL DEFAULT '',
   `btemp` varchar(255) NOT NULL DEFAULT '',
   `sbp` varchar(255) NOT NULL DEFAULT '',

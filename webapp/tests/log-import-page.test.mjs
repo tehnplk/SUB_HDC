@@ -93,3 +93,19 @@ test("log import grid shows file size after file name and falls back to dash", a
   assert.match(pageSource, /<td>{formatFileSize\(row\.file_size\)}<\/td>/);
   assert.match(pageSource, /colSpan=\{7\}/);
 });
+
+test("log import page splits rows into success and not-success tabs with counts", async () => {
+  const pageSource = await readFile(pagePath, "utf8");
+  const cssSource = await readFile(cssPath, "utf8");
+
+  assert.match(pageSource, /const \[activeStatusTab, setActiveStatusTab\] = useState\("success"\)/);
+  assert.match(pageSource, /const successRows = useMemo\(\(\) => rows\.filter\(\(row\) => row\.status === "complete"\)/);
+  assert.match(pageSource, /const notSuccessRows = useMemo\(\(\) => rows\.filter\(\(row\) => row\.status !== "complete"\)/);
+  assert.match(pageSource, /const tabRows = activeStatusTab === "success" \? successRows : notSuccessRows/);
+  assert.match(pageSource, /นำเข้าสำเร็จ \(\{successRows\.length\}\)/);
+  assert.match(pageSource, /ไม่สำเร็จ \(\{notSuccessRows\.length\}\)/);
+  assert.match(pageSource, /aria-pressed=\{activeStatusTab === "success"\}/);
+  assert.match(pageSource, /aria-pressed=\{activeStatusTab === "not-success"\}/);
+  assert.match(cssSource, /\.logImportStatusTabs/);
+  assert.match(cssSource, /\.logImportStatusTabActive/);
+});
