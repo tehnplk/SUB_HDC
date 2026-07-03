@@ -4,9 +4,11 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import {
   CalendarClock,
+  CircleCheck,
+  CircleX,
+  Clock3,
   FileText,
   Search,
-  TableProperties,
   UploadCloud,
 } from "lucide-react";
 import DashboardHeaderImage from "@/components/dashboard-header-image";
@@ -199,6 +201,7 @@ export default function LogImportDashboard() {
             aria-pressed={activeStatusTab === "pending"}
             onClick={() => setActiveStatusTab("pending")}
           >
+            <Clock3 aria-hidden="true" />
             รอนำเข้า({pendingRows.length})
           </button>
           <button
@@ -207,6 +210,7 @@ export default function LogImportDashboard() {
             aria-pressed={activeStatusTab === "success"}
             onClick={() => setActiveStatusTab("success")}
           >
+            <CircleCheck aria-hidden="true" />
             สำเร็จ({successRows.length})
           </button>
           <button
@@ -215,13 +219,9 @@ export default function LogImportDashboard() {
             aria-pressed={activeStatusTab === "failed"}
             onClick={() => setActiveStatusTab("failed")}
           >
+            <CircleX aria-hidden="true" />
             ไม่สำเร็จ({failedRows.length})
           </button>
-        </div>
-
-        <div className="tableMeta metaLine">
-          <TableProperties aria-hidden="true" />
-          {loading ? "กำลังโหลด..." : `รายการประวัติการนำเข้าทั้งหมด (${filteredRows.length} รายการ)`}
         </div>
 
         <div className="tableWrap">

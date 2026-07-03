@@ -112,3 +112,21 @@ test("log import page splits rows into waiting success and failed tabs with coun
   assert.match(cssSource, /\.logImportStatusTabs/);
   assert.match(cssSource, /\.logImportStatusTabActive/);
 });
+
+test("log import page hides the total history label row", async () => {
+  const pageSource = await readFile(pagePath, "utf8");
+
+  assert.doesNotMatch(pageSource, /รายการประวัติการนำเข้าทั้งหมด/);
+  assert.doesNotMatch(pageSource, /className="tableMeta metaLine"/);
+});
+
+test("log import status tabs show icons", async () => {
+  const pageSource = await readFile(pagePath, "utf8");
+
+  assert.match(pageSource, /Clock3,/);
+  assert.match(pageSource, /CircleCheck,/);
+  assert.match(pageSource, /CircleX,/);
+  assert.match(pageSource, /<Clock3 aria-hidden="true" \/>[\s\S]*รอนำเข้า/);
+  assert.match(pageSource, /<CircleCheck aria-hidden="true" \/>[\s\S]*สำเร็จ/);
+  assert.match(pageSource, /<CircleX aria-hidden="true" \/>[\s\S]*ไม่สำเร็จ/);
+});
