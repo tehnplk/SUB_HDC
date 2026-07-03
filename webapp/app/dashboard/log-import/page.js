@@ -80,7 +80,7 @@ export default function LogImportDashboard() {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedErrorId, setExpandedErrorId] = useState(null);
-  const [activeStatusTab, setActiveStatusTab] = useState("success");
+  const [activeStatusTab, setActiveStatusTab] = useState("pending");
 
   const loadData = useCallback((signal) => {
     setLoading(true);
@@ -119,9 +119,10 @@ export default function LogImportDashboard() {
     return () => clearInterval(interval);
   }, [rows, loadData]);
 
+  const pendingRows = useMemo(() => rows.filter((row) => ["pending", "processing"].includes(row.status)), [rows]);
   const successRows = useMemo(() => rows.filter((row) => row.status === "complete"), [rows]);
-  const notSuccessRows = useMemo(() => rows.filter((row) => row.status !== "complete"), [rows]);
-  const tabRows = activeStatusTab === "success" ? successRows : notSuccessRows;
+  const failedRows = useMemo(() => rows.filter((row) => ["not_complate", "no_complete"].includes(row.status)), [rows]);
+  const tabRows = activeStatusTab === "pending" ? pendingRows : activeStatusTab === "success" ? successRows : failedRows;
 
   const filteredRows = useMemo(() => {
     if (!searchTerm.trim()) return tabRows;
@@ -194,19 +195,27 @@ export default function LogImportDashboard() {
         <div className="logImportStatusTabs" role="group" aria-label="log import status">
           <button
             type="button"
+            className={`logImportStatusTab${activeStatusTab === "pending" ? " logImportStatusTabActive" : ""}`}
+            aria-pressed={activeStatusTab === "pending"}
+            onClick={() => setActiveStatusTab("pending")}
+          >
+            รอนำเข้า({pendingRows.length})
+          </button>
+          <button
+            type="button"
             className={`logImportStatusTab${activeStatusTab === "success" ? " logImportStatusTabActive" : ""}`}
             aria-pressed={activeStatusTab === "success"}
             onClick={() => setActiveStatusTab("success")}
           >
-            นำเข้าสำเร็จ ({successRows.length})
+            สำเร็จ({successRows.length})
           </button>
           <button
             type="button"
-            className={`logImportStatusTab${activeStatusTab === "not-success" ? " logImportStatusTabActive" : ""}`}
-            aria-pressed={activeStatusTab === "not-success"}
-            onClick={() => setActiveStatusTab("not-success")}
+            className={`logImportStatusTab${activeStatusTab === "failed" ? " logImportStatusTabActive" : ""}`}
+            aria-pressed={activeStatusTab === "failed"}
+            onClick={() => setActiveStatusTab("failed")}
           >
-            ไม่สำเร็จ ({notSuccessRows.length})
+            ไม่สำเร็จ({failedRows.length})
           </button>
         </div>
 

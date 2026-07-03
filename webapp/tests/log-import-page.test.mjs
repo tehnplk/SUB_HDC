@@ -94,18 +94,21 @@ test("log import grid shows file size after file name and falls back to dash", a
   assert.match(pageSource, /colSpan=\{7\}/);
 });
 
-test("log import page splits rows into success and not-success tabs with counts", async () => {
+test("log import page splits rows into waiting success and failed tabs with counts", async () => {
   const pageSource = await readFile(pagePath, "utf8");
   const cssSource = await readFile(cssPath, "utf8");
 
-  assert.match(pageSource, /const \[activeStatusTab, setActiveStatusTab\] = useState\("success"\)/);
+  assert.match(pageSource, /const \[activeStatusTab, setActiveStatusTab\] = useState\("pending"\)/);
+  assert.match(pageSource, /const pendingRows = useMemo\(\(\) => rows\.filter\(\(row\) => \["pending", "processing"\]\.includes\(row\.status\)\)/);
   assert.match(pageSource, /const successRows = useMemo\(\(\) => rows\.filter\(\(row\) => row\.status === "complete"\)/);
-  assert.match(pageSource, /const notSuccessRows = useMemo\(\(\) => rows\.filter\(\(row\) => row\.status !== "complete"\)/);
-  assert.match(pageSource, /const tabRows = activeStatusTab === "success" \? successRows : notSuccessRows/);
-  assert.match(pageSource, /นำเข้าสำเร็จ \(\{successRows\.length\}\)/);
-  assert.match(pageSource, /ไม่สำเร็จ \(\{notSuccessRows\.length\}\)/);
+  assert.match(pageSource, /const failedRows = useMemo\(\(\) => rows\.filter\(\(row\) => \["not_complate", "no_complete"\]\.includes\(row\.status\)\)/);
+  assert.match(pageSource, /const tabRows = activeStatusTab === "pending" \? pendingRows : activeStatusTab === "success" \? successRows : failedRows/);
+  assert.match(pageSource, /รอนำเข้า\(\{pendingRows\.length\}\)/);
+  assert.match(pageSource, /สำเร็จ\(\{successRows\.length\}\)/);
+  assert.match(pageSource, /ไม่สำเร็จ\(\{failedRows\.length\}\)/);
+  assert.match(pageSource, /aria-pressed=\{activeStatusTab === "pending"\}/);
   assert.match(pageSource, /aria-pressed=\{activeStatusTab === "success"\}/);
-  assert.match(pageSource, /aria-pressed=\{activeStatusTab === "not-success"\}/);
+  assert.match(pageSource, /aria-pressed=\{activeStatusTab === "failed"\}/);
   assert.match(cssSource, /\.logImportStatusTabs/);
   assert.match(cssSource, /\.logImportStatusTabActive/);
 });
