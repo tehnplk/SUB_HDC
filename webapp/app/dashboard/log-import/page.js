@@ -82,7 +82,7 @@ export default function LogImportDashboard() {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedErrorId, setExpandedErrorId] = useState(null);
-  const [activeStatusTab, setActiveStatusTab] = useState("pending");
+  const [activeStatusTab, setActiveStatusTab] = useState("success");
 
   const loadData = useCallback((signal) => {
     setLoading(true);
@@ -197,15 +197,6 @@ export default function LogImportDashboard() {
         <div className="logImportStatusTabs" role="group" aria-label="log import status">
           <button
             type="button"
-            className={`logImportStatusTab${activeStatusTab === "pending" ? " logImportStatusTabActive" : ""}`}
-            aria-pressed={activeStatusTab === "pending"}
-            onClick={() => setActiveStatusTab("pending")}
-          >
-            <Clock3 aria-hidden="true" />
-            รอนำเข้า({pendingRows.length})
-          </button>
-          <button
-            type="button"
             className={`logImportStatusTab${activeStatusTab === "success" ? " logImportStatusTabActive" : ""}`}
             aria-pressed={activeStatusTab === "success"}
             onClick={() => setActiveStatusTab("success")}
@@ -221,6 +212,15 @@ export default function LogImportDashboard() {
           >
             <CircleX aria-hidden="true" />
             ไม่สำเร็จ({failedRows.length})
+          </button>
+          <button
+            type="button"
+            className={`logImportStatusTab${activeStatusTab === "pending" ? " logImportStatusTabActive" : ""}`}
+            aria-pressed={activeStatusTab === "pending"}
+            onClick={() => setActiveStatusTab("pending")}
+          >
+            <Clock3 aria-hidden="true" />
+            รอนำเข้า({pendingRows.length})
           </button>
         </div>
 
@@ -289,7 +289,7 @@ export default function LogImportDashboard() {
               ) : (
                 <tr>
                   <td className="emptyCell" colSpan={7}>
-                    {loading ? "กำลังโหลดข้อมูล..." : "ไม่พบประวัติการนำเข้า"}
+                    {loading ? "กำลังโหลดข้อมูล..." : activeStatusTab === "pending" ? "ไม่มีไฟล์รอนำเข้า" : "ไม่พบประวัติการนำเข้า"}
                   </td>
                 </tr>
               )}

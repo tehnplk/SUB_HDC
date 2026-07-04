@@ -98,7 +98,7 @@ test("log import page splits rows into waiting success and failed tabs with coun
   const pageSource = await readFile(pagePath, "utf8");
   const cssSource = await readFile(cssPath, "utf8");
 
-  assert.match(pageSource, /const \[activeStatusTab, setActiveStatusTab\] = useState\("pending"\)/);
+  assert.match(pageSource, /const \[activeStatusTab, setActiveStatusTab\] = useState\("success"\)/);
   assert.match(pageSource, /const pendingRows = useMemo\(\(\) => rows\.filter\(\(row\) => \["pending", "processing"\]\.includes\(row\.status\)\)/);
   assert.match(pageSource, /const successRows = useMemo\(\(\) => rows\.filter\(\(row\) => row\.status === "complete"\)/);
   assert.match(pageSource, /const failedRows = useMemo\(\(\) => rows\.filter\(\(row\) => \["not_complate", "no_complete"\]\.includes\(row\.status\)\)/);
