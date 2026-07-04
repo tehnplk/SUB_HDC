@@ -7,7 +7,7 @@ const routeSource = readFileSync(new URL("../app/api/report/route.js", import.me
 test("report API exposes PATCH for updating report name and sql", () => {
   assert.match(routeSource, /export\s+async\s+function\s+PATCH\s*\(/);
   assert.match(routeSource, /UPDATE report SET name = \?, `sql` = \?, date_update = NOW\(\) WHERE id = \?/);
-  assert.match(routeSource, /normalizeReportSql\(sql\)/);
+  assert.match(routeSource, /const sql = normalizeReportSql\(body\?\.sql\)/);
   assert.match(routeSource, /return Response\.json\(\{\s*report:/s);
 });
 

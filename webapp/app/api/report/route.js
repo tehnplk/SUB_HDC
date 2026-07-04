@@ -1,21 +1,12 @@
 import { requireApiJwt } from "@/lib/api-auth.mjs";
 import { createDbConnection } from "@/lib/db";
+import {
+  buildReportQuery,
+  getReportResultSet,
+  normalizeReportSql,
+} from "@/lib/report-sql.mjs";
 
 export const runtime = "nodejs";
-
-function normalizeReportSql(sql) {
-  const normalized = String(sql || "").trim().replace(/;+\s*$/, "");
-  if (!/^select\s+/i.test(normalized)) {
-    throw new Error("Only SELECT report SQL is allowed");
-  }
-  if (/;/.test(normalized)) {
-    throw new Error("Report SQL must contain one statement");
-  }
-  if (/\b(insert|update|delete|drop|truncate|alter|create|replace)\b/i.test(normalized)) {
-    throw new Error("Report SQL must be read-only");
-  }
-  return normalized;
-}
 
 async function getReport(conn, id) {
   const [rows] = await conn.query(
@@ -67,14 +58,15 @@ export async function POST(request) {
       return Response.json({ error: "Invalid report id" }, { status: 400 });
     }
 
-    conn = await createDbConnection();
+    conn = await createDbConnection({ multipleStatements: true });
     const report = await getReport(conn, id);
     if (!report) {
       return Response.json({ error: "Report not found" }, { status: 404 });
     }
 
     const sql = normalizeReportSql(report.sql);
-    const [rows, fields] = await conn.query(`SELECT * FROM (${sql}) AS report_result LIMIT 500`);
+    const [queryRows, queryFields] = await conn.query(buildReportQuery(sql));
+    const { rows, fields } = getReportResultSet(queryRows, queryFields);
     const columns = fields.map((field) => field.name);
 
     return Response.json({

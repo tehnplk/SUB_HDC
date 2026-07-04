@@ -1,8 +1,10 @@
 "use client";
 
 import { Database } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import packageConfig from "../package.json";
+import { getMaxUpdateVersion } from "../lib/update-log.mjs";
+import updateLog from "../upldate_log.json";
 
 export default function DashboardPageTitle() {
   const [centerName, setCenterName] = useState("");
@@ -35,7 +37,9 @@ export default function DashboardPageTitle() {
   return (
     <h4 className="pageHeaderTitle">
       SUB-HDC{centerSuffix}
-      <span className="versionLabel">Version {packageConfig.version}</span>
+      <Link href="/update-log" className="versionLabel">
+        Version {getMaxUpdateVersion(updateLog)}
+      </Link>
       <span className={`dbStatusLabel dbStatusLabel-${dbStatus}`} title={`Database ${dbLabel}`}>
         <Database aria-hidden="true" />
         <span>{dbLabel}</span>

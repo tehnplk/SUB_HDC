@@ -43,7 +43,127 @@ The browser UI calls local Next.js API routes for upload, import, dashboard, rep
 - Protected `GET /api/dashboard` and `GET /api/person`; both return `401` without the app JWT cookie.
 - Added AI chat chart rendering through Chart.js. Supported prompt-driven chart types are bar/default, column, line, multiline, pie, and radar.
 - Added AI chat DbQuery tool-call modal: clicking a DbQuery badge opens a selectable SQL/code panel instead of an inline detail block.
-- Bumped app version to `1.0.3` in `webapp/package.json` and `webapp/package-lock.json`.
+- Bumped app version through the current `1.0.6` release in `webapp/package.json`.
+
+## 2026-07-04 Update
+
+### Complex Report SQL
+
+Report execution now supports SQL scripts that declare session variables before the final result query.
+
+Important files:
+
+- `webapp/lib/report-sql.mjs`
+- `webapp/app/api/report/route.js`
+- `webapp/tests/report-sql.test.mjs`
+- `webapp/tests/report-api-route.test.mjs`
+
+Behavior:
+
+- Allows leading `SET @name = ...;` statements before a final `SELECT` or `WITH ... SELECT`.
+- Keeps write statements rejected.
+- Splits SQL on semicolons while respecting strings and comments.
+- Runs report SQL with `multipleStatements: true`.
+- Extracts the final result set from multi-statement MariaDB results.
+
+Local DB has a report named:
+
+```text
+ทดสอบ
+```
+
+The report was inserted with `id = 4`. It uses the pasted complex SQL with:
+
+```sql
+SET @ds1='20251001', @ds2='20260930';
+```
+
+DB verification showed:
+
+```text
+id=4 | name=ทดสอบ | sql_len=6733 | has_set=1 | has_cte=1
+```
+
+### Version Update Log
+
+The app now has a file-backed update log and the dashboard version badge reads from that file instead of hard-coded package metadata.
+
+Important files:
+
+- `webapp/upldate_log.json`
+- `webapp/lib/update-log.mjs`
+- `webapp/components/dashboard-page-title.jsx`
+- `webapp/app/update-log/page.js`
+- `webapp/tests/update-log.test.mjs`
+
+Current update log entries:
+
+```text
+1.0.6 | 2026-07-04 | สร้างรายงานด้วย sql ที่ซับซ้อน และกำหนดตัวแปรได้
+1.0.5 | 2026-07-03 | นำเข้าไฟล์ zip ขนาดไม่เกิน 50MB
+```
+
+Notes:
+
+- The filename is intentionally `upldate_log.json` to match the user request.
+- The version badge shows the max semantic version from this JSON file.
+- Clicking the version badge navigates to `/update-log`.
+- The update-log page title is `Version Update Log`.
+- The old label `Application version history` was removed.
+- Issue text supports escaped `\n` line breaks through `.updateLogIssue { white-space: pre-line; }`.
+- `webapp/package-lock.json` still has root version `1.0.5`; `npm ci` and Docker build succeeded, but update this too if strict package metadata consistency is needed.
+
+### Local Docker Deploy
+
+The user requested local Docker deploy after these changes.
+
+Command run from repo root:
+
+```powershell
+docker compose up -d --build --force-recreate webapp
+```
+
+Result:
+
+- Image build succeeded.
+- `sub_hdc_web` was recreated.
+- `sub_hdc_db` stayed up.
+- Published route remains `0.0.0.0:80->3000`.
+- Startup migrations were skipped as already applied.
+- `http://localhost/login` returned `200`.
+- `http://localhost/update-log` returned `200`.
+- Rendered HTML contained `Version Update Log`, `1.0.6`, and `1.0.5`.
+- Docker inspect showed the web container running and healthy enough for HTTP verification.
+
+Build note:
+
+```text
+npm ci / npm prune reported existing audit warnings:
+4 vulnerabilities (3 moderate, 1 high)
+```
+
+### Current Focused Verification
+
+Most recent full Node test run:
+
+```powershell
+node --test tests\*.test.mjs
+```
+
+Result:
+
+```text
+114 tests passed, 0 failed
+```
+
+Additional checks run:
+
+```powershell
+node --test tests\update-log.test.mjs
+node --check app\update-log\page.js
+```
+
+Both passed.
 
 ## Recent Schema Change
 
@@ -170,6 +290,10 @@ If the InnoDB tablespace issue returns after heavy DDL, consider moving MariaDB 
 Useful focused checks:
 
 ```powershell
+node --test tests\*.test.mjs
+node --test tests\report-sql.test.mjs tests\report-api-route.test.mjs
+node --test tests\update-log.test.mjs
+node --check app\update-log\page.js
 node --test tests\import-f43.test.mjs tests\db-migrations.test.mjs
 node --test tests\ai-chart.test.mjs tests\ai-chat-page.test.mjs
 npm run check:node
@@ -179,10 +303,16 @@ node --check app\api\dashboard\route.js
 node --check app\api\person\route.js
 ```
 
-Historical full test result:
+Historical full test result before the July 4 report/update-log work:
 
 ```text
 29 tests passed, 0 failed
+```
+
+Current full test result after the July 4 report/update-log work:
+
+```text
+114 tests passed, 0 failed
 ```
 
 ## Current Dev Server
@@ -192,3 +322,17 @@ The local dev server was restarted after env key changes and is running at:
 ```text
 http://localhost:3000
 ```
+
+The local Docker deployment is also running through port 80:
+
+```text
+http://localhost
+```
+
+## Suggested Skills
+
+- `handoff`: Use when updating this document for the next session.
+- `db-cli`: Use for direct MariaDB inspection or report row verification.
+- `playwright-cli`: Use for browser-visible checks, especially dashboard and update-log routing.
+- `build-web-apps:react-best-practices`: Use when touching Next.js/React UI or route code.
+- `superpowers:verification-before-completion`: Use before claiming a code or deploy task is complete.
