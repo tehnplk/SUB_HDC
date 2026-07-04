@@ -3,6 +3,7 @@
 import { Database } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { getDbStatusOnce } from "../lib/db-status-cache.mjs";
 import { getMaxUpdateVersion } from "../lib/update-log.mjs";
 import updateLog from "../upldate_log.json";
 
@@ -13,25 +14,23 @@ export default function DashboardPageTitle() {
   const dbLabel = dbStatus === "online" ? "Connect" : dbStatus === "error" ? "Disconnect" : "Checking";
 
   useEffect(() => {
-    const controller = new AbortController();
+    let active = true;
 
-    fetch("/api/dashboard?summary=true", { signal: controller.signal })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load dashboard summary");
-        return res.json();
-      })
+    getDbStatusOnce()
       .then((payload) => {
+        if (!active) return;
         setCenterName(payload.centerName || "");
-        setDbStatus("online");
+        setDbStatus(payload.status === "online" ? "online" : "error");
       })
-      .catch((err) => {
-        if (err.name !== "AbortError") {
-          setCenterName("");
-          setDbStatus("error");
-        }
+      .catch(() => {
+        if (!active) return;
+        setCenterName("");
+        setDbStatus("error");
       });
 
-    return () => controller.abort();
+    return () => {
+      active = false;
+    };
   }, []);
 
   return (
