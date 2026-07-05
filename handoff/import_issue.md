@@ -91,7 +91,7 @@ Files รอใน `tmp/uploads/`:
 - `webapp/lib/log-import.mjs`: เพิ่ม `finalizeInterruptedLogImport()` (ปิด record เดี่ยวเมื่อ import process ตาย) และ `recoverStaleLogImports()` (กวาด record ที่ค้าง `pending`/`processing` เกิน `IMPORT_STALE_MINUTES` นาที ตั้งเป็น `not_complate`) — guard ด้วย `finish_date_time IS NULL` จะไม่ทับ record ที่ importer ปิดเองแล้ว
 - `webapp/app/api/import-zip/route.js`: เมื่อ child process ตาย (exit code ≠ 0 หรือ spawn error) parent จะอัปเดต status เป็น `not_complate` ให้เอง + ทุกครั้งที่มี import ใหม่จะ sweep stale records อัตโนมัติ (fire-and-forget)
 - `tmp_scripts/tmp_fix_stuck_processing.sql`: SQL สำหรับกวาดข้อมูลค้างด้วยมือ (one-off)
-- Env ใหม่: `IMPORT_STALE_MINUTES` (default 120)
+- ตั้งค่าเวลา stale ที่ `webapp/config.json` → `import.staleMinutes` (default 120)
 
 ### Issue 2 — MySQL connection closed mid-import ✅
 - `webapp/lib/import_f43_node.js`: pool เพิ่ม `enableKeepAlive` + `idleTimeout: 60s` (คืน connection ที่ idle ก่อนโดน server ตัด) และเพิ่ม `getPooledConnection()` ที่ `ping()` ตรวจ connection ก่อนใช้ทุกครั้ง — ถ้าตายจะ destroy แล้วดึงตัวใหม่ (retry 3 ครั้ง) ใช้แทน `pool.getConnection()` ทุกจุด
@@ -99,8 +99,13 @@ Files รอใน `tmp/uploads/`:
 - Error path ตอนบันทึก `not_complate` มี try/catch แยก — ถ้า pool พังจะไม่ mask error เดิม (parent/sweep จะปิด record ให้)
 
 ### Issue 3 — Lock timeout on large tables ✅
-- `IMPORT_QUEUE_CONCURRENCY` เปลี่ยน default จาก 2 → 1 (ทั้งใน `import-queue.mjs`, `.env`, `.env.example`) — import ทีละไฟล์ ไม่แย่ง per-table advisory lock กัน
+- `import.queueConcurrency` เปลี่ยน default จาก 2 → 1 (ที่ `webapp/config.json`) — import ทีละไฟล์ ไม่แย่ง per-table advisory lock กัน
 - ยังปรับ `IMPORT_ADVISORY_LOCK_TIMEOUT` (default 300s) ได้ผ่าน env เดิมหากตารางใหญ่ขึ้น
+
+### Config consolidation (2026-07-05)
+- ย้าย import queue settings จาก `.env` → `webapp/config.json` ใต้ key `import`: `queueConcurrency`, `queueCapacity`, `userMaxZips`, `staleMinutes`
+- ตัวอ่านค่ากลาง: `webapp/lib/import-config.mjs` (`loadImportSettings()`); ใช้โดย `import-queue.mjs` และ `log-import.mjs`
+- `IMPORT_ADVISORY_LOCK_TIMEOUT` ยังอยู่ที่ env (ใช้เฉพาะ CLI importer)
 
 ### Verification
 - Test suite ทั้งหมดผ่าน: 126/126 (`node --test "tests/*.test.mjs"`)

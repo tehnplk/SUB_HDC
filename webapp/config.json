@@ -1,6 +1,16 @@
 {
-  "_help": "import.method must be one of: load-data, insert",
+  "_help": {
+    "import.method": "one of: load-data, insert",
+    "import.queueConcurrency": "how many ZIP imports run DB work at once (keep 1 to avoid per-table lock contention on large tables)",
+    "import.queueCapacity": "max ZIPs allowed in the queue at once (running + pending)",
+    "import.userMaxZips": "max ZIPs one user can select in a single upload",
+    "import.staleMinutes": "minutes before a stuck pending/processing import is marked not_complate"
+  },
   "import": {
-    "method": "load-data"
+    "method": "load-data",
+    "queueConcurrency": 1,
+    "queueCapacity": 120,
+    "userMaxZips": 12,
+    "staleMinutes": 120
   }
 }

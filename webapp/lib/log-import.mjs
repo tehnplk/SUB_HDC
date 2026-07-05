@@ -1,3 +1,5 @@
+import { IMPORT_SETTING_DEFAULTS, loadImportSettings } from "./import-config.mjs";
+
 export function logImportOrderClause() {
   return `
     CASE status
@@ -37,11 +39,10 @@ export async function finalizeInterruptedLogImport(connection, id, message) {
   return result.affectedRows > 0;
 }
 
-export const IMPORT_STALE_MINUTES_DEFAULT = 120;
+export const IMPORT_STALE_MINUTES_DEFAULT = IMPORT_SETTING_DEFAULTS.staleMinutes;
 
-export function importStaleMinutes(env = process.env) {
-  const parsed = Number(env.IMPORT_STALE_MINUTES);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : IMPORT_STALE_MINUTES_DEFAULT;
+export function importStaleMinutes() {
+  return loadImportSettings().staleMinutes;
 }
 
 // Sweeps records stuck in pending/processing (importer crashed, container

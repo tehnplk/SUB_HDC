@@ -1,13 +1,18 @@
+import { loadImportSettings } from "./import-config.mjs";
+
 function positiveInt(value, fallback) {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-// Default 1: concurrent ZIPs importing the same tables fight over per-table
-// advisory locks (GET_LOCK) and large REPLACE loads then time out.
-export const IMPORT_QUEUE_CONCURRENCY = positiveInt(process.env.IMPORT_QUEUE_CONCURRENCY, 1);
-export const IMPORT_QUEUE_CAPACITY = positiveInt(process.env.IMPORT_QUEUE_CAPACITY, 120);
-export const IMPORT_USER_MAX_ZIPS = positiveInt(process.env.IMPORT_USER_MAX_ZIPS, 12);
+// Queue tuning comes from config.json (import.*). Concurrency defaults to 1:
+// concurrent ZIPs importing the same tables fight over per-table advisory
+// locks (GET_LOCK) and large REPLACE loads then time out.
+const importSettings = loadImportSettings();
+
+export const IMPORT_QUEUE_CONCURRENCY = importSettings.queueConcurrency;
+export const IMPORT_QUEUE_CAPACITY = importSettings.queueCapacity;
+export const IMPORT_USER_MAX_ZIPS = importSettings.userMaxZips;
 
 export class ImportQueue {
   constructor({ concurrency = IMPORT_QUEUE_CONCURRENCY, capacity = IMPORT_QUEUE_CAPACITY } = {}) {
