@@ -14,6 +14,7 @@ services:
     volumes:
       - sub_hdc_mariadb_data:/var/lib/mysql
       - ./table:/docker-entrypoint-initdb.d:ro
+      - ./my.cnf:/etc/mysql/conf.d/custom.cnf:ro
 
   webapp:
     build:
