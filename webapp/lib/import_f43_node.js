@@ -7,11 +7,15 @@ const AdmZip = require("adm-zip");
 const iconv = require("iconv-lite");
 const mysql = require("mysql2/promise");
 const { loadEnvConfig } = require("@next/env");
+const sharedImporter = require("./import_f43_shared.js");
+const insertImporter = require("./import_f43_insert.js");
+const loadDataImporter = require("./import_f43_load_data.js");
 
 loadEnvConfig(process.cwd());
 
 const IDENTIFIER_RE = /^[A-Za-z0-9_]+$/;
 const SYSTEM_METADATA_COLUMNS = new Set(["file_name", "import_date_time", "log_import_id"]);
+const IMPORT_METHODS = new Set(["insert", "load-data"]);
 
 // ── Encryption rules ──
 const ENCRYPT_RULES = {
@@ -260,107 +264,38 @@ async function withTableImportLock(connection, database, tableName, timeoutSecon
   }
 }
 
-function buildInsert(tableName, columns, rowCount) {
-  const columnSql = columns.map(quoteIdentifier).join(", ");
-  const oneRow = `(${columns.map(() => "?").join(", ")})`;
-  const valuesSql = Array.from({ length: rowCount }, () => oneRow).join(", ");
-  return `INSERT INTO ${quoteIdentifier(tableName)} (${columnSql}) VALUES ${valuesSql}`;
-}
-
-function getMysqlErrorText(error) {
-  return String(error?.sqlMessage || error?.message || error || "");
-}
-
-function getMysqlErrorColumn(error) {
-  const message = getMysqlErrorText(error);
-  const match = message.match(/column '([^']+)'/i) || message.match(/column `([^`]+)`/i);
-  return match?.[1] || null;
-}
-
-function getMysqlErrorBatchRow(error) {
-  const message = getMysqlErrorText(error);
-  const match = message.match(/\bat row (\d+)\b/i);
-  return match ? Number(match[1]) : null;
-}
-
-function addImportErrorContext(error, file, batchStart) {
-  const column = getMysqlErrorColumn(error);
-  const batchRow = getMysqlErrorBatchRow(error);
-  const sourceRow = Number.isInteger(batchRow) ? batchStart + batchRow : null;
-  const details = [
-    `file=${file.fileName}`,
-    `table=${file.tableName}`,
-    column ? `column=${column}` : null,
-    sourceRow ? `row=${sourceRow}` : null,
-    batchRow && batchRow !== sourceRow ? `batchRow=${batchRow}` : null,
-  ].filter(Boolean);
-  const wrapped = new Error(`${getMysqlErrorText(error)} [${details.join(", ")}]`, { cause: error });
-  wrapped.code = error?.code;
-  wrapped.errno = error?.errno;
-  wrapped.sqlState = error?.sqlState;
-  return wrapped;
-}
-
-async function importFile(connection, file, batchSize, onDuplicate, onBatchComplete, logImportId) {
-  const existingColumns = await getExistingColumns(connection, file.tableName);
-  const importColumns = file.columns
-    .filter((column) => !SYSTEM_METADATA_COLUMNS.has(column.toLowerCase()))
-    .filter((column) => existingColumns.has(column.toLowerCase()))
-    .map((column) => existingColumns.get(column.toLowerCase()));
-  const missingColumns = file.columns.filter((column) => {
-    const normalized = column.toLowerCase();
-    return !SYSTEM_METADATA_COLUMNS.has(normalized) && !existingColumns.has(normalized);
-  });
-
-  if (existingColumns.has("log_import_id")) {
-    if (logImportId === undefined || logImportId === null) {
-      throw new Error(`${file.tableName}: log_import_id is required`);
+function loadImportConfig(configPath = path.join(process.cwd(), "config.json")) {
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(configPath, "utf8"));
+  } catch (error) {
+    if (error?.code === "ENOENT") {
+      throw new Error("config.json import.method is required");
     }
-    importColumns.push(existingColumns.get("log_import_id"));
+    throw new Error(`config.json is invalid JSON: ${error.message}`);
   }
 
-  if (!importColumns.length) {
-    throw new Error(`${file.tableName}: no importable columns found`);
+  const method = parsed?.import?.method;
+  if (typeof method !== "string" || !method.trim()) {
+    throw new Error("config.json import.method is required");
   }
 
-  let imported = 0;
-  for (let start = 0; start < file.rows.length; start += batchSize) {
-    const batch = file.rows.slice(start, start + batchSize);
-    const values = [];
-    for (const row of batch) {
-      const rowByColumn = new Map(file.columns.map((column, index) => [column, row[index]]));
-      for (const column of importColumns) {
-        values.push(column.toLowerCase() === "log_import_id" ? logImportId : rowByColumn.get(column.toLowerCase()));
-      }
-    }
-
-    let sql = buildInsert(file.tableName, importColumns, batch.length);
-    if (onDuplicate === "ignore") {
-      sql = sql.replace(/^INSERT INTO/i, "INSERT IGNORE INTO");
-    } else if (onDuplicate === "replace") {
-      sql = sql.replace(/^INSERT INTO/i, "REPLACE INTO");
-    }
-    try {
-      await connection.execute(sql, values);
-    } catch (error) {
-      throw addImportErrorContext(error, file, start);
-    }
-    imported += batch.length;
-    if (onBatchComplete) {
-      onBatchComplete(batch.length, imported, file.rows.length);
-    }
+  const normalizedMethod = method.trim().toLowerCase();
+  if (!IMPORT_METHODS.has(normalizedMethod)) {
+    throw new Error("config.json import.method must be insert or load-data");
   }
 
   return {
-    table: file.tableName,
-    fileName: file.fileName,
-    columns: importColumns.length,
-    missingColumns,
-    rows: imported,
+    ...parsed,
+    import: {
+      ...parsed.import,
+      method: normalizedMethod,
+    },
   };
 }
 
 function parseArgs(argv = process.argv, env = process.env) {
+  const importConfig = loadImportConfig(env.IMPORT_CONFIG_PATH || path.join(process.cwd(), "config.json"));
   const args = {
     zip: "",
     host: env.DB_HOST || "localhost",
@@ -373,6 +308,7 @@ function parseArgs(argv = process.argv, env = process.env) {
     fileName: "",
     progress: false,
     concurrency: 20,
+    method: importConfig.import.method,
     advisoryLockTimeout: Number(env.IMPORT_ADVISORY_LOCK_TIMEOUT || 300),
     logImportId: null,
   };
@@ -423,6 +359,13 @@ function parseArgs(argv = process.argv, env = process.env) {
 
 async function main() {
   const args = parseArgs();
+  const configuredImporter = {
+    insert: insertImporter,
+    "load-data": loadDataImporter,
+  }[args.method];
+  if (!configuredImporter) {
+    throw new Error("config.json import.method must be insert or load-data");
+  }
   const files = readF43Files(args.zip, args.fileName || undefined);
 
   // Apply encryption according to encrypt_method.md
@@ -448,6 +391,7 @@ async function main() {
     connectionLimit: Math.max(args.concurrency, 1),
     waitForConnections: true,
     queueLimit: 0,
+    infileStreamFactory: (filePath) => fs.createReadStream(filePath),
   });
 
   const semaphore = [];
@@ -494,7 +438,7 @@ async function main() {
           await conn.beginTransaction();
           transactionStarted = true;
           try {
-            const item = await importFile(
+            const item = await configuredImporter.importFile(
               conn,
               file,
               args.batchSize,
@@ -613,20 +557,22 @@ if (require.main === module) {
 }
 
 module.exports = {
-  buildInsert,
+  buildLoadDataSql: loadDataImporter.buildLoadDataSql,
   acquireTableImportLock,
   createLogImportFile,
-  decodeText,
-  encryptFileRows,
+  decodeText: sharedImporter.decodeText,
+  encryptFileRows: sharedImporter.encryptFileRows,
   releaseTableImportLock,
-  getAesKey,
-  getExistingColumns,
-  importFile,
+  getAesKey: sharedImporter.getAesKey,
+  getExistingColumns: sharedImporter.getExistingColumns,
+  importFileWithLoadData: loadDataImporter.importFile,
+  importFileWithInsert: insertImporter.importFile,
+  loadImportConfig,
   main,
-  md5,
+  md5: sharedImporter.md5,
   parseArgs,
-  quoteIdentifier,
-  readF43Files,
+  quoteIdentifier: sharedImporter.quoteIdentifier,
+  readF43Files: sharedImporter.readF43Files,
   tableImportLockName,
   updateLogImportFileStatus,
   withTableImportLock,

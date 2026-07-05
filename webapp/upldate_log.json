@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.7",
+    "update_date": "2026-07-05",
+    "issue": "เพิ่ม config สำหรับเลือก import method"
+  },
+  {
     "version": "1.0.6",
     "update_date": "2026-07-04",
     "issue": "สร้างรายงานด้วย sql ที่ซับซ้อน และกำหนดตัวแปรได้"

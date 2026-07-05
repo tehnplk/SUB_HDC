@@ -1,0 +1,6 @@
+{
+  "_help": "import.method must be one of: load-data, insert",
+  "import": {
+    "method": "load-data"
+  }
+}

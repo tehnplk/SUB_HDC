@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -26,11 +26,24 @@ async function withTempZip(entries, callback) {
   }
 }
 
+async function withTempConfig(config, callback) {
+  const dir = await mkdtemp(path.join(os.tmpdir(), "sub-hdc-import-config-"));
+  const configPath = path.join(dir, "config.json");
+  await writeFile(configPath, JSON.stringify(config), "utf8");
+
+  try {
+    return await callback(configPath);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
 test("importer module exports helpers without running the CLI", () => {
   const importer = require("../lib/import_f43_node.js");
 
   assert.equal(typeof importer.readF43Files, "function");
-  assert.equal(typeof importer.importFile, "function");
+  assert.equal(typeof importer.importFileWithLoadData, "function");
+  assert.equal(importer.importFile, undefined);
 });
 
 test("readF43Files parses nested F43 text files", async () => {
@@ -54,9 +67,9 @@ test("readF43Files parses nested F43 text files", async () => {
   );
 });
 
-test("importFile writes log_import_id metadata instead of source file columns", async () => {
-  const importer = require("../lib/import_f43_node.js");
-  const executed = [];
+test("load-data import writes log_import_id metadata instead of source file columns", async () => {
+  const loader = require("../lib/import_f43_load_data.js");
+  let loadedSource = "";
   const connection = {
     async execute(sql, values) {
       if (/^SHOW COLUMNS/i.test(sql)) {
@@ -69,31 +82,133 @@ test("importFile writes log_import_id metadata instead of source file columns", 
           ],
         ];
       }
-      executed.push({ sql, values });
+      throw new Error(`Unexpected execute: ${sql} ${values}`);
+    },
+    async query(sql) {
+      const match = sql.match(/LOAD DATA LOCAL INFILE '([^']+)'/);
+      assert.ok(match);
+      loadedSource = await readFile(match[1], "utf8");
       return [{ affectedRows: 1 }];
     },
   };
 
-  const result = await importer.importFile(
-    connection,
-    {
-      tableName: "service",
-      fileName: "source.zip",
-      columns: ["hospcode", "seq", "date_serv", "file_name"],
-      rows: [["11251", "1", "20260101", "inside.txt"]],
-    },
-    500,
-    "error",
-    undefined,
-    42
-  );
+  await withTempZip({}, async (zipPath) => {
+    const result = await loader.importFile(
+      connection,
+      {
+        tableName: "service",
+        fileName: "source.zip",
+        columns: ["hospcode", "seq", "date_serv", "file_name"],
+        rows: [["11251", "1", "20260101", "inside.txt"]],
+      },
+      500,
+      "replace",
+      undefined,
+      42,
+      { tmpDir: path.dirname(zipPath) }
+    );
 
-  assert.equal(result.rows, 1);
-  assert.equal(executed.length, 1);
-  assert.match(executed[0].sql, /`hospcode`, `seq`, `date_serv`, `log_import_id`/);
-  assert.doesNotMatch(executed[0].sql, /`file_name`, `file_name`/);
-  assert.doesNotMatch(executed[0].sql, /`file_name`/);
-  assert.deepEqual(executed[0].values, ["11251", "1", "20260101", 42]);
+    assert.equal(result.rows, 1);
+  });
+
+  assert.equal(loadedSource, "11251|1|20260101|42\n");
+});
+
+test("load-data import adds table column context to MySQL errors", async () => {
+  const loader = require("../lib/import_f43_load_data.js");
+  const connection = {
+    async execute(sql) {
+      if (/^SHOW COLUMNS/i.test(sql)) {
+        return [
+          [
+            { Field: "hospcode" },
+            { Field: "hid" },
+            { Field: "house" },
+          ],
+        ];
+      }
+      throw new Error(`Unexpected execute: ${sql}`);
+    },
+    async query() {
+      const error = new Error("Data too long for column 'house' at row 1");
+      error.code = "ER_DATA_TOO_LONG";
+      throw error;
+    },
+  };
+
+  await withTempZip({}, async (zipPath) => {
+    await assert.rejects(
+      () => loader.importFile(
+        connection,
+        {
+          tableName: "home",
+          fileName: "source.zip",
+          columns: ["hospcode", "hid", "house"],
+          rows: [["11251", "1", "99/1"]],
+        },
+        500,
+        "replace",
+        undefined,
+        42,
+        { tmpDir: path.dirname(zipPath) }
+      ),
+      /table=home/
+    );
+  });
+});
+
+test("legacy insert import is available only as a separate importer file", () => {
+  const importer = require("../lib/import_f43_node.js");
+  const inserter = require("../lib/import_f43_insert.js");
+
+  assert.equal(importer.importFile, undefined);
+  assert.equal(importer.buildInsert, undefined);
+  assert.equal(typeof inserter.importFile, "function");
+  assert.equal(typeof inserter.buildInsert, "function");
+});
+
+test("parseArgs reads import method from config.json", async () => {
+  const importer = require("../lib/import_f43_node.js");
+
+  await withTempConfig({ import: { method: "insert" } }, async (configPath) => {
+    assert.equal(
+      importer.parseArgs(["node", "import_f43_node.js", "--zip", "sample.zip"], {
+        IMPORT_CONFIG_PATH: configPath,
+      }).method,
+      "insert"
+    );
+  });
+
+  await withTempConfig({ import: { method: "load-data" } }, async (configPath) => {
+    assert.equal(
+      importer.parseArgs(["node", "import_f43_node.js", "--zip", "sample.zip"], {
+        IMPORT_CONFIG_PATH: configPath,
+      }).method,
+      "load-data"
+    );
+  });
+});
+
+test("parseArgs requires a valid import method in config.json without fallback", async () => {
+  const importer = require("../lib/import_f43_node.js");
+
+  await withTempConfig({}, async (configPath) => {
+    assert.throws(
+      () => importer.parseArgs(["node", "import_f43_node.js", "--zip", "sample.zip"], {
+        IMPORT_CONFIG_PATH: configPath,
+      }),
+      /config\.json import\.method is required/
+    );
+  });
+
+  await withTempConfig({ import: { method: "bulk" } }, async (configPath) => {
+    assert.throws(
+      () => importer.parseArgs(["node", "import_f43_node.js", "--zip", "sample.zip"], {
+        IMPORT_CONFIG_PATH: configPath,
+      }),
+      /config\.json import\.method must be insert or load-data/
+    );
+  });
 });
 
 test("createLogImportFile stores the source zip name size and pending status", async () => {
@@ -140,48 +255,6 @@ test("updateLogImportFileStatus stamps processing complete and not_complate stat
 
   assert.match(executed[2].sql, /CURRENT_TIMESTAMP/);
   assert.deepEqual(executed[2].values, ["not_complate", "home: failed", 42]);
-});
-
-test("importFile adds table column and row context to MySQL data length errors", async () => {
-  const importer = require("../lib/import_f43_node.js");
-  const rows = Array.from({ length: 500 }, (_, index) => ["11251", String(index + 1), "99/1"]);
-  const connection = {
-    async execute(sql) {
-      if (/^SHOW COLUMNS/i.test(sql)) {
-        return [
-          [
-            { Field: "hospcode" },
-            { Field: "hid" },
-            { Field: "house" },
-          ],
-        ];
-      }
-      const error = new Error("Data too long for column 'house' at row 465");
-      error.code = "ER_DATA_TOO_LONG";
-      throw error;
-    },
-  };
-
-  await assert.rejects(
-    () => importer.importFile(
-      connection,
-      {
-        tableName: "home",
-        fileName: "source.zip",
-        columns: ["hospcode", "hid", "house"],
-        rows,
-      },
-      500,
-      "error"
-    ),
-    (error) => {
-      assert.match(error.message, /table=home/);
-      assert.match(error.message, /column=house/);
-      assert.match(error.message, /row=465/);
-      assert.match(error.message, /Data too long for column 'house' at row 465/);
-      return true;
-    }
-  );
 });
 
 test("encryptFileRows encrypts HOME house_id house and telephone with AES", () => {
@@ -260,6 +333,33 @@ test("parseArgs requires an explicit zip path and validates numeric options", ()
   );
 });
 
+test("parseArgs rejects method CLI overrides because config.json controls method", () => {
+  const importer = require("../lib/import_f43_node.js");
+
+  assert.throws(
+    () => importer.parseArgs([
+      "node",
+      "import_f43_node.js",
+      "--zip",
+      "sample.zip",
+      "--method",
+      "insert",
+    ], {}),
+    /Unknown argument: --method/
+  );
+  assert.throws(
+    () => importer.parseArgs([
+      "node",
+      "import_f43_node.js",
+      "--zip",
+      "sample.zip",
+      "--method",
+      "bulk",
+    ], {}),
+    /Unknown argument: --method/
+  );
+});
+
 test("parseArgs accepts an existing log import id for background imports", () => {
   const importer = require("../lib/import_f43_node.js");
 
@@ -332,4 +432,44 @@ test("withTableImportLock releases the advisory lock when import work fails", as
   );
 
   assert.match(calls.at(-1).sql, /RELEASE_LOCK/);
+});
+
+test("buildLoadDataSql uses local infile replace with utf8mb4 and pipe fields", () => {
+  const loader = require("../lib/import_f43_load_data.js");
+
+  const sql = loader.buildLoadDataSql(
+    "service",
+    ["hospcode", "seq", "date_serv", "log_import_id"],
+    "C:/tmp/sub-hdc-load/service.tsv",
+    "replace"
+  );
+
+  assert.match(sql, /^LOAD DATA LOCAL INFILE 'C:\/tmp\/sub-hdc-load\/service.tsv'/);
+  assert.match(sql, /REPLACE INTO TABLE `service`/);
+  assert.match(sql, /CHARACTER SET utf8mb4/);
+  assert.match(sql, /FIELDS TERMINATED BY '\|'/);
+  assert.match(sql, /LINES TERMINATED BY '\\n'/);
+  assert.match(sql, /\(`hospcode`, `seq`, `date_serv`, `log_import_id`\)/);
+});
+
+test("writeLoadDataTempFile writes encrypted Thai-safe UTF-8 rows with log_import_id", async () => {
+  const loader = require("../lib/import_f43_load_data.js");
+
+  await withTempZip({}, async (zipPath) => {
+    const tmpDir = path.dirname(zipPath);
+    const tempPath = await loader.writeLoadDataTempFile(
+      tmpDir,
+      {
+        tableName: "service",
+        columns: ["hospcode", "seq", "chiefcomp"],
+        rows: [["11251", "1", "อาการไอ"]],
+      },
+      ["hospcode", "seq", "chiefcomp", "log_import_id"],
+      42
+    );
+
+    const source = await readFile(tempPath, "utf8");
+
+    assert.equal(source, "11251|1|อาการไอ|42\n");
+  });
 });

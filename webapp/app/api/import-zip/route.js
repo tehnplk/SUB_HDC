@@ -140,7 +140,6 @@ export async function POST(request) {
     const storedName = body?.storedName;
     const originalName = body?.originalName;
     const background = body?.background === true;
-
     if (typeof storedName !== "string" || !storedName) {
       return Response.json(
         { error: "storedName is required" },

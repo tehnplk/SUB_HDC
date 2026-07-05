@@ -36,6 +36,18 @@ test("buildImportProcessArgs passes existing log import id to the importer", () 
   ]);
 });
 
+test("buildImportProcessArgs does not accept an insert fallback method", () => {
+  const args = buildImportProcessArgs({
+    scriptPath: "/app/lib/import_f43_node.js",
+    zipPath: "/app/tmp/uploads/sample.zip",
+    originalName: "sample.zip",
+    importMethod: "insert",
+  });
+
+  assert.equal(args.includes("--method"), false);
+  assert.equal(args.includes("insert"), false);
+});
+
 test("logImportOrderClause keeps processing rows above pending rows", () => {
   assert.match(logImportOrderClause(), /WHEN 'processing' THEN 0/);
   assert.match(logImportOrderClause(), /WHEN 'pending' THEN 1/);

@@ -1,0 +1,213 @@
+const path = require("node:path");
+const crypto = require("node:crypto");
+const { TextDecoder } = require("node:util");
+
+const AdmZip = require("adm-zip");
+const iconv = require("iconv-lite");
+
+const IDENTIFIER_RE = /^[A-Za-z0-9_]+$/;
+const SYSTEM_METADATA_COLUMNS = new Set(["file_name", "import_date_time", "log_import_id"]);
+
+const ENCRYPT_RULES = {
+  md5: {
+    ACCIDENT: ["cid"],
+    ADDRESS: ["cid"],
+    ADMISSION: ["cid"],
+    ANC: ["cid"],
+    APPOINTMENT: ["cid"],
+    CARD: ["cid"],
+    CHARGE_IPD: ["cid"],
+    CHARGE_OPD: ["cid"],
+    CHRONIC: ["cid"],
+    CHRONICFU: ["cid"],
+    COMMUNITY_SERVICE: ["cid"],
+    DEATH: ["cid"],
+    DENTAL: ["cid"],
+    DIAGNOSIS_IPD: ["cid"],
+    DIAGNOSIS_OPD: ["cid"],
+    DISABILITY: ["cid"],
+    DRUGALLERGY: ["cid"],
+    DRUG_IPD: ["cid"],
+    DRUG_OPD: ["cid"],
+    EPI: ["cid"],
+    FP: ["cid"],
+    FUNCTIONAL: ["cid"],
+    ICF: ["cid"],
+    LABFU: ["cid"],
+    LABOR: ["cid"],
+    NCDSCREEN: ["cid"],
+    NEWBORN: ["cid"],
+    NEWBORNCARE: ["cid"],
+    NUTRITION: ["cid"],
+    PERSON: ["cid", "father", "mother", "couple", "passport"],
+    POSTNATAL: ["cid"],
+    PRENATAL: ["cid"],
+    PROCEDURE_IPD: ["cid"],
+    PROCEDURE_OPD: ["cid"],
+    PROVIDER: ["cid"],
+    REHABILITATION: ["cid"],
+    SERVICE: ["cid"],
+    SPECIALPP: ["cid"],
+    SURVEILLANCE: ["cid"],
+    WOMEN: ["cid"],
+  },
+  aes: {
+    PERSON: ["lname", "telephone", "mobile"],
+    ADDRESS: ["house_id", "houseno"],
+    HOME: ["house_id", "house", "telephone"],
+    PROVIDER: ["lname"],
+    SERVICE: ["insid"],
+    CARD: ["insid"],
+  },
+};
+
+function getAesKey(env) {
+  const raw = env.ENCRYPT_KEY || "change_me";
+  return crypto.createHash("sha256").update(raw).digest();
+}
+
+function md5(value) {
+  if (!value) return value;
+  return crypto.createHash("md5").update(String(value)).digest("hex");
+}
+
+function encryptAes(value, key) {
+  if (!value) return value;
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+  const encrypted = Buffer.concat([
+    cipher.update(String(value), "utf8"),
+    cipher.final(),
+  ]);
+  const tag = cipher.getAuthTag();
+  return Buffer.concat([iv, encrypted, tag]).toString("hex");
+}
+
+function encryptFileRows(file, aesKey) {
+  const tableRulesKey = file.tableName.toUpperCase();
+  const md5Columns = new Set((ENCRYPT_RULES.md5[tableRulesKey] || []).map((column) => column.toLowerCase()));
+  const aesColumns = new Set((ENCRYPT_RULES.aes[tableRulesKey] || []).map((column) => column.toLowerCase()));
+  const cidIndex = file.columns.findIndex((column) => column.toLowerCase() === "cid");
+  const shouldAddCidAes =
+    md5Columns.has("cid") &&
+    cidIndex >= 0 &&
+    !file.columns.some((column) => column.toLowerCase() === "cid_aes");
+
+  if (!md5Columns.size && !aesColumns.size && !shouldAddCidAes) {
+    return file;
+  }
+
+  const encryptedRows = file.rows.map((row) =>
+    row.map((value, index) => {
+      const column = file.columns[index]?.toLowerCase();
+      if (md5Columns.has(column)) return md5(value);
+      if (aesColumns.has(column)) return encryptAes(value, aesKey);
+      return value;
+    }).concat(shouldAddCidAes ? [encryptAes(row[cidIndex], aesKey)] : [])
+  );
+
+  return {
+    ...file,
+    columns: shouldAddCidAes ? file.columns.concat("cid_aes") : file.columns,
+    rows: encryptedRows,
+  };
+}
+
+function quoteIdentifier(name) {
+  if (!name || !IDENTIFIER_RE.test(name)) {
+    throw new Error(`Invalid MySQL identifier: ${name}`);
+  }
+  return `\`${name}\``;
+}
+
+function decodeText(buffer) {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(buffer).replace(/^\uFEFF/, "");
+  } catch {
+    return iconv.decode(buffer, "cp874").replace(/^\uFEFF/, "");
+  }
+}
+
+function readF43Files(zipPath, sourceFileName) {
+  const zip = new AdmZip(zipPath);
+  const zipFileName = sourceFileName || path.basename(zipPath);
+  return zip
+    .getEntries()
+    .filter((entry) => !entry.isDirectory && entry.entryName.toLowerCase().endsWith(".txt"))
+    .sort((a, b) => a.entryName.localeCompare(b.entryName))
+    .map((entry) => {
+      const text = decodeText(entry.getData());
+      const lines = text.split(/\r?\n/);
+      while (lines.length && lines[lines.length - 1] === "") lines.pop();
+      if (!lines.length) throw new Error(`Missing header in ${entry.entryName}`);
+
+      const columns = lines[0].split("|").map((column) => column.trim().toLowerCase());
+      if (columns.some((column) => !column)) {
+        throw new Error(`Blank column name in ${entry.entryName}`);
+      }
+
+      const rows = [];
+      for (let index = 1; index < lines.length; index += 1) {
+        const line = lines[index];
+        if (!line) continue;
+        const row = line.split("|");
+        if (row.length !== columns.length) {
+          throw new Error(
+            `Column count mismatch in ${entry.entryName} line ${index + 1}: ` +
+              `expected ${columns.length}, got ${row.length}`
+          );
+        }
+        rows.push(row);
+      }
+
+      return {
+        fileName: zipFileName,
+        tableName: path.basename(entry.entryName, path.extname(entry.entryName)).toLowerCase(),
+        columns,
+        rows,
+      };
+    });
+}
+
+async function getExistingColumns(connection, tableName) {
+  const [rows] = await connection.execute(`SHOW COLUMNS FROM ${quoteIdentifier(tableName)}`);
+  return new Map(rows.map((row) => [row.Field.toLowerCase(), row.Field]));
+}
+
+function getImportColumns(existingColumns, file, logImportId) {
+  const importColumns = file.columns
+    .filter((column) => !SYSTEM_METADATA_COLUMNS.has(column.toLowerCase()))
+    .filter((column) => existingColumns.has(column.toLowerCase()))
+    .map((column) => existingColumns.get(column.toLowerCase()));
+  const missingColumns = file.columns.filter((column) => {
+    const normalized = column.toLowerCase();
+    return !SYSTEM_METADATA_COLUMNS.has(normalized) && !existingColumns.has(normalized);
+  });
+
+  if (existingColumns.has("log_import_id")) {
+    if (logImportId === undefined || logImportId === null) {
+      throw new Error(`${file.tableName}: log_import_id is required`);
+    }
+    importColumns.push(existingColumns.get("log_import_id"));
+  }
+
+  if (!importColumns.length) {
+    throw new Error(`${file.tableName}: no importable columns found`);
+  }
+
+  return { importColumns, missingColumns };
+}
+
+module.exports = {
+  ENCRYPT_RULES,
+  SYSTEM_METADATA_COLUMNS,
+  decodeText,
+  encryptAes,
+  encryptFileRows,
+  getAesKey,
+  getExistingColumns,
+  getImportColumns,
+  md5,
+  quoteIdentifier,
+  readF43Files,
+};
