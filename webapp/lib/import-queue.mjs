@@ -3,7 +3,9 @@ function positiveInt(value, fallback) {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-export const IMPORT_QUEUE_CONCURRENCY = positiveInt(process.env.IMPORT_QUEUE_CONCURRENCY, 2);
+// Default 1: concurrent ZIPs importing the same tables fight over per-table
+// advisory locks (GET_LOCK) and large REPLACE loads then time out.
+export const IMPORT_QUEUE_CONCURRENCY = positiveInt(process.env.IMPORT_QUEUE_CONCURRENCY, 1);
 export const IMPORT_QUEUE_CAPACITY = positiveInt(process.env.IMPORT_QUEUE_CAPACITY, 120);
 export const IMPORT_USER_MAX_ZIPS = positiveInt(process.env.IMPORT_USER_MAX_ZIPS, 12);
 

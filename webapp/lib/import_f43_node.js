@@ -213,6 +213,23 @@ async function updateLogImportFileStatus(connection, id, status, notCompleteMsg 
   );
 }
 
+async function getPooledConnection(pool, attempts = 3) {
+  let lastError;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const connection = await pool.getConnection();
+    try {
+      await connection.ping();
+      return connection;
+    } catch (error) {
+      // A pooled connection can be dead (server wait_timeout, network drop)
+      // without the pool knowing; destroy it and pull a fresh one.
+      lastError = error;
+      connection.destroy();
+    }
+  }
+  throw lastError;
+}
+
 function tableImportLockName(database, tableName) {
   const key = `${database || "sub_hdc"}:${tableName}`.toLowerCase();
   const digest = crypto.createHash("sha1").update(key).digest("hex");
@@ -391,6 +408,11 @@ async function main() {
     connectionLimit: Math.max(args.concurrency, 1),
     waitForConnections: true,
     queueLimit: 0,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 10_000,
+    // Recycle idle connections before the server's wait_timeout can kill them
+    // mid-pool, which surfaced as "connection is in closed state" during import.
+    idleTimeout: 60_000,
     infileStreamFactory: (filePath) => fs.createReadStream(filePath),
   });
 
@@ -419,7 +441,7 @@ async function main() {
       fileName: args.fileName || path.basename(args.zip),
     });
 
-    const logConn = await pool.getConnection();
+    const logConn = await getPooledConnection(pool);
     try {
       if (!logImportId) {
         const zipFileSize = fs.statSync(args.zip).size;
@@ -431,7 +453,7 @@ async function main() {
     }
 
     const tasks = files.map((file) => async () => {
-      const conn = await pool.getConnection();
+      const conn = await getPooledConnection(pool);
       let transactionStarted = false;
       try {
         await withTableImportLock(conn, args.database, file.tableName, args.advisoryLockTimeout, async () => {
@@ -517,7 +539,7 @@ async function main() {
       processedRows,
       tables: summary.length,
     });
-    const completeConn = await pool.getConnection();
+    const completeConn = await getPooledConnection(pool);
     try {
       await updateLogImportFileStatus(completeConn, logImportId, "complete");
     } finally {
@@ -525,11 +547,17 @@ async function main() {
     }
   } catch (error) {
     if (logImportId) {
-      const errorConn = await pool.getConnection();
       try {
-        await updateLogImportFileStatus(errorConn, logImportId, "not_complate", error.message);
-      } finally {
-        errorConn.release();
+        const errorConn = await getPooledConnection(pool);
+        try {
+          await updateLogImportFileStatus(errorConn, logImportId, "not_complate", error.message);
+        } finally {
+          errorConn.release();
+        }
+      } catch (statusError) {
+        // Never mask the import error; the parent process / stale sweep will
+        // finalize the record if this status write could not go through.
+        console.error(`Failed to record import failure: ${statusError.message}`);
       }
     }
     emitJson(args.progress, { type: "error", message: error.message });

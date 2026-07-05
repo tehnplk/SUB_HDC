@@ -4,7 +4,11 @@ import { spawn } from "node:child_process";
 import { createDbConnection } from "../../../lib/db.js";
 import { importQueue, IMPORT_QUEUE_CAPACITY, IMPORT_QUEUE_CONCURRENCY } from "../../../lib/import-queue.mjs";
 import { clearImportProgress, updateImportProgressFromEvent } from "../../../lib/import-progress.mjs";
-import { createPendingLogImportFile } from "../../../lib/log-import.mjs";
+import {
+  createPendingLogImportFile,
+  finalizeInterruptedLogImport,
+  recoverStaleLogImports,
+} from "../../../lib/log-import.mjs";
 
 export const runtime = "nodejs";
 
@@ -85,6 +89,36 @@ export function createImportProgressWriter({ logImportId, writeStdout = () => {}
   };
 }
 
+async function finalizeInterrupted(logImportId, message) {
+  if (!logImportId) return;
+  try {
+    const connection = await createDbConnection();
+    try {
+      await finalizeInterruptedLogImport(connection, logImportId, message);
+    } finally {
+      await connection.end();
+    }
+  } catch (error) {
+    console.error("Failed to finalize interrupted import:", error);
+  }
+}
+
+async function sweepStaleImports() {
+  try {
+    const connection = await createDbConnection();
+    try {
+      const recovered = await recoverStaleLogImports(connection);
+      if (recovered > 0) {
+        console.log(`Recovered ${recovered} stale import record(s)`);
+      }
+    } finally {
+      await connection.end();
+    }
+  } catch (error) {
+    console.error("Failed to sweep stale imports:", error);
+  }
+}
+
 function runImportProcess({ zipPath, originalName, logImportId, writeStdout = () => {}, writeEvent = () => {} }) {
   return new Promise((resolve) => {
     const scriptPath = path.join(process.cwd(), "lib", "import_f43_node.js");
@@ -110,16 +144,22 @@ function runImportProcess({ zipPath, originalName, logImportId, writeStdout = ()
     child.on("error", (error) => {
       writeEvent({ type: "error", message: error.message });
       clearImportProgress(logImportId);
-      secureDelete(zipPath).finally(resolve);
+      finalizeInterrupted(logImportId, error.message)
+        .then(() => secureDelete(zipPath))
+        .finally(resolve);
     });
 
     child.on("close", (code) => {
-      if (code !== 0) {
-        const message = stderr.trim() || `Import failed with exit code ${code}`;
-        writeEvent({ type: "error", message });
-      }
+      const finalize =
+        code === 0
+          ? Promise.resolve()
+          : (() => {
+              const message = stderr.trim() || `Import failed with exit code ${code}`;
+              writeEvent({ type: "error", message });
+              return finalizeInterrupted(logImportId, message);
+            })();
       clearImportProgress(logImportId);
-      secureDelete(zipPath).finally(resolve);
+      finalize.then(() => secureDelete(zipPath)).finally(resolve);
     });
   });
 }
@@ -156,6 +196,8 @@ export async function POST(request) {
 
     const zipPath = resolveUploadedPath(storedName);
     await access(zipPath);
+
+    sweepStaleImports();
 
     if (!importQueue.canAccept()) {
       await secureDelete(zipPath);
