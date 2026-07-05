@@ -1,7 +1,7 @@
 CREATE TABLE `prenatal` (
-  `hospcode` varchar(10) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `pid` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `gravida` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `hospcode` varchar(10) NOT NULL DEFAULT '',
+  `pid` varchar(255) NOT NULL DEFAULT '',
+  `gravida` varchar(255) NOT NULL DEFAULT '',
   `lmp` varchar(255) NOT NULL DEFAULT '',
   `edc` varchar(255) NOT NULL DEFAULT '',
   `vdrl_result` varchar(255) NOT NULL DEFAULT '',

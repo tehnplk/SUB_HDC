@@ -1,9 +1,9 @@
 CREATE TABLE `functional` (
-  `hospcode` varchar(10) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `pid` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `seq` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `hospcode` varchar(10) NOT NULL DEFAULT '',
+  `pid` varchar(255) NOT NULL DEFAULT '',
+  `seq` varchar(255) NOT NULL DEFAULT '',
   `date_serv` varchar(8) NOT NULL DEFAULT '',
-  `functional_test` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `functional_test` varchar(255) NOT NULL DEFAULT '',
   `testresult` varchar(255) NOT NULL DEFAULT '',
   `dependent` varchar(255) NOT NULL DEFAULT '',
   `provider` varchar(255) NOT NULL DEFAULT '',

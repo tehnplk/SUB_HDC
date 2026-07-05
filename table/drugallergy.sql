@@ -1,8 +1,8 @@
 CREATE TABLE `drugallergy` (
-  `hospcode` varchar(10) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `pid` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `hospcode` varchar(10) NOT NULL DEFAULT '',
+  `pid` varchar(255) NOT NULL DEFAULT '',
   `daterecord` varchar(255) NOT NULL DEFAULT '',
-  `drugallergy` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `drugallergy` varchar(255) NOT NULL DEFAULT '',
   `dname` varchar(255) NOT NULL DEFAULT '',
   `typedx` varchar(255) NOT NULL DEFAULT '',
   `alevel` varchar(255) NOT NULL DEFAULT '',

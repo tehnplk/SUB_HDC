@@ -1,8 +1,8 @@
 CREATE TABLE `card` (
-  `hospcode` varchar(10) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `pid` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `hospcode` varchar(10) NOT NULL DEFAULT '',
+  `pid` varchar(255) NOT NULL DEFAULT '',
   `instype_old` varchar(255) NOT NULL DEFAULT '',
-  `instype_new` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `instype_new` varchar(255) NOT NULL DEFAULT '',
   `insid` varchar(2000) NOT NULL DEFAULT '',
   `startdate` varchar(255) NOT NULL DEFAULT '',
   `expiredate` varchar(255) NOT NULL DEFAULT '',

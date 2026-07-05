@@ -1,6 +1,6 @@
 CREATE TABLE `village` (
-  `hospcode` varchar(10) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `vid` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `hospcode` varchar(10) NOT NULL DEFAULT '',
+  `vid` varchar(255) NOT NULL DEFAULT '',
   `ntraditional` varchar(255) NOT NULL DEFAULT '',
   `nmonk` varchar(255) NOT NULL DEFAULT '',
   `nreligionleader` varchar(255) NOT NULL DEFAULT '',

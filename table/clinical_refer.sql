@@ -1,9 +1,9 @@
 CREATE TABLE `clinical_refer` (
-  `hospcode` varchar(10) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `referid` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `hospcode` varchar(10) NOT NULL DEFAULT '',
+  `referid` varchar(255) NOT NULL DEFAULT '',
   `referid_province` varchar(255) NOT NULL DEFAULT '',
-  `datetime_assess` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `clinicalcode` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `datetime_assess` varchar(255) NOT NULL DEFAULT '',
+  `clinicalcode` varchar(255) NOT NULL DEFAULT '',
   `clinicalname` varchar(255) NOT NULL DEFAULT '',
   `clinicalvalue` varchar(255) NOT NULL DEFAULT '',
   `clinicalresult` varchar(255) NOT NULL DEFAULT '',

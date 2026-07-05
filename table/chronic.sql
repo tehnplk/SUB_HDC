@@ -1,8 +1,8 @@
 CREATE TABLE `chronic` (
-  `hospcode` varchar(10) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `pid` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `date_diag` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `chronic` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `hospcode` varchar(10) NOT NULL DEFAULT '',
+  `pid` varchar(255) NOT NULL DEFAULT '',
+  `date_diag` varchar(255) NOT NULL DEFAULT '',
+  `chronic` varchar(255) NOT NULL DEFAULT '',
   `hosp_dx` varchar(255) NOT NULL DEFAULT '',
   `hosp_rx` varchar(255) NOT NULL DEFAULT '',
   `date_disch` varchar(255) NOT NULL DEFAULT '',

@@ -1,9 +1,9 @@
 CREATE TABLE `epi` (
-  `hospcode` varchar(10) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `pid` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `hospcode` varchar(10) NOT NULL DEFAULT '',
+  `pid` varchar(255) NOT NULL DEFAULT '',
   `seq` varchar(255) NOT NULL DEFAULT '',
-  `date_serv` varchar(8) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `vaccinetype` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `date_serv` varchar(8) NOT NULL DEFAULT '',
+  `vaccinetype` varchar(255) NOT NULL DEFAULT '',
   `vaccineplace` varchar(255) NOT NULL DEFAULT '',
   `provider` varchar(255) NOT NULL DEFAULT '',
   `d_update` varchar(255) NOT NULL DEFAULT '',

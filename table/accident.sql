@@ -1,8 +1,8 @@
 CREATE TABLE `accident` (
-  `hospcode` varchar(10) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `pid` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `seq` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `datetime_serv` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `hospcode` varchar(10) NOT NULL DEFAULT '',
+  `pid` varchar(255) NOT NULL DEFAULT '',
+  `seq` varchar(255) NOT NULL DEFAULT '',
+  `datetime_serv` varchar(255) NOT NULL DEFAULT '',
   `datetime_ae` varchar(255) NOT NULL DEFAULT '',
   `aetype` varchar(255) NOT NULL DEFAULT '',
   `aeplace` varchar(255) NOT NULL DEFAULT '',

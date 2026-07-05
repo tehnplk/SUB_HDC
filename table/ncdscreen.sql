@@ -1,8 +1,8 @@
 CREATE TABLE `ncdscreen` (
-  `hospcode` varchar(10) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `pid` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `hospcode` varchar(10) NOT NULL DEFAULT '',
+  `pid` varchar(255) NOT NULL DEFAULT '',
   `seq` varchar(255) NOT NULL DEFAULT '',
-  `date_serv` varchar(8) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `date_serv` varchar(8) NOT NULL DEFAULT '',
   `servplace` varchar(255) NOT NULL DEFAULT '',
   `smoke` varchar(255) NOT NULL DEFAULT '',
   `alcohol` varchar(255) NOT NULL DEFAULT '',

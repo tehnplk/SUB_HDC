@@ -1,6 +1,6 @@
 CREATE TABLE `provider` (
-  `hospcode` varchar(10) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `provider` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `hospcode` varchar(10) NOT NULL DEFAULT '',
+  `provider` varchar(255) NOT NULL DEFAULT '',
   `registerno` varchar(255) NOT NULL DEFAULT '',
   `council` varchar(255) NOT NULL DEFAULT '',
   `cid` varchar(255) NOT NULL DEFAULT '',

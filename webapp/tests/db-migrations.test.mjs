@@ -25,6 +25,27 @@ function hasHospcodeColumn(source) {
   return /`\s*hospcode\s*`/i.test(source);
 }
 
+function tableDefaultBytesPerChar(source) {
+  const charsetMatch = source.match(/DEFAULT\s+CHARSET\s*=\s*(utf8mb4|utf8mb3|utf8)\b/i);
+  const charset = charsetMatch?.[1]?.toLowerCase();
+  if (charset === "utf8mb4") return 4;
+  return 3;
+}
+
+function columnVarcharLengths(source) {
+  const lengths = new Map();
+  for (const match of source.matchAll(/`([^`]+)`\s+varchar\((\d+)\)/gi)) {
+    lengths.set(match[1], Number(match[2]));
+  }
+  return lengths;
+}
+
+function primaryKeyColumns(source) {
+  const match = source.match(/PRIMARY\s+KEY\s*\(([^)]+)\)/i);
+  if (!match) return [];
+  return [...match[1].matchAll(/`([^`]+)`/g)].map((column) => column[1]);
+}
+
 test("listMigrationFiles returns sorted sql files only", async () => {
   await withTempDir(async (dir) => {
     await writeFile(path.join(dir, "20260630_b.sql"), "SELECT 2;");
@@ -95,6 +116,46 @@ test("initial table schemas define hospcode columns as varchar 10", async () => 
     const source = await readFile(path.join(tableDir, file), "utf8");
     if (!hasHospcodeColumn(source)) continue;
     if (/`\s*hospcode\s*`\s+varchar\(5\)/i.test(source)) offenders.push(file);
+  }
+
+  assert.deepEqual(offenders, []);
+});
+
+test("schema sql files do not force ascii charset or collation", async () => {
+  const schemaDirs = [
+    path.resolve(process.cwd(), "..", "table"),
+    path.resolve(process.cwd(), "..", "table_update"),
+  ];
+  const offenders = [];
+
+  for (const dir of schemaDirs) {
+    const files = (await readdir(dir)).filter((file) => file.endsWith(".sql"));
+    for (const file of files) {
+      const source = await readFile(path.join(dir, file), "utf8");
+      if (/\bCHARACTER\s+SET\s+ascii\b|\bascii_general_ci\b/i.test(source)) {
+        offenders.push(path.join(path.basename(dir), file));
+      }
+    }
+  }
+
+  assert.deepEqual(offenders, []);
+});
+
+test("initial table primary keys fit the table charset key length limit", async () => {
+  const tableDir = path.resolve(process.cwd(), "..", "table");
+  const files = (await readdir(tableDir)).filter((file) => file.endsWith(".sql"));
+  const offenders = [];
+
+  for (const file of files) {
+    const source = await readFile(path.join(tableDir, file), "utf8");
+    const varcharLengths = columnVarcharLengths(source);
+    const keyColumns = primaryKeyColumns(source);
+    const varcharKeyChars = keyColumns.reduce(
+      (total, column) => total + (varcharLengths.get(column) || 0),
+      0
+    );
+    const keyBytes = varcharKeyChars * tableDefaultBytesPerChar(source);
+    if (keyBytes > 3072) offenders.push(`${file}:${keyBytes}`);
   }
 
   assert.deepEqual(offenders, []);

@@ -1,9 +1,9 @@
 CREATE TABLE `investigation_refer` (
-  `hospcode` varchar(10) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `referid` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `hospcode` varchar(10) NOT NULL DEFAULT '',
+  `referid` varchar(255) NOT NULL DEFAULT '',
   `referid_province` varchar(255) NOT NULL DEFAULT '',
-  `datetime_invest` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `investcode` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `datetime_invest` varchar(255) NOT NULL DEFAULT '',
+  `investcode` varchar(255) NOT NULL DEFAULT '',
   `investname` varchar(255) NOT NULL DEFAULT '',
   `datetime_report` varchar(255) NOT NULL DEFAULT '',
   `investvalue` varchar(255) NOT NULL DEFAULT '',

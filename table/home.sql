@@ -1,6 +1,6 @@
 CREATE TABLE `home` (
-  `hospcode` varchar(10) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `hid` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `hospcode` varchar(10) NOT NULL DEFAULT '',
+  `hid` varchar(255) NOT NULL DEFAULT '',
   `house_id` varchar(2000) NOT NULL DEFAULT '',
   `housetype` varchar(255) NOT NULL DEFAULT '',
   `roomno` varchar(255) NOT NULL DEFAULT '',

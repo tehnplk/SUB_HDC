@@ -1,9 +1,9 @@
 CREATE TABLE `community_activity` (
-  `hospcode` varchar(10) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `vid` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-  `date_start` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `hospcode` varchar(10) NOT NULL DEFAULT '',
+  `vid` varchar(255) NOT NULL DEFAULT '',
+  `date_start` varchar(255) NOT NULL DEFAULT '',
   `date_finish` varchar(255) NOT NULL DEFAULT '',
-  `comactivity` varchar(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+  `comactivity` varchar(255) NOT NULL DEFAULT '',
   `provider` varchar(255) NOT NULL DEFAULT '',
   `d_update` varchar(255) NOT NULL DEFAULT '',
   `log_import_id` int(11) DEFAULT NULL,
