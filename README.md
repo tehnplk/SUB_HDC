@@ -57,10 +57,33 @@ docker compose up -d --build
 คำสั่งนี้จะสร้าง database ใหม่จากไฟล์ `table/*.sql`
 
 
-## 4. การ UPDATE 
+## 4. การ UPDATE
+
+### อัปเดตปกติ (โค้ด webapp / config.json)
 
 ```bash
 cd SUB_HDC
 git pull
 docker compose up -d --build webapp
 ```
+
+ค่า import settings (`import.method`, `import.queueConcurrency`, `import.queueCapacity`, `import.userMaxZips`, `import.staleMinutes`) อยู่ใน `webapp/config.json` ซึ่งถูก build เข้า image — แก้แล้วต้อง rebuild webapp ด้วยคำสั่งข้างบน
+
+### กรณี `my.cnf` มีการแก้ไข
+
+ต้อง recreate ตัว database container ด้วย เพราะ `my.cnf` เป็น single-file bind mount — หลัง `git pull` container เดิมจะยังเห็นไฟล์เก่า (restart เฉย ๆ ไม่พอ)
+
+```bash
+cd SUB_HDC
+git pull
+docker compose up -d --force-recreate mariadb
+docker compose up -d --build webapp
+```
+
+ตรวจว่าค่าใหม่มีผลแล้ว:
+
+```bash
+docker exec sub_hdc_db mysql -uroot -p112233 -e "SHOW VARIABLES LIKE 'wait_timeout'"
+```
+
+> คำเตือน: recreate `mariadb` ทำให้ database หยุดชั่วคราวไม่กี่วินาที — อย่าทำระหว่างมี import กำลังรันอยู่ (เช็คหน้า `/dashboard/log-import` แท็บ "รอนำเข้า" ให้เป็น 0 ก่อน)
