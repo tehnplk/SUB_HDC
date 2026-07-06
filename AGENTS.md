@@ -23,6 +23,31 @@ playwright-cli show
 playwright-cli show --annotate
 
 ```
+## bump version
+- edit @wepapp/update_log.json
+- post version payload to https://subhdc.plkhealth.go.th/api/sub-version
+
+
+## Sync Data to center
+- post to https://subhdc.plkhealth.go.th/api/data-sync-in
+- payload 
+```json
+{
+  "sub_center_name": "อ.เมือง",
+  "hospcode": "10731",
+  "data_type": "person",
+  "rows": [
+    { "cid": "3100500123456", "name": "สมชาย ใจดี" },
+    { "cid": "3650100654321", "name": "สมหญิง มีสุข" }
+  ]
+}
+
+```
+- response
+```json
+{ "success": true, "id": 3, "date_time_sync": "2026-07-06T03:10:00.000Z" }
+
+```
 
 ## Handoff
  - you must update @handoff/HANDOFF.md  if user  request.
