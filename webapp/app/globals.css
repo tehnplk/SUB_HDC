@@ -594,7 +594,9 @@ button:disabled {
   box-shadow: var(--shadow-sm);
 }
 
+/* hos-list: แสดงทุกแถวไม่ให้มี scroll แนวตั้ง (คง scroll แนวนอนสำหรับคอลัมน์รายเดือน) */
 .monthlyTableWrap {
+  max-height: none;
   overflow: auto;
 }
 
