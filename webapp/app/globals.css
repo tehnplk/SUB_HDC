@@ -420,6 +420,35 @@ button:disabled {
   padding-left: 40px !important;
 }
 
+.inputWithIcon .inputClearBtn {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.inputWithIcon .inputClearBtn:hover {
+  background: rgba(15, 23, 42, 0.08);
+  color: var(--foreground);
+}
+
+/* override .inputWithIcon .lucide ที่ตรึงไอคอนไว้ฝั่งซ้ายของ input */
+.inputWithIcon .inputClearBtn .lucide {
+  position: static;
+  transform: none;
+  left: auto;
+}
+
 .field select {
   width: 100%;
   min-height: 44px;

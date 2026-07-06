@@ -11,16 +11,6 @@ const nextConfig = {
         permanent: true,
       },
       {
-        source: "/dasboard/file-list",
-        destination: "/dashboard/file-list",
-        permanent: true,
-      },
-      {
-        source: "/dashbord/file-list",
-        destination: "/dashboard/file-list",
-        permanent: true,
-      },
-      {
         source: "/dasboard/hos-list",
         destination: "/dashboard/hos-list",
         permanent: true,

@@ -447,7 +447,7 @@ test("buildLoadDataSql uses local infile replace with utf8mb4 and pipe fields", 
   assert.match(sql, /^LOAD DATA LOCAL INFILE 'C:\/tmp\/sub-hdc-load\/service.tsv'/);
   assert.match(sql, /REPLACE INTO TABLE `service`/);
   assert.match(sql, /CHARACTER SET utf8mb4/);
-  assert.match(sql, /FIELDS TERMINATED BY '\|'/);
+  assert.match(sql, /FIELDS TERMINATED BY '\|' ESCAPED BY ''/);
   assert.match(sql, /LINES TERMINATED BY '\\n'/);
   assert.match(sql, /\(`hospcode`, `seq`, `date_serv`, `log_import_id`\)/);
 });

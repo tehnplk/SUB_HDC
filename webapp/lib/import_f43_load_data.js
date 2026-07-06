@@ -22,7 +22,9 @@ function buildLoadDataSql(tableName, columns, filePath, onDuplicate) {
     `LOAD DATA LOCAL INFILE '${escapeSqlString(filePath.replace(/\\/g, "/"))}'`,
     `${duplicateSql}INTO TABLE ${quoteIdentifier(tableName)}`,
     "CHARACTER SET utf8mb4",
-    "FIELDS TERMINATED BY '|'",
+    // ESCAPED BY '' — ปิดการตีความ backslash เพราะข้อมูล free text (เช่น CHIEFCOMP)
+    // อาจลงท้ายด้วย \ ทำให้ \| ถูกอ่านเป็นตัวอักษร | แล้วคอลัมน์ขาด
+    "FIELDS TERMINATED BY '|' ESCAPED BY ''",
     "LINES TERMINATED BY '\\n'",
     `(${columns.map(quoteIdentifier).join(", ")})`,
   ].join("\n");

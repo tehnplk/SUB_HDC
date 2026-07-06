@@ -10,6 +10,7 @@ import {
   FileText,
   Search,
   UploadCloud,
+  X,
 } from "lucide-react";
 import DashboardHeaderImage from "@/components/dashboard-header-image";
 import DashboardPageTitle from "@/components/dashboard-page-title";
@@ -162,8 +163,8 @@ export default function LogImportDashboard() {
               <Search aria-hidden="true" />
               <input
                 type="text"
-                aria-label="ค้นหาตามชื่อไฟล์ / ไอดีนำเข้า"
-                placeholder="พิมพ์ชื่อไฟล์ ไอดีนำเข้า"
+                aria-label="ค้นด้วยรหัส 5 หลัก / ชื่อไฟล์ / ไอดีนำเข้า"
+                placeholder="ค้นด้วยรหัส 5 หลัก"
                 className="fieldInput"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -177,7 +178,7 @@ export default function LogImportDashboard() {
                   font: "inherit",
                   fontSize: "15px",
                   fontWeight: "650",
-                  padding: "0 12px",
+                  padding: "0 40px 0 12px",
                   outline: "none",
                   transition: "border-color 0.15s, box-shadow 0.15s, background 0.15s",
                 }}
@@ -190,6 +191,16 @@ export default function LogImportDashboard() {
                   e.target.style.boxShadow = "none";
                 }}
               />
+              {searchTerm ? (
+                <button
+                  type="button"
+                  className="inputClearBtn"
+                  aria-label="ล้างตัวกรอง"
+                  onClick={() => setSearchTerm("")}
+                >
+                  <X aria-hidden="true" />
+                </button>
+              ) : null}
             </div>
           </div>
         </div>

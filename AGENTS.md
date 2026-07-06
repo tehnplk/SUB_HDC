@@ -25,6 +25,7 @@ playwright-cli show --annotate
 ```
 ## bump version
 - edit @wepapp/update_log.json
+- ถ้าตัวสุดท้ายเป็น 9 ให้ +1 ให้ตัวที่สอง และตัวสุดท้ายเป็น 1  เช่น  1.0.9 -> 1.1.1
 - post version payload to `https://subhdc.plkhealth.go.th/api/sub-version`
 - read @SSJ_API_ENDPOINT.md  more detail
 
