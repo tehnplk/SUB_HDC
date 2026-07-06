@@ -33,6 +33,9 @@ playwright-cli show --annotate
   "issue": "แก้บั๊กหน้า benchmark แสดงผลไม่ครบ และเพิ่มคอลัมน์ sub_center_name"
 }
 ```
+- read @SSJ_API_ENDPOINT.md  more detail
+
+
 
 
 ## Sync Data to center
@@ -55,6 +58,7 @@ playwright-cli show --annotate
 { "success": true, "id": 3, "date_time_sync": "2026-07-06T03:10:00.000Z" }
 
 ```
+- read @SSJ_API_ENDPOINT.md  more detail
 
 ## Handoff
  - you must update @handoff/HANDOFF.md  if user  request.
