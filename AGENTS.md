@@ -18,18 +18,25 @@
 
 ### anotate step
 ```
-playwright-cli open http://localhost:3000
+playwright-cli open `http://localhost:3000`
 playwright-cli show
 playwright-cli show --annotate
 
 ```
 ## bump version
 - edit @wepapp/update_log.json
-- post version payload to https://subhdc.plkhealth.go.th/api/sub-version
+- post version payload to `https://subhdc.plkhealth.go.th/api/sub-version`
+- payload 
+```json
+{
+  "version": "1.0.2",
+  "issue": "แก้บั๊กหน้า benchmark แสดงผลไม่ครบ และเพิ่มคอลัมน์ sub_center_name"
+}
+```
 
 
 ## Sync Data to center
-- post to https://subhdc.plkhealth.go.th/api/data-sync-in
+- post to `https://subhdc.plkhealth.go.th/api/data-sync-in`
 - payload 
 ```json
 {
