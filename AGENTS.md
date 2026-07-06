@@ -26,13 +26,6 @@ playwright-cli show --annotate
 ## bump version
 - edit @wepapp/update_log.json
 - post version payload to `https://subhdc.plkhealth.go.th/api/sub-version`
-- payload 
-```json
-{
-  "version": "1.0.2",
-  "issue": "แก้บั๊กหน้า benchmark แสดงผลไม่ครบ และเพิ่มคอลัมน์ sub_center_name"
-}
-```
 - read @SSJ_API_ENDPOINT.md  more detail
 
 
@@ -40,24 +33,7 @@ playwright-cli show --annotate
 
 ## Sync Data to center
 - post to `https://subhdc.plkhealth.go.th/api/data-sync-in`
-- payload 
-```json
-{
-  "sub_center_name": "อ.เมือง",
-  "hospcode": "10731",
-  "data_type": "person",
-  "rows": [
-    { "cid": "3100500123456", "name": "สมชาย ใจดี" },
-    { "cid": "3650100654321", "name": "สมหญิง มีสุข" }
-  ]
-}
 
-```
-- response
-```json
-{ "success": true, "id": 3, "date_time_sync": "2026-07-06T03:10:00.000Z" }
-
-```
 - read @SSJ_API_ENDPOINT.md  more detail
 
 ## Handoff

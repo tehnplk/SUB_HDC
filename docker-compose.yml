@@ -35,5 +35,24 @@ services:
       - ./webapp/tmp:/app/tmp
       - ./table_update:/app/table_update:ro
 
+  sync:
+    build:
+      context: ./sync
+      dockerfile: Dockerfile
+    container_name: sub_hdc_sync
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - ./webapp/.env
+    environment:
+      TZ: Asia/Bangkok
+      SYNC_TARGET_URL: "https://subhdc.plkhealth.go.th/api/data-sync-in"
+      SYNC_JOBS_FILE: "/sync/sync-jobs.json"
+      SYNC_RUN_ON_START: "true"
+    command: sh /sync/entrypoint.sh
+    volumes:
+      - ./sync:/sync
+
 volumes:
   sub_hdc_mariadb_data:

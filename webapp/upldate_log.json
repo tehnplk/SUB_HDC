@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.9",
+    "update_date": "2026-07-06",
+    "issue": "เพิ่มระบบ sync data เข้า สสจ"
+  },
+  {
     "version": "1.0.8",
     "update_date": "2026-07-05",
     "issue": "แก้ไข import queue ค้าง: กวาด record ที่ค้างอัตโนมัติ, connection ping ก่อน LOAD DATA, ลด concurrency เพื่อเลี่ยง lock timeout"
