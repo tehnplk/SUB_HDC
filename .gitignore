@@ -32,3 +32,5 @@ sync/config_base_url.json
 DEPLOY_TO*
 .claude
 
+/webapp/test_query
+
