@@ -3,6 +3,7 @@ import { createDbConnection } from "@/lib/db";
 import {
   buildReportQuery,
   getReportResultSet,
+  normalizeReportRows,
   normalizeReportSql,
 } from "@/lib/report-sql.mjs";
 
@@ -66,7 +67,8 @@ export async function POST(request) {
 
     const sql = normalizeReportSql(report.sql);
     const [queryRows, queryFields] = await conn.query(buildReportQuery(sql));
-    const { rows, fields } = getReportResultSet(queryRows, queryFields);
+    const { rows: rawRows, fields } = getReportResultSet(queryRows, queryFields);
+    const rows = normalizeReportRows(rawRows);
     const columns = fields.map((field) => field.name);
 
     return Response.json({

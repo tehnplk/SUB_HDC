@@ -139,6 +139,18 @@ export function hasMultipleReportStatements(sql) {
   return splitReportSqlStatements(sql).length > 1;
 }
 
+export function normalizeReportRows(rows) {
+  if (!Array.isArray(rows)) return rows;
+
+  return rows.map((row) => {
+    const normalized = {};
+    for (const [key, value] of Object.entries(row)) {
+      normalized[key] = Buffer.isBuffer(value) ? value.toString("utf8") : value;
+    }
+    return normalized;
+  });
+}
+
 export function getReportResultSet(rows, fields) {
   if (Array.isArray(rows) && rows.some((result) => Array.isArray(result))) {
     let lastIndex = rows.length - 1;
