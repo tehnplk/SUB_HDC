@@ -27,5 +27,5 @@ webapp/.env*.local
 /docs
 
 DEPLOY_TO*
-
+.claude
 
