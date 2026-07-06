@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getDbStatusOnce } from "../lib/db-status-cache.mjs";
 import { getMaxUpdateVersion } from "../lib/update-log.mjs";
-import updateLog from "../upldate_log.json";
+import updateLog from "../update_log.json";
 
 export default function DashboardPageTitle() {
   const [centerName, setCenterName] = useState("");

@@ -1,4 +1,4 @@
-import updateLog from "@/upldate_log.json";
+import updateLog from "@/update_log.json";
 
 export const metadata = {
   title: "Version Update Log",

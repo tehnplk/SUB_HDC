@@ -16,6 +16,7 @@ const ENV_NAMES = [
   "DB_PASSWORD",
   "DB_DATABASE",
   "CENTER_NAME",
+  "UPDATE_LOG_FILE",
 ];
 
 function quoteCronValue(value) {

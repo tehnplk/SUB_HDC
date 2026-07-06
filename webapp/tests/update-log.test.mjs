@@ -19,8 +19,8 @@ test("getMaxUpdateVersion returns the highest semantic version from update log r
   );
 });
 
-test("dashboard version badge reads from upldate_log instead of package json", () => {
-  assert.match(titleSource, /import updateLog from "\.\.\/upldate_log\.json"/);
+test("dashboard version badge reads from update_log instead of package json", () => {
+  assert.match(titleSource, /import updateLog from "\.\.\/update_log\.json"/);
   assert.match(titleSource, /Version \{getMaxUpdateVersion\(updateLog\)\}/);
   assert.doesNotMatch(titleSource, /package\.json/);
 });
@@ -30,11 +30,11 @@ test("dashboard version badge links to update log page", () => {
   assert.match(titleSource, /<Link\s+href="\/update-log"\s+className="versionLabel"/);
 });
 
-test("update log page renders version date and issue fields from upldate_log", () => {
+test("update log page renders version date and issue fields from update_log", () => {
   assert.equal(existsSync(updateLogPageUrl), true);
 
   const pageSource = readFileSync(updateLogPageUrl, "utf8");
-  assert.match(pageSource, /import updateLog from "@\/upldate_log\.json"/);
+  assert.match(pageSource, /import updateLog from "@\/update_log\.json"/);
   assert.match(pageSource, /title:\s*"Version Update Log"/);
   assert.match(pageSource, /<h4 className="pageHeaderTitle">Version Update Log<\/h4>/);
   assert.doesNotMatch(pageSource, />Update Log<\/h4>/);
