@@ -1,6 +1,7 @@
 const mysql = require("mysql2/promise");
+const { resolveTargetUrl } = require("./resolve_target_url");
 
-const TARGET_URL = process.env.SYNC_TARGET_URL || "https://subhdc.plkhealth.go.th/api/data-sync-in";
+const TARGET_URL = resolveTargetUrl();
 const PERIOD_START = "20251001";
 const DATE_SERV_PATTERN = "^[0-9]{8}$";
 

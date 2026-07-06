@@ -1,7 +1,8 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const { resolveTargetUrl } = require("./resolve_target_url");
 
-const TARGET_URL = process.env.SYNC_TARGET_URL || "https://subhdc.plkhealth.go.th/api/data-sync-in";
+const TARGET_URL = resolveTargetUrl();
 const UPDATE_LOG_FILE = process.env.UPDATE_LOG_FILE || path.resolve(__dirname, "../../webapp/update_log.json");
 
 function compareVersions(left, right) {
