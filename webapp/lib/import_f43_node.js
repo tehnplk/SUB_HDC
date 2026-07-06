@@ -511,27 +511,44 @@ async function main() {
       }
     });
 
+    // แฟ้มเดียวที่พังต้องไม่ล้มทั้ง zip: แฟ้มอื่นที่ดีต้องนำเข้าและ commit ให้ครบ
+    // แล้วค่อยรวมรายชื่อแฟ้มที่พังรายงานเป็น not_complate ทีเดียวตอนจบ
     let running = 0;
     let nextIndex = 0;
-    await new Promise((resolve, reject) => {
+    const failures = [];
+    await new Promise((resolve) => {
+      function finishTask() {
+        running--;
+        if (nextIndex === tasks.length && running === 0) {
+          resolve();
+        } else {
+          runNext();
+        }
+      }
       function runNext() {
         while (running < limit && nextIndex < tasks.length) {
           const index = nextIndex++;
           running++;
-          tasks[index]()
-            .then(() => {
-              running--;
-              if (nextIndex === tasks.length && running === 0) {
-                resolve();
-              } else {
-                runNext();
-              }
-            })
-            .catch(reject);
+          tasks[index]().then(finishTask, (error) => {
+            failures.push({ table: files[index].tableName, message: error.message });
+            emitJson(args.progress, {
+              type: "table_error",
+              table: files[index].tableName,
+              message: error.message,
+            });
+            finishTask();
+          });
         }
       }
       runNext();
     });
+
+    if (failures.length) {
+      const detail = failures
+        .map((failure) => `${failure.table} — ${String(failure.message).slice(0, 300)}`)
+        .join("; ");
+      throw new Error(`${failures.length}/${files.length} แฟ้มไม่สำเร็จ: ${detail}`);
+    }
 
     emitJson(args.progress, {
       type: "done",

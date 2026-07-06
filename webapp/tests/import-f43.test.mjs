@@ -434,6 +434,16 @@ test("withTableImportLock releases the advisory lock when import work fails", as
   assert.match(calls.at(-1).sql, /RELEASE_LOCK/);
 });
 
+test("import runner continues past a failed file and aggregates failures", async () => {
+  const source = await readFile(new URL("../lib/import_f43_node.js", import.meta.url), "utf8");
+
+  // แฟ้มที่พังถูกเก็บเข้า failures แล้วไปแฟ้มถัดไป ไม่ reject ทั้งงานตั้งแต่ error แรก
+  assert.match(source, /failures\.push\(\{ table: files\[index\]\.tableName, message: error\.message \}\)/);
+  assert.doesNotMatch(source, /\.catch\(reject\)/);
+  assert.match(source, /type: "table_error"/);
+  assert.match(source, /แฟ้มไม่สำเร็จ/);
+});
+
 test("buildLoadDataSql uses local infile replace with utf8mb4 and pipe fields", () => {
   const loader = require("../lib/import_f43_load_data.js");
 
