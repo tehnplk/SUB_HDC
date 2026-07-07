@@ -43,7 +43,6 @@ DEEPSEEK_BASE_URL=https://api.deepseek.com
 ## 3. ติดตั้งใหม่
 
 ```bash
-docker compose down -v
 docker compose up -d --build
 ```
 
