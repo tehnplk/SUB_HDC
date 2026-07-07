@@ -1,0 +1,4 @@
+{
+  "_help": "Base URL ของเซิร์ฟเวอร์กลาง (ไม่ต้องใส่ /api/data-sync-in ต่อท้าย) แก้แล้ว restart container sub_hdc_sync",
+  "base_url": "https://subhdc.plkhealth.go.th"
+}

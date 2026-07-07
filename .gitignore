@@ -27,7 +27,6 @@ webapp/.env*.local
 /docs
 
 # Per-site sync target (each site sets its own base_url)
-sync/config_base_url.json
 
 DEPLOY_TO*
 .claude
