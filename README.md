@@ -46,7 +46,6 @@ DEEPSEEK_BASE_URL=https://api.deepseek.com
 docker compose up -d --build
 ```
 
-คำสั่งนี้จะสร้าง database ใหม่จากไฟล์ `table/*.sql`
 
 ## 4. อัปเดตระบบ
 
@@ -56,4 +55,3 @@ git pull
 docker compose up -d --build
 ```
 
-คำสั่งนี้จะอัปเดตระบบโดยไม่ลบ database volume
