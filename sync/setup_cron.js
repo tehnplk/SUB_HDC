@@ -85,6 +85,11 @@ function runStartupJobs(jobs) {
   }
 }
 
+const { resolveTargetUrl } = require("./post/resolve_target_url");
+
+console.log(`sync target: ${resolveTargetUrl()}`);
+console.log(`sync jobs file: ${jobsFile}`);
+
 const jobs = readJobs();
 writeCrontab(jobs);
 

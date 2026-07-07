@@ -15,6 +15,12 @@ services:
       - sub_hdc_mariadb_data:/var/lib/mysql
       - ./table:/docker-entrypoint-initdb.d:ro
       - ./my.cnf:/etc/mysql/conf.d/custom.cnf:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
 
   webapp:
     build:
@@ -22,6 +28,9 @@ services:
       dockerfile: Dockerfile
     container_name: sub_hdc_web
     restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
     ports:
       - "80:3000"
     extra_hosts:
@@ -41,6 +50,9 @@ services:
       dockerfile: Dockerfile
     container_name: sub_hdc_sync
     restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
     extra_hosts:
       - "host.docker.internal:host-gateway"
     env_file:
@@ -51,7 +63,7 @@ services:
       SYNC_JOBS_FILE: "/sync/sync-jobs.json"
       SYNC_RUN_ON_START: "true"
       UPDATE_LOG_FILE: "/sync/update_log.json"
-    command: sh /sync/entrypoint.sh
+    command: ["sh", "-c", "node /sync/setup_cron.js && exec crond -f -l 8"]
     volumes:
       - ./sync:/sync
       - ./webapp/update_log.json:/sync/update_log.json:ro

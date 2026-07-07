@@ -24,7 +24,10 @@ test("docker compose includes hourly sync service mounted at /sync", async () =>
   assert.match(compose, /UPDATE_LOG_FILE:\s*"\/sync\/update_log\.json"/);
   assert.doesNotMatch(compose, /SYNC_SCRIPT/);
   assert.doesNotMatch(compose, /SYNC_PAYLOAD_FILE/);
-  assert.match(compose, /command:\s*sh \/sync\/entrypoint\.sh/);
+  assert.match(
+    compose,
+    /command:\s*\["sh", "-c", "node \/sync\/setup_cron\.js && exec crond -f -l 8"\]/
+  );
   assert.match(compose, /- \.\/sync:\/sync/);
   assert.match(compose, /- \.\/webapp\/update_log\.json:\/sync\/update_log\.json:ro/);
 });

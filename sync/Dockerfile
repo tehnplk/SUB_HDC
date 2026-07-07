@@ -11,4 +11,4 @@ WORKDIR /sync
 
 COPY . /sync
 
-CMD ["sh", "/sync/entrypoint.sh"]
+CMD ["sh", "-c", "node /sync/setup_cron.js && exec crond -f -l 8"]
