@@ -4,48 +4,32 @@ import path from "node:path";
 import test from "node:test";
 
 import {
-  buildImportProcessArgs,
-  createImportProgressWriter,
-} from "../app/api/import-zip/route.js";
-import { clearImportProgress, getImportProgressPercent } from "../lib/import-progress.mjs";
+  buildQueueFileName,
+  parseQueueFileName,
+} from "../lib/import-dirs.js";
 import { createPendingLogImportFile, logImportOrderClause } from "../lib/log-import.mjs";
 
 const routePath = path.resolve(process.cwd(), "app", "api", "import-zip", "route.js");
 
-test("buildImportProcessArgs passes existing log import id to the importer", () => {
-  const args = buildImportProcessArgs({
-    scriptPath: "/app/lib/import_f43_node.js",
-    zipPath: "/app/tmp/uploads/sample.zip",
-    originalName: "sample.zip",
+test("queue file names embed the log import id and parse back", () => {
+  const name = buildQueueFileName(42, "abc-def_sample.zip");
+  assert.equal(name, "42__abc-def_sample.zip");
+  assert.deepEqual(parseQueueFileName(name), {
     logImportId: 42,
+    baseName: "abc-def_sample.zip",
   });
-
-  assert.deepEqual(args, [
-    "/app/lib/import_f43_node.js",
-    "--zip",
-    "/app/tmp/uploads/sample.zip",
-    "--file-name",
-    "sample.zip",
-    "--on-duplicate",
-    "replace",
-    "--concurrency",
-    "4",
-    "--progress",
-    "--log-import-id",
-    "42",
-  ]);
 });
 
-test("buildImportProcessArgs does not accept an insert fallback method", () => {
-  const args = buildImportProcessArgs({
-    scriptPath: "/app/lib/import_f43_node.js",
-    zipPath: "/app/tmp/uploads/sample.zip",
-    originalName: "sample.zip",
-    importMethod: "insert",
+test("queue file names without an id parse as manual drop-ins", () => {
+  assert.deepEqual(parseQueueFileName("manual.zip"), {
+    logImportId: null,
+    baseName: "manual.zip",
   });
+});
 
-  assert.equal(args.includes("--method"), false);
-  assert.equal(args.includes("insert"), false);
+test("buildQueueFileName rejects invalid log import ids", () => {
+  assert.throws(() => buildQueueFileName(0, "a.zip"));
+  assert.throws(() => buildQueueFileName("x", "a.zip"));
 });
 
 test("logImportOrderClause keeps processing rows above pending rows", () => {
@@ -69,31 +53,33 @@ test("createPendingLogImportFile stores the queued zip file size", async () => {
   assert.deepEqual(executed[0].values, ["queued.zip", 2048, "pending"]);
 });
 
-test("import route deletes uploaded zip immediately when the queue rejects import", async () => {
+test("import route only enqueues to the directory queue and never spawns import work", async () => {
+  const source = await readFile(routePath, "utf8");
+
+  assert.doesNotMatch(source, /spawn\(/);
+  assert.doesNotMatch(source, /import_f43_node/);
+  assert.match(source, /buildQueueFileName\(logImportId, storedName\)/);
+  assert.match(source, /await rename\(zipPath, queuedPath\)/);
+});
+
+test("import route creates the pending log row before moving the zip into the queue", async () => {
+  const source = await readFile(routePath, "utf8");
+  const postSource = source.slice(source.indexOf("export async function POST"));
+  const logIndex = postSource.indexOf("createPendingLog(");
+  const renameIndex = postSource.indexOf("await rename(");
+
+  assert.notEqual(logIndex, -1);
+  assert.notEqual(renameIndex, -1);
+  assert.ok(logIndex < renameIndex);
+});
+
+test("import route deletes the uploaded zip when the queue is full", async () => {
   const source = await readFile(routePath, "utf8");
   const queueFullBlock = source.slice(
-    source.indexOf("if (!importQueue.canAccept())"),
-    source.indexOf("if (background)")
-  );
-  const backgroundCatchBlock = source.slice(
-    source.indexOf("Background import failed:"),
-    source.indexOf("return Response.json({", source.indexOf("Background import failed:"))
+    source.indexOf("if (active + pending >= settings.queueCapacity)"),
+    source.indexOf("const logImportId")
   );
 
   assert.match(queueFullBlock, /await secureDelete\(zipPath\)/);
-  assert.match(backgroundCatchBlock, /secureDelete\(zipPath\)/);
-});
-
-test("import route captures progress percent from importer stdout", () => {
-  clearImportProgress(42);
-  const output = [];
-  const writeProgress = createImportProgressWriter({
-    logImportId: 42,
-    writeStdout: (chunk) => output.push(chunk),
-  });
-
-  writeProgress('{"type":"progress","percent":64}\n');
-
-  assert.equal(getImportProgressPercent(42), 64);
-  assert.deepEqual(output, ['{"type":"progress","percent":64}\n']);
+  assert.match(queueFullBlock, /IMPORT_QUEUE_FULL/);
 });

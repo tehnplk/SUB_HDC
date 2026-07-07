@@ -1,5 +1,4 @@
 import { createDbConnection } from "@/lib/db";
-import { getImportProgressPercent } from "@/lib/import-progress.mjs";
 import { logImportOrderClause } from "@/lib/log-import.mjs";
 import {
   MONTHS,
@@ -153,7 +152,7 @@ export async function GET(request) {
     const isLogImport = url.searchParams.get("logImport") === "true";
     if (isLogImport) {
       const [rows] = await conn.query(
-        `SELECT id, file_name, file_size, import_date_time, status, finish_date_time, not_complete_msg
+        `SELECT id, file_name, file_size, import_date_time, status, finish_date_time, not_complete_msg, progress_percent
          FROM log_import_file
          ORDER BY ${logImportOrderClause()}
          LIMIT 500`
@@ -165,7 +164,10 @@ export async function GET(request) {
           file_size: r.file_size == null ? null : Number(r.file_size),
           import_date_time: r.import_date_time,
           status: r.status,
-          progress_percent: r.status === "processing" ? getImportProgressPercent(r.id) : null,
+          progress_percent:
+            r.status === "processing" && r.progress_percent != null
+              ? Number(r.progress_percent)
+              : null,
           finish_date_time: r.finish_date_time,
           not_complete_msg: r.not_complete_msg,
         })),

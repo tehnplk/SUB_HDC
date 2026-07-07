@@ -1234,6 +1234,17 @@ button:disabled {
   color: var(--error);
 }
 
+.importStatusBadge.isWarning {
+  background: var(--warning-soft);
+  color: #92510a;
+}
+
+.importStatusBadge.isWarning svg {
+  width: 13px;
+  height: 13px;
+  margin-left: 3px;
+}
+
 .importStatusBadge.isClickable {
   border: 0;
   cursor: pointer;
@@ -1244,6 +1255,19 @@ button:disabled {
 .importStatusBadge.isClickable:focus-visible {
   box-shadow: 0 0 0 3px rgba(210, 53, 69, 0.14);
   outline: none;
+}
+
+.importStatusBadge.isWarning.isClickable:hover,
+.importStatusBadge.isWarning.isClickable:focus-visible {
+  box-shadow: 0 0 0 3px rgba(146, 81, 10, 0.16);
+}
+
+.notCompleteMessageRow.isWarningRow td {
+  background: var(--warning-soft);
+}
+
+.notCompleteMessageRow.isWarningRow .notCompleteMessage {
+  color: #92510a;
 }
 
 .notCompleteMessageRow td {
@@ -1820,6 +1844,20 @@ button:disabled {
 .versionLabel:hover {
   border-color: var(--accent);
   color: var(--accent-strong);
+}
+
+/* มีเวอร์ชันใหม่กว่าจาก center: เน้นสีเตือน + จางทั้ง badge ตอนสลับ
+   เวอร์ชันเดิม ↔ "ตรวจพบ New Version" (JS คุมค่า opacity ผ่าน inline style) */
+.versionLabel.versionLabelUpdate {
+  border-color: #d9a300;
+  color: #92510a;
+  background: var(--warning-soft);
+  transition: opacity 0.4s ease;
+}
+
+.versionLabel.versionLabelUpdate:hover {
+  border-color: #b98500;
+  color: #7a4300;
 }
 
 .dbStatusLabel {

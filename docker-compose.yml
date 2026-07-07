@@ -26,6 +26,7 @@ services:
     build:
       context: ./webapp
       dockerfile: Dockerfile
+    image: sub-hdc-webapp
     container_name: sub_hdc_web
     restart: unless-stopped
     depends_on:
@@ -43,6 +44,23 @@ services:
     volumes:
       - ./webapp/tmp:/app/tmp
       - ./table_update:/app/table_update:ro
+
+  importer:
+    image: sub-hdc-webapp
+    container_name: sub_hdc_importer
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - ./webapp/.env
+    environment:
+      TZ: Asia/Bangkok
+    command: node lib/import_daemon.js
+    volumes:
+      - ./webapp/tmp:/app/tmp
 
   sync:
     build:
