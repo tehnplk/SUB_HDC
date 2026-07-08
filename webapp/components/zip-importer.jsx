@@ -177,18 +177,27 @@ export default function ZipImporter() {
 
     setEntries((prev) => [...prev, ...newEntries]);
 
-    // Upload all in parallel
-    const uploads = newEntries.map(async (entry) => {
+    // Upload ทุกไฟล์พร้อมกัน แล้วส่งเข้าคิว import อัตโนมัติทันทีที่ upload เสร็จ
+    // (ไม่ต้องกดปุ่ม "ส่งเข้าคิว") — importer daemon จะทยอยนำเข้าเอง
+    const results = newEntries.map(async (entry) => {
+      let result;
       try {
-        const result = await uploadZip(entry.file, entry.key);
+        result = await uploadZip(entry.file, entry.key);
         updateEntry(entry.key, { uploadStatus: "done", uploadPercent: 100, uploadResult: result });
       } catch (error) {
         updateEntry(entry.key, { uploadStatus: "error", uploadPercent: 0, uploadError: error.message });
+        return { ok: false };
       }
+      const queued = await importZip({ ...entry, uploadResult: result });
+      return { ok: queued };
     });
 
-    Promise.allSettled(uploads).then(() => {
-      setGlobalMsg((prev) => prev || "");
+    Promise.all(results).then((outcomes) => {
+      setGlobalMsg(summarizeImportResults(outcomes));
+      // เด้งไปหน้าประวัตินำเข้าเมื่อทุกไฟล์เข้าคิวสำเร็จ
+      if (outcomes.length && outcomes.every((o) => o.ok)) {
+        window.location.assign("/dashboard/log-import");
+      }
     });
   }, [entries]);
 
@@ -216,7 +225,7 @@ export default function ZipImporter() {
     setGlobalMsg("กำลังส่งเข้าคิว...");
 
     const pending = entries.filter(
-      (e) => e.uploadStatus === "done" && e.uploadResult && e.importStatus !== "done" && e.importStatus !== "importing"
+      (e) => e.uploadStatus === "done" && e.uploadResult && e.importStatus === "error"
     );
 
     try {
@@ -252,8 +261,10 @@ export default function ZipImporter() {
   }
 
   const allDone = entries.length > 0 && entries.every((e) => e.uploadStatus === "done" && e.importStatus === "done");
+  // ปุ่มนี้เป็น fallback สำหรับ retry เฉพาะไฟล์ที่ upload เสร็จแต่เข้าคิวไม่สำเร็จ
+  // (auto-enqueue พลาด) — ปกติ upload แล้วเข้าคิวเองไม่ต้องกด
   const canImport = entries.some(
-    (e) => e.uploadStatus === "done" && e.uploadResult && e.importStatus !== "done" && e.importStatus !== "importing"
+    (e) => e.uploadStatus === "done" && e.uploadResult && e.importStatus === "error"
   );
 
   return (
@@ -282,7 +293,7 @@ export default function ZipImporter() {
           <span className="dropText">
             ลากไฟล์ .zip มาวาง หรือคลิกเลือก (สูงสุด {MAX_FILES} ไฟล์)
           </span>
-          <span className="dropHint">อัปโหลดพร้อมกัน นำเข้าพร้อมกันแบบกันชนตาราง</span>
+          <span className="dropHint">อัปโหลดแล้วส่งเข้าคิวนำเข้าอัตโนมัติ ไม่ต้องกดนำเข้า</span>
         </div>
       </div>
 
@@ -292,7 +303,7 @@ export default function ZipImporter() {
           {canImport && !importRunning && (
             <button type="button" className="primary" onClick={handleImportAll}>
               <Play aria-hidden="true" />
-              ส่งเข้าคิวนำเข้า ({entries.filter(e => e.uploadStatus === "done" && e.importStatus !== "done").length} ไฟล์)
+              ลองส่งเข้าคิวอีกครั้ง ({entries.filter(e => e.uploadStatus === "done" && e.importStatus === "error").length} ไฟล์)
             </button>
           )}
           {importRunning && (
