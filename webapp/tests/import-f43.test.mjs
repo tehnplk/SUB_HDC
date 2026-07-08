@@ -61,10 +61,133 @@ test("readF43Files parses nested F43 text files", async () => {
         fileName: "original.zip",
         tableName: "service",
         columns: ["hospcode", "seq", "date_serv"],
+        headerLine: "HOSPCODE|SEQ|DATE_SERV",
         rows: [["11251", "1", "20260101"]],
+        invalidLines: [],
       });
     }
   );
+});
+
+test("readF43Files collects malformed rows instead of failing the whole file", async () => {
+  const importer = require("../lib/import_f43_node.js");
+
+  await withTempZip(
+    {
+      "F43_11251/LABFU.txt":
+        "HOSPCODE|SEQ|DATE_SERV\r\n11251|1|20260101\r\n11251|broken\r\n11251|2|20260102\r\n11251|3|20260103|extra\r\n",
+    },
+    async (zipPath) => {
+      const files = importer.readF43Files(zipPath, "original.zip");
+
+      assert.equal(files.length, 1);
+      assert.deepEqual(files[0].rows, [
+        ["11251", "1", "20260101"],
+        ["11251", "2", "20260102"],
+      ]);
+      assert.deepEqual(files[0].invalidLines, [
+        { line: 3, raw: "11251|broken" },
+        { line: 5, raw: "11251|3|20260103|extra" },
+      ]);
+    }
+  );
+});
+
+test("writeInvalidRowFiles writes {TABLE}_ERROR.txt with header and raw rows", async () => {
+  const importer = require("../lib/import_f43_node.js");
+  const dir = await mkdtemp(path.join(os.tmpdir(), "sub-hdc-error-"));
+
+  try {
+    const skipped = importer.writeInvalidRowFiles(
+      [
+        {
+          tableName: "labfu",
+          headerLine: "HOSPCODE|SEQ|DATE_SERV",
+          invalidLines: [{ line: 3, raw: "11251|broken" }],
+        },
+        { tableName: "service", headerLine: "HOSPCODE|SEQ", invalidLines: [] },
+      ],
+      dir
+    );
+
+    assert.deepEqual(skipped, [{ table: "labfu", count: 1, lines: [3] }]);
+    const content = await readFile(path.join(dir, "LABFU_ERROR.txt"), "utf8");
+    assert.equal(content, "HOSPCODE|SEQ|DATE_SERV\n11251|broken\n");
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("formatSkippedSummary lists skipped row numbers per table", () => {
+  const importer = require("../lib/import_f43_node.js");
+
+  assert.equal(importer.formatSkippedSummary([]), null);
+  assert.equal(
+    importer.formatSkippedSummary([
+      { table: "labfu", count: 3, lines: [1, 2, 6] },
+      { table: "service", count: 3, lines: [5, 7, 101] },
+    ]),
+    "labfu > row 1, 2, 6\nservice > row 5, 7, 101"
+  );
+});
+
+test("formatSkippedSummary caps the listed rows and reports the remainder", () => {
+  const importer = require("../lib/import_f43_node.js");
+  const lines = Array.from({ length: 53 }, (_, i) => i + 1);
+
+  const summary = importer.formatSkippedSummary([{ table: "labfu", count: 53, lines }]);
+  assert.match(summary, /^labfu > row 1, 2, .*50 \.\.\. \(\+3\)$/);
+});
+
+test("truncateRowsToColumnWidths trims over-long text and reports affected columns", () => {
+  const importer = require("../lib/import_f43_node.js");
+  const file = {
+    columns: ["hospcode", "hosp_rx", "cid"],
+    rows: [
+      ["07488", "abcdefghij", "1"],
+      ["07488", "short", "2"],
+      ["07488", "0123456789X", "3"],
+    ],
+  };
+  const maxLengths = new Map([
+    ["hosp_rx", 5],
+    ["cid", 13],
+  ]);
+
+  const truncated = importer.truncateRowsToColumnWidths(file, maxLengths);
+
+  assert.deepEqual(file.rows, [
+    ["07488", "abcde", "1"],
+    ["07488", "short", "2"],
+    ["07488", "01234", "3"],
+  ]);
+  assert.deepEqual(truncated, [{ column: "hosp_rx", count: 2 }]);
+});
+
+test("truncateRowsToColumnWidths counts characters, not bytes, and keeps code points whole", () => {
+  const importer = require("../lib/import_f43_node.js");
+  const file = {
+    columns: ["note"],
+    rows: [["กขคง๒๒"]],
+  };
+  // 6 characters; cap at 4 characters -> keep first 4, drop the rest
+  const truncated = importer.truncateRowsToColumnWidths(file, new Map([["note", 4]]));
+
+  assert.equal([...file.rows[0][0]].length, 4);
+  assert.equal(file.rows[0][0], "กขคง");
+  assert.deepEqual(truncated, [{ column: "note", count: 1 }]);
+});
+
+test("buildWarningMessage combines skipped rows and truncated fields", () => {
+  const importer = require("../lib/import_f43_node.js");
+
+  assert.equal(importer.buildWarningMessage([], new Map()), null);
+
+  const message = importer.buildWarningMessage(
+    [{ table: "epi", count: 2, lines: [4, 5] }],
+    new Map([["chronic", [{ column: "hosp_rx", count: 3 }]]])
+  );
+  assert.equal(message, "epi > row 4, 5\nchronic.hosp_rx ตัด 3 แถว");
 });
 
 test("load-data import writes log_import_id metadata instead of source file columns", async () => {

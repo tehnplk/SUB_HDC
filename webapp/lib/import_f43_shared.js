@@ -146,16 +146,17 @@ function readF43Files(zipPath, sourceFileName) {
         throw new Error(`Blank column name in ${entry.entryName}`);
       }
 
+      // แถวที่จำนวนคอลัมน์ไม่ตรง header ไม่ล้มทั้งแฟ้ม: เก็บลง invalidLines
+      // ให้ผู้เรียกเขียนเป็นไฟล์ *_ERROR.txt ไว้ตรวจสอบ แล้วนำเข้าเฉพาะแถวดี
       const rows = [];
+      const invalidLines = [];
       for (let index = 1; index < lines.length; index += 1) {
         const line = lines[index];
         if (!line) continue;
         const row = line.split("|");
         if (row.length !== columns.length) {
-          throw new Error(
-            `Column count mismatch in ${entry.entryName} line ${index + 1}: ` +
-              `expected ${columns.length}, got ${row.length}`
-          );
+          invalidLines.push({ line: index + 1, raw: line });
+          continue;
         }
         rows.push(row);
       }
@@ -164,7 +165,9 @@ function readF43Files(zipPath, sourceFileName) {
         fileName: zipFileName,
         tableName: path.basename(entry.entryName, path.extname(entry.entryName)).toLowerCase(),
         columns,
+        headerLine: lines[0],
         rows,
+        invalidLines,
       };
     });
 }
@@ -172,6 +175,52 @@ function readF43Files(zipPath, sourceFileName) {
 async function getExistingColumns(connection, tableName) {
   const [rows] = await connection.execute(`SHOW COLUMNS FROM ${quoteIdentifier(tableName)}`);
   return new Map(rows.map((row) => [row.Field.toLowerCase(), row.Field]));
+}
+
+// คืน Map ของ column (lowercase) -> ความยาวสูงสุดเป็นจำนวนอักขระ สำหรับชนิด
+// ที่มี CHARACTER_MAXIMUM_LENGTH (varchar/char/text) เพื่อใช้ตัดค่าที่ยาวเกิน
+// ก่อนนำเข้า ป้องกัน "Data too long" ที่ทำ LOAD DATA ล้มทั้งแฟ้ม
+async function getColumnMaxLengths(connection, tableName) {
+  const [rows] = await connection.execute(
+    `SELECT COLUMN_NAME, CHARACTER_MAXIMUM_LENGTH
+     FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?`,
+    [tableName]
+  );
+  const lengths = new Map();
+  for (const row of rows) {
+    const max = row.CHARACTER_MAXIMUM_LENGTH;
+    if (max != null && Number(max) > 0) {
+      lengths.set(String(row.COLUMN_NAME).toLowerCase(), Number(max));
+    }
+  }
+  return lengths;
+}
+
+// ตัดค่าฟิลด์ text ที่ยาวเกินความกว้างคอลัมน์ (นับเป็นอักขระ ไม่ใช่ไบต์)
+// แก้ไข rows ในตัว และคืนสรุปว่าตัดคอลัมน์ไหนไปกี่แถว
+function truncateRowsToColumnWidths(file, columnMaxLengths) {
+  if (!columnMaxLengths || !columnMaxLengths.size) return [];
+  const truncatedCounts = new Map();
+
+  for (const row of file.rows) {
+    for (let index = 0; index < file.columns.length; index += 1) {
+      const column = file.columns[index]?.toLowerCase();
+      const max = columnMaxLengths.get(column);
+      if (max == null) continue;
+      const value = row[index];
+      if (value == null) continue;
+      const text = String(value);
+      // ใช้ spread เพื่อนับ/ตัดตาม code point ไม่ให้ surrogate pair (อีโมจิ ฯลฯ) ขาดกลาง
+      const chars = [...text];
+      if (chars.length > max) {
+        row[index] = chars.slice(0, max).join("");
+        truncatedCounts.set(column, (truncatedCounts.get(column) || 0) + 1);
+      }
+    }
+  }
+
+  return [...truncatedCounts.entries()].map(([column, count]) => ({ column, count }));
 }
 
 function getImportColumns(existingColumns, file, logImportId) {
@@ -205,9 +254,11 @@ module.exports = {
   encryptAes,
   encryptFileRows,
   getAesKey,
+  getColumnMaxLengths,
   getExistingColumns,
   getImportColumns,
   md5,
   quoteIdentifier,
   readF43Files,
+  truncateRowsToColumnWidths,
 };

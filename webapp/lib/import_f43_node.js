@@ -1,10 +1,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
-const { TextDecoder } = require("node:util");
 
-const AdmZip = require("adm-zip");
-const iconv = require("iconv-lite");
 const mysql = require("mysql2/promise");
 const { loadEnvConfig } = require("@next/env");
 const sharedImporter = require("./import_f43_shared.js");
@@ -130,53 +127,58 @@ function quoteIdentifier(name) {
   return `\`${name}\``;
 }
 
-function decodeText(buffer) {
-  try {
-    return new TextDecoder("utf-8", { fatal: true }).decode(buffer).replace(/^\uFEFF/, "");
-  } catch {
-    return iconv.decode(buffer, "cp874").replace(/^\uFEFF/, "");
+// \u0E40\u0E02\u0E35\u0E22\u0E19\u0E41\u0E16\u0E27\u0E17\u0E35\u0E48\u0E1C\u0E34\u0E14\u0E23\u0E39\u0E1B\u0E41\u0E1A\u0E1A\u0E02\u0E2D\u0E07\u0E41\u0E15\u0E48\u0E25\u0E30\u0E41\u0E1F\u0E49\u0E21\u0E40\u0E1B\u0E47\u0E19 {TABLE}_ERROR.txt (header \u0E40\u0E14\u0E34\u0E21 + \u0E41\u0E16\u0E27\u0E14\u0E34\u0E1A)
+// \u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E40\u0E01\u0E47\u0E1A\u0E44\u0E27\u0E49\u0E15\u0E23\u0E27\u0E08\u0E2A\u0E2D\u0E1A\u0E20\u0E32\u0E22\u0E2B\u0E25\u0E31\u0E07 \u0E04\u0E37\u0E19\u0E2A\u0E23\u0E38\u0E1B\u0E08\u0E33\u0E19\u0E27\u0E19\u0E41\u0E16\u0E27\u0E17\u0E35\u0E48\u0E02\u0E49\u0E32\u0E21\u0E15\u0E48\u0E2D\u0E41\u0E1F\u0E49\u0E21
+function writeInvalidRowFiles(files, errorDir) {
+  const skipped = [];
+  for (const file of files) {
+    if (!file.invalidLines?.length) continue;
+    skipped.push({
+      table: file.tableName,
+      count: file.invalidLines.length,
+      lines: file.invalidLines.map((item) => item.line),
+    });
+    if (errorDir) {
+      fs.mkdirSync(errorDir, { recursive: true });
+      const errorPath = path.join(errorDir, `${file.tableName.toUpperCase()}_ERROR.txt`);
+      const content = [file.headerLine, ...file.invalidLines.map((item) => item.raw)].join("\n");
+      fs.writeFileSync(errorPath, `${content}\n`, "utf8");
+    }
   }
+  return skipped;
 }
 
-function readF43Files(zipPath, sourceFileName) {
-  const zip = new AdmZip(zipPath);
-  const zipFileName = sourceFileName || path.basename(zipPath);
-  return zip
-    .getEntries()
-    .filter((entry) => !entry.isDirectory && entry.entryName.toLowerCase().endsWith(".txt"))
-    .sort((a, b) => a.entryName.localeCompare(b.entryName))
-    .map((entry) => {
-      const text = decodeText(entry.getData());
-      const lines = text.split(/\r?\n/);
-      while (lines.length && lines[lines.length - 1] === "") lines.pop();
-      if (!lines.length) throw new Error(`Missing header in ${entry.entryName}`);
+// \u0E08\u0E33\u0E01\u0E31\u0E14\u0E08\u0E33\u0E19\u0E27\u0E19\u0E40\u0E25\u0E02\u0E1A\u0E23\u0E23\u0E17\u0E31\u0E14\u0E17\u0E35\u0E48\u0E42\u0E0A\u0E27\u0E4C\u0E15\u0E48\u0E2D\u0E41\u0E1F\u0E49\u0E21 \u0E40\u0E1E\u0E23\u0E32\u0E30\u0E44\u0E1F\u0E25\u0E4C\u0E43\u0E2B\u0E0D\u0E48\u0E2D\u0E32\u0E08\u0E02\u0E49\u0E32\u0E21\u0E2B\u0E25\u0E32\u0E22\u0E1E\u0E31\u0E19\u0E41\u0E16\u0E27
+// \u0E17\u0E35\u0E48\u0E40\u0E2B\u0E25\u0E37\u0E2D\u0E22\u0E48\u0E2D\u0E40\u0E1B\u0E47\u0E19 "... (+N)" \u0E01\u0E31\u0E19\u0E02\u0E49\u0E2D\u0E04\u0E27\u0E32\u0E21\u0E22\u0E32\u0E27\u0E40\u0E01\u0E34\u0E19\u0E41\u0E25\u0E30 not_complete_msg \u0E1A\u0E27\u0E21
+const SKIPPED_LINES_LIMIT = 50;
 
-      const columns = lines[0].split("|").map((column) => column.trim().toLowerCase());
-      if (columns.some((column) => !column)) {
-        throw new Error(`Blank column name in ${entry.entryName}`);
-      }
+function formatSkippedSummary(skipped) {
+  if (!skipped.length) return null;
+  return skipped
+    .map((item) => {
+      const lines = item.lines || [];
+      const shown = lines.slice(0, SKIPPED_LINES_LIMIT).join(", ");
+      const extra = lines.length > SKIPPED_LINES_LIMIT ? ` ... (+${lines.length - SKIPPED_LINES_LIMIT})` : "";
+      return `${item.table} > row ${shown}${extra}`;
+    })
+    .join("\n");
+}
 
-      const rows = [];
-      for (let index = 1; index < lines.length; index += 1) {
-        const line = lines[index];
-        if (!line) continue;
-        const row = line.split("|");
-        if (row.length !== columns.length) {
-          throw new Error(
-            `Column count mismatch in ${entry.entryName} line ${index + 1}: ` +
-              `expected ${columns.length}, got ${row.length}`
-          );
-        }
-        rows.push(row);
-      }
+// สรุปฟิลด์ที่ถูกตัดเพราะยาวเกินความกว้างคอลัมน์ เช่น "chronic.hosp_rx ตัด 3 แถว"
+function formatTruncatedSummary(fileTruncations) {
+  const entries = [];
+  for (const [table, cols] of fileTruncations) {
+    for (const t of cols) {
+      entries.push(`${table}.${t.column} ตัด ${t.count} แถว`);
+    }
+  }
+  return entries.length ? entries.join("\n") : null;
+}
 
-      return {
-        fileName: zipFileName,
-        tableName: path.basename(entry.entryName, path.extname(entry.entryName)).toLowerCase(),
-        columns,
-        rows,
-      };
-    });
+// รวมข้อความเตือน (แถวข้าม + ฟิลด์ที่ถูกตัด) เป็น not_complete_msg เดียว
+function buildWarningMessage(skipped, fileTruncations) {
+  const parts = [formatSkippedSummary(skipped), formatTruncatedSummary(fileTruncations)].filter(Boolean);
+  return parts.length ? parts.join("\n") : null;
 }
 
 function emitJson(progressEnabled, event) {
@@ -328,6 +330,7 @@ function parseArgs(argv = process.argv, env = process.env) {
     method: importConfig.import.method,
     advisoryLockTimeout: Number(env.IMPORT_ADVISORY_LOCK_TIMEOUT || 300),
     logImportId: null,
+    errorDir: "",
   };
 
   for (let index = 2; index < argv.length; index += 1) {
@@ -345,6 +348,7 @@ function parseArgs(argv = process.argv, env = process.env) {
     else if (arg === "--concurrency") args.concurrency = Number(next);
     else if (arg === "--advisory-lock-timeout") args.advisoryLockTimeout = Number(next);
     else if (arg === "--log-import-id") args.logImportId = Number(next);
+    else if (arg === "--error-dir") args.errorDir = next;
     else if (arg === "--progress") args.progress = true;
     else throw new Error(`Unknown argument: ${arg}`);
     if (!["--progress"].includes(arg)) index += 1;
@@ -383,16 +387,25 @@ async function main() {
   if (!configuredImporter) {
     throw new Error("config.json import.method must be insert or load-data");
   }
-  const files = readF43Files(args.zip, args.fileName || undefined);
+  const files = sharedImporter.readF43Files(args.zip, args.fileName || undefined);
+
+  if (!files.length) {
+    throw new Error("No .txt files found in the zip");
+  }
+
+  // แยกแถวผิดรูปแบบออกก่อนเข้ารหัส (invalidLines เป็นบรรทัดดิบจาก zip)
+  const skippedRows = writeInvalidRowFiles(files, args.errorDir || null);
+  for (const item of skippedRows) {
+    emitJson(args.progress, { type: "invalid_rows", table: item.table, count: item.count });
+    if (!args.progress) {
+      console.log(`${item.table}: skipped ${item.count} malformed row(s)`);
+    }
+  }
 
   // Apply encryption according to encrypt_method.md
   const aesKey = getAesKey(process.env);
   for (let i = 0; i < files.length; i++) {
     files[i] = encryptFileRows(files[i], aesKey);
-  }
-
-  if (!files.length) {
-    throw new Error("No .txt files found in the zip");
   }
 
   const totalRows = files.reduce((sum, file) => sum + file.rows.length, 0);
@@ -432,6 +445,7 @@ async function main() {
   }
 
   const summary = [];
+  const fileTruncations = new Map();
   let logImportId = args.logImportId;
   try {
     emitJson(args.progress, {
@@ -457,6 +471,23 @@ async function main() {
       let transactionStarted = false;
       try {
         await withTableImportLock(conn, args.database, file.tableName, args.advisoryLockTimeout, async () => {
+          // ตัดค่า text ที่ยาวเกินความกว้างคอลัมน์ ก่อน LOAD DATA เพื่อไม่ให้
+          // "Data too long" ทำทั้งแฟ้มล้ม (ทำหลัง encrypt ได้ เพราะคอลัมน์ที่
+          // เข้ารหัสถูกขยายให้กว้างพอรองรับ ciphertext แล้ว จึงไม่ถูกตัด)
+          const columnMaxLengths = await sharedImporter.getColumnMaxLengths(conn, file.tableName);
+          const truncated = sharedImporter.truncateRowsToColumnWidths(file, columnMaxLengths);
+          if (truncated.length) {
+            fileTruncations.set(file.tableName, truncated);
+            for (const t of truncated) {
+              emitJson(args.progress, {
+                type: "truncated",
+                table: file.tableName,
+                column: t.column,
+                count: t.count,
+              });
+            }
+          }
+
           await conn.beginTransaction();
           transactionStarted = true;
           try {
@@ -550,15 +581,22 @@ async function main() {
       throw new Error(`${failures.length}/${files.length} แฟ้มไม่สำเร็จ: ${detail}`);
     }
 
+    const totalSkipped = skippedRows.reduce((sum, item) => sum + item.count, 0);
     emitJson(args.progress, {
       type: "done",
       totalRows,
       processedRows,
       tables: summary.length,
+      skippedRows: totalSkipped,
     });
     const completeConn = await getPooledConnection(pool);
     try {
-      await updateLogImportFileStatus(completeConn, logImportId, "complete");
+      await updateLogImportFileStatus(
+        completeConn,
+        logImportId,
+        "complete",
+        buildWarningMessage(skippedRows, fileTruncations)
+      );
     } finally {
       completeConn.release();
     }
@@ -618,6 +656,12 @@ module.exports = {
   parseArgs,
   quoteIdentifier: sharedImporter.quoteIdentifier,
   readF43Files: sharedImporter.readF43Files,
+  getColumnMaxLengths: sharedImporter.getColumnMaxLengths,
+  truncateRowsToColumnWidths: sharedImporter.truncateRowsToColumnWidths,
+  writeInvalidRowFiles,
+  formatSkippedSummary,
+  formatTruncatedSummary,
+  buildWarningMessage,
   tableImportLockName,
   updateLogImportFileStatus,
   withTableImportLock,

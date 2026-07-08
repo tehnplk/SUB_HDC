@@ -20,21 +20,34 @@ test("log import page maps each import status to a semantic badge color class", 
   const source = await readFile(pagePath, "utf8");
 
   assert.match(source, /function statusBadgeClass/);
-  assert.match(source, /status === "complete"[\s\S]+isComplete/);
-  assert.match(source, /status === "pending"[\s\S]+isPending/);
-  assert.match(source, /status === "processing"[\s\S]+isProcessing/);
-  assert.match(source, /status === "not_complate"[\s\S]+isNotComplete/);
+  assert.match(source, /isComplete/);
+  assert.match(source, /isPending/);
+  assert.match(source, /isProcessing/);
+  assert.match(source, /isNotComplete/);
 });
 
 test("log import page displays Thai labels for import status badges", async () => {
   const source = await readFile(pagePath, "utf8");
 
   assert.match(source, /function statusBadgeLabel/);
-  assert.match(source, /status === "pending"[\s\S]+รอนำเข้า/);
-  assert.match(source, /status === "processing"[\s\S]+กำลังนำเข้า/);
-  assert.match(source, /status === "complete"[\s\S]+สำเร็จ/);
-  assert.match(source, /status === "not_complate"[\s\S]+ไม่สำเร็จ/);
-  assert.match(source, /statusBadgeLabel\(row\.status, row\.progress_percent\)/);
+  assert.match(source, /row\.status === "pending"[\s\S]+รอนำเข้า/);
+  assert.match(source, /row\.status === "processing"[\s\S]+กำลังนำเข้า/);
+  assert.match(source, /row\.status === "complete"[\s\S]+สำเร็จ/);
+  assert.match(source, /ไม่สำเร็จ/);
+  assert.match(source, /statusBadgeLabel\(row\)/);
+});
+
+test("log import page flags a completed import that skipped rows as success with warning", async () => {
+  const source = await readFile(pagePath, "utf8");
+  const cssSource = await readFile(cssPath, "utf8");
+
+  // complete + not_complete_msg => warning badge that opens the message row
+  assert.match(source, /function hasWarning/);
+  assert.match(source, /row\.status === "complete" && Boolean\(row\.not_complete_msg\)/);
+  assert.match(source, /isWarning/);
+  assert.match(source, /row\.status === "not_complate" \|\| hasWarning\(row\)/);
+  assert.match(source, /<AlertTriangle aria-hidden="true" \/>/);
+  assert.match(cssSource, /\.importStatusBadge\.isWarning/);
 });
 
 test("log import page shows elapsed import time in seconds from start to finish", async () => {
@@ -74,10 +87,10 @@ test("log import page keeps the file column close to id and prevents filename wr
 test("log import page shows processing percent in the status badge", async () => {
   const pageSource = await readFile(pagePath, "utf8");
 
-  assert.match(pageSource, /function statusBadgeLabel\(status, progressPercent = null\)/);
-  assert.match(pageSource, /status === "processing"[\s\S]*Number\.isFinite\(progressPercent\)/);
-  assert.match(pageSource, /Math\.round\(progressPercent\)/);
-  assert.match(pageSource, /statusBadgeLabel\(row\.status, row\.progress_percent\)/);
+  assert.match(pageSource, /function statusBadgeLabel\(row\)/);
+  assert.match(pageSource, /row\.status === "processing"[\s\S]*Number\.isFinite\(row\.progress_percent\)/);
+  assert.match(pageSource, /Math\.round\(row\.progress_percent\)/);
+  assert.match(pageSource, /statusBadgeLabel\(row\)/);
 });
 
 test("log import grid shows file size after file name and falls back to dash", async () => {

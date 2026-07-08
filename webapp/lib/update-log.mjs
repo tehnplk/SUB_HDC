@@ -1,4 +1,4 @@
-function compareVersions(left, right) {
+export function compareVersions(left, right) {
   const leftParts = String(left || "").split(".").map((part) => Number(part) || 0);
   const rightParts = String(right || "").split(".").map((part) => Number(part) || 0);
   const length = Math.max(leftParts.length, rightParts.length);
@@ -22,4 +22,10 @@ export function getMaxUpdateVersion(updateLog) {
     .reduce((maxVersion, version) => (
       compareVersions(version, maxVersion) > 0 ? version : maxVersion
     ), "");
+}
+
+// ดึงเวอร์ชันสูงสุดจาก response ของ /api/sub-version ({ success, data: [{ version }] })
+export function getMaxVersionFromApi(payload) {
+  const rows = Array.isArray(payload?.data) ? payload.data : [];
+  return getMaxUpdateVersion(rows);
 }

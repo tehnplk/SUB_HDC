@@ -15,6 +15,9 @@ pnpm-debug.log*
 .playwright-cli
 .superpowers/
 
+# Playwright/verification screenshots dropped at repo root
+/*.png
+
 # Docker local data directories
 mysql_data/
 webapp/tmp/

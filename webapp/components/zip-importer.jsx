@@ -37,7 +37,6 @@ export default function ZipImporter() {
   const [globalMsg, setGlobalMsg] = useState("");
 
   const uploadXhrRefs = useRef({});
-  const importAbortRefs = useRef({});
   const fileInputRef = useRef(null);
 
   function updateEntry(key, patch) {
@@ -97,14 +96,15 @@ export default function ZipImporter() {
     });
   }
 
-  // ── Import a single file (streaming) ──
+  // ── Queue a single file for import ──
+  // The webapp no longer imports in-request: it hands the ZIP to the importer
+  // daemon via the directory queue and returns immediately. Live progress is
+  // then followed on the log-import page (fed from log_import_file in the DB).
   async function importZip(entry) {
     const { uploadResult, key } = entry;
-    const controller = new AbortController();
-    importAbortRefs.current[key] = controller;
 
     updateEntry(key, { importStatus: "importing", importPercent: 0, logLines: [], logOpen: true });
-    appendLog(key, `📦 เริ่มนำเข้า ${uploadResult.originalName}`);
+    appendLog(key, `📦 ส่งเข้าคิวนำเข้า ${uploadResult.originalName}`);
 
     try {
       const response = await fetch("/api/import-zip", {
@@ -113,79 +113,21 @@ export default function ZipImporter() {
         body: JSON.stringify({
           storedName: uploadResult.storedName,
           originalName: uploadResult.originalName,
-          background: true,
         }),
-        signal: controller.signal,
       });
 
+      const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
         throw new Error(data?.error || "Import failed");
       }
 
-      if (!response.body) throw new Error("Stream unavailable");
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      const handleLine = (rawLine) => {
-        if (!rawLine) return;
-        let event;
-        try { event = JSON.parse(rawLine); } catch { appendLog(key, rawLine); return; }
-
-        if (event.type === "init") {
-          appendLog(key, `📦 ${event.totalFiles} ตาราง`);
-          return;
-        }
-        if (event.type === "queued") {
-          appendLog(key, `⏳ รอคิว import (${event.active}/${event.concurrency} กำลังทำงาน, รอ ${event.pending})`);
-          return;
-        }
-        if (event.type === "started") {
-          appendLog(key, "▶️ เริ่ม import");
-          return;
-        }
-        if (event.type === "progress") {
-          updateEntry(key, { importPercent: event.percent });
-          return;
-        }
-        if (event.type === "table") {
-          const missing = event.missingColumns?.length ? ` ⚠ missing=${event.missingColumns.join(",")}` : "";
-          appendLog(key, `  ✓ ${event.table}: ${event.rows} rows${missing}`);
-          return;
-        }
-        if (event.type === "done") {
-          appendLog(key, `✅ ${event.processedRows} rows / ${event.tables} tables`);
-          return;
-        }
-        if (event.type === "error") throw new Error(event.message);
-        appendLog(key, rawLine);
-      };
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        let nl = buffer.indexOf("\n");
-        while (nl !== -1) {
-          handleLine(buffer.slice(0, nl).trim());
-          buffer = buffer.slice(nl + 1);
-          nl = buffer.indexOf("\n");
-        }
-      }
-      const tail = buffer.trim();
-      if (tail) handleLine(tail);
-
+      appendLog(key, `⏳ เข้าคิวแล้ว (รอ ${data.pending} ไฟล์) — ดูความคืบหน้าที่หน้าประวัตินำเข้า`);
       updateEntry(key, { importStatus: "done", importPercent: 100 });
       return true;
     } catch (error) {
-      if (error.name === "AbortError") return false;
       updateEntry(key, { importStatus: "error", importPercent: 0 });
       appendLog(key, `❌ ${error.message}`);
       return false;
-    } finally {
-      importAbortRefs.current[key] = null;
     }
   }
 
@@ -271,7 +213,7 @@ export default function ZipImporter() {
   // ── Parallel Import All ──
   async function handleImportAll() {
     setImportRunning(true);
-    setGlobalMsg("กำลังนำเข้าทั้งหมด...");
+    setGlobalMsg("กำลังส่งเข้าคิว...");
 
     const pending = entries.filter(
       (e) => e.uploadStatus === "done" && e.uploadResult && e.importStatus !== "done" && e.importStatus !== "importing"
@@ -298,15 +240,11 @@ export default function ZipImporter() {
     if (uploadXhrRefs.current[key]) {
       uploadXhrRefs.current[key].abort();
     }
-    if (importAbortRefs.current[key]) {
-      importAbortRefs.current[key].abort();
-    }
     setEntries((prev) => prev.filter((e) => e.key !== key));
   }
 
   function clearAll() {
     Object.values(uploadXhrRefs.current).forEach((xhr) => xhr?.abort());
-    Object.values(importAbortRefs.current).forEach((ctrl) => ctrl?.abort());
     setEntries([]);
     setGlobalMsg("");
     setImportRunning(false);
@@ -354,7 +292,7 @@ export default function ZipImporter() {
           {canImport && !importRunning && (
             <button type="button" className="primary" onClick={handleImportAll}>
               <Play aria-hidden="true" />
-              นำเข้าทั้งหมด ({entries.filter(e => e.uploadStatus === "done" && e.importStatus !== "done").length} ไฟล์)
+              ส่งเข้าคิวนำเข้า ({entries.filter(e => e.uploadStatus === "done" && e.importStatus !== "done").length} ไฟล์)
             </button>
           )}
           {importRunning && (
@@ -363,7 +301,7 @@ export default function ZipImporter() {
           {allDone && (
             <span className="statusMsg statusSuccess inlineIconLabel">
               <Check aria-hidden="true" />
-              ทั้งหมดเสร็จสิ้น
+              ส่งเข้าคิวครบแล้ว
             </span>
           )}
           <button type="button" className="secondary" onClick={clearAll}>
@@ -423,10 +361,10 @@ export default function ZipImporter() {
                     </div>
                   )}
                   {entry.importStatus === "done" && (
-                    <span className="miniDone">✓ นำเข้าแล้ว</span>
+                    <span className="miniDone">✓ เข้าคิวแล้ว</span>
                   )}
                   {entry.importStatus === "error" && (
-                    <span className="miniError">นำเข้าล้มเหลว</span>
+                    <span className="miniError">เข้าคิวไม่สำเร็จ</span>
                   )}
                   {entry.importStatus === "idle" && (
                     <span className="miniIdle">รอนำเข้า</span>

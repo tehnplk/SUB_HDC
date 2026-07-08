@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import {
+  AlertTriangle,
   CalendarClock,
   CircleCheck,
   CircleX,
@@ -57,24 +58,30 @@ function formatFileSize(fileSize) {
   return `${value.toLocaleString("th-TH", { maximumFractionDigits: 1 })} ${units[unitIndex]}`;
 }
 
-function statusBadgeClass(status) {
+// A completed import that skipped malformed rows still has a not_complete_msg:
+// treat it as "success with warning" rather than a plain success or a failure.
+function hasWarning(row) {
+  return row.status === "complete" && Boolean(row.not_complete_msg);
+}
+
+function statusBadgeClass(row) {
   const classes = ["importStatusBadge"];
-  if (status === "complete") classes.push("isComplete");
-  if (status === "pending") classes.push("isPending");
-  if (status === "processing") classes.push("isProcessing");
-  if (status === "not_complate" || status === "no_complete") classes.push("isNotComplete");
+  if (row.status === "complete") classes.push(hasWarning(row) ? "isWarning" : "isComplete");
+  if (row.status === "pending") classes.push("isPending");
+  if (row.status === "processing") classes.push("isProcessing");
+  if (row.status === "not_complate" || row.status === "no_complete") classes.push("isNotComplete");
   return classes.join(" ");
 }
 
-function statusBadgeLabel(status, progressPercent = null) {
-  if (status === "pending") return "รอนำเข้า";
-  if (status === "processing") {
-    if (Number.isFinite(progressPercent)) return `กำลังนำเข้า ${Math.round(progressPercent)}%`;
+function statusBadgeLabel(row) {
+  if (row.status === "pending") return "รอนำเข้า";
+  if (row.status === "processing") {
+    if (Number.isFinite(row.progress_percent)) return `กำลังนำเข้า ${Math.round(row.progress_percent)}%`;
     return "กำลังนำเข้า";
   }
-  if (status === "complete") return "สำเร็จ";
-  if (status === "not_complate" || status === "no_complete") return "ไม่สำเร็จ";
-  return status || "-";
+  if (row.status === "complete") return "สำเร็จ";
+  if (row.status === "not_complate" || row.status === "no_complete") return "ไม่สำเร็จ";
+  return row.status || "-";
 }
 
 export default function LogImportDashboard() {
@@ -267,17 +274,18 @@ export default function LogImportDashboard() {
                       </span>
                     </td>
                     <td>
-                      {row.status === "not_complate" ? (
+                      {row.status === "not_complate" || hasWarning(row) ? (
                         <button
                           type="button"
-                          className={`${statusBadgeClass(row.status)} isClickable`}
+                          className={`${statusBadgeClass(row)} isClickable`}
                           onClick={() => setExpandedErrorId((current) => (current === row.id ? null : row.id))}
                         >
-                          {statusBadgeLabel(row.status, row.progress_percent)}
+                          {statusBadgeLabel(row)}
+                          {hasWarning(row) ? <AlertTriangle aria-hidden="true" /> : null}
                         </button>
                       ) : (
-                        <span className={statusBadgeClass(row.status)}>
-                          {statusBadgeLabel(row.status, row.progress_percent)}
+                        <span className={statusBadgeClass(row)}>
+                          {statusBadgeLabel(row)}
                         </span>
                       )}
                     </td>
@@ -289,8 +297,8 @@ export default function LogImportDashboard() {
                     </td>
                     <td>{formatDurationSeconds(row.import_date_time, row.finish_date_time)}</td>
                   </tr>,
-                  expandedErrorId === row.id && row.status === "not_complate" ? (
-                    <tr key={`msg-${row.id}`} className="notCompleteMessageRow">
+                  expandedErrorId === row.id && (row.status === "not_complate" || hasWarning(row)) ? (
+                    <tr key={`msg-${row.id}`} className={`notCompleteMessageRow${hasWarning(row) ? " isWarningRow" : ""}`}>
                       <td colSpan={7}>
                         <div className="notCompleteMessage">{row.not_complete_msg || "-"}</div>
                       </td>
