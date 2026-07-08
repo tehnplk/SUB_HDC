@@ -35,6 +35,9 @@ export default function HosListDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // เพิ่มค่าทุกครั้งที่ต้อง fetch ซ้ำ (auto-poll ตอนกำลังนำเข้า) เพื่อให้ fetch
+  // effect รันใหม่โดยไม่ต้องเปลี่ยน filter
+  const [refreshTick, setRefreshTick] = useState(0);
 
   const PAGE_SIZE = 100;
 
@@ -85,7 +88,9 @@ export default function HosListDashboard() {
 
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true);
+    // poll (refreshTick > 0) ไม่ตั้ง loading เพื่อไม่ให้ banner กระพริบ
+    const isPoll = refreshTick > 0;
+    if (!isPoll) setLoading(true);
     setError(null);
 
     fetch(`/api/dashboard${query ? `?${query}` : ""}`, { signal: controller.signal })
@@ -104,10 +109,21 @@ export default function HosListDashboard() {
       .catch((err) => {
         if (err.name !== "AbortError") setError(err.message);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!isPoll) setLoading(false);
+      });
 
     return () => controller.abort();
-  }, [query, selectedFile, selectedFiscalYear]);
+  }, [query, selectedFile, selectedFiscalYear, refreshTick]);
+
+  // ระหว่างกำลังนำเข้า poll ซ้ำทุก 15 วิ เพื่อให้ banner หายเอง + ตารางโหลดขึ้น
+  // อัตโนมัติเมื่อ import จบ โดยไม่ต้อง refresh มือ (query ที่ poll เป็นตัวเบา —
+  // เช็ค log_import_file อย่างเดียว ไม่แตะตารางใหญ่)
+  useEffect(() => {
+    if (!data?.importing) return;
+    const timer = setInterval(() => setRefreshTick((tick) => tick + 1), 15000);
+    return () => clearInterval(timer);
+  }, [data?.importing]);
 
   const importing = Boolean(data?.importing);
   const hasData = data && !error;

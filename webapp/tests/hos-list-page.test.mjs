@@ -42,3 +42,14 @@ test("hos-list shows an importing notice instead of the table while importing", 
   assert.match(pageSource, /className="filterGrid" hidden=\{importing\}/);
   assert.match(pageSource, /className="tableWrap monthlyTableWrap" hidden=\{importing\}/);
 });
+
+test("hos-list auto-polls while importing so the notice clears on its own", () => {
+  // a refreshTick state drives re-fetch; an interval bumps it only while importing
+  assert.match(pageSource, /const \[refreshTick,\s*setRefreshTick\] = useState\(0\)/);
+  assert.match(pageSource, /if \(!data\?\.importing\) return;/);
+  assert.match(pageSource, /setInterval\(\(\) => setRefreshTick\(\(tick\) => tick \+ 1\), 15000\)/);
+  assert.match(pageSource, /\}, \[data\?\.importing\]\)/);
+  // refreshTick is part of the fetch effect deps, and polling stays silent (no loading flicker)
+  assert.match(pageSource, /\[query, selectedFile, selectedFiscalYear, refreshTick\]/);
+  assert.match(pageSource, /const isPoll = refreshTick > 0/);
+});
