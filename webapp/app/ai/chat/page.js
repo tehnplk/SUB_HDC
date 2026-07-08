@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Bot, Download, Send, Sparkles, UserRound, X } from "lucide-react";
+import { ImportingNotice, useImportingGuard } from "@/components/importing-guard";
 
 const INITIAL_MESSAGES = [
   {
@@ -418,6 +419,7 @@ function ChatExcelExports({ exports }) {
 }
 
 export default function AiChatPage() {
+  const importing = useImportingGuard();
   const formRef = useRef(null);
   const chatBoxRef = useRef(null);
   const [input, setInput] = useState("");
@@ -593,20 +595,24 @@ export default function AiChatPage() {
           ))}
         </div>
 
-        <form ref={formRef} className="chatComposer" onSubmit={handleSubmit}>
-          <textarea
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type your message..."
-            rows={2}
-            aria-label="Message"
-          />
-          <button type="submit" className="primary" disabled={!canSend}>
-            <Send aria-hidden="true" />
-            Send
-          </button>
-        </form>
+        {importing ? (
+          <ImportingNotice />
+        ) : (
+          <form ref={formRef} className="chatComposer" onSubmit={handleSubmit}>
+            <textarea
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type your message..."
+              rows={2}
+              aria-label="Message"
+            />
+            <button type="submit" className="primary" disabled={!canSend}>
+              <Send aria-hidden="true" />
+              Send
+            </button>
+          </form>
+        )}
       </section>
       {activeToolDetail ? (
         <div className="chatToolModalBackdrop" onClick={() => setActiveToolDetail(null)}>

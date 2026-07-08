@@ -17,6 +17,7 @@ import {
 import DashboardHeaderImage from "@/components/dashboard-header-image";
 import DashboardPageTitle from "@/components/dashboard-page-title";
 import DashboardTabs from "@/components/dashboard-tabs";
+import { ImportingNotice, useImportingGuard } from "@/components/importing-guard";
 
 function formatDate(value) {
   if (!value) return "-";
@@ -53,6 +54,7 @@ function makeReportFilename(reportName) {
 }
 
 export default function ReportDashboard() {
+  const importing = useImportingGuard();
   const [reports, setReports] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -300,7 +302,9 @@ export default function ReportDashboard() {
 
         {error ? <div className="error">{error}</div> : null}
 
-        <div className="filterGrid" style={{ gridTemplateColumns: "1fr" }}>
+        {importing ? <ImportingNotice /> : null}
+
+        <div className="filterGrid" hidden={importing} style={{ gridTemplateColumns: "1fr" }}>
           <div className="field">
             <div className="inputWithIcon">
               <Search aria-hidden="true" />
@@ -316,7 +320,7 @@ export default function ReportDashboard() {
           </div>
         </div>
 
-        <div className="tableMeta metaLine reportGridHeader">
+        <div className="tableMeta metaLine reportGridHeader" hidden={importing}>
           <span className="metaLine">
             <TableProperties aria-hidden="true" />
             {loading ? "กำลังโหลดรายงาน..." : `รายงานทั้งหมด (${filteredRows.length} รายการ)`}
@@ -327,7 +331,7 @@ export default function ReportDashboard() {
           </button>
         </div>
 
-        <div className="tableWrap">
+        <div className="tableWrap" hidden={importing}>
           <table className="fileTable">
             <thead>
               <tr>
