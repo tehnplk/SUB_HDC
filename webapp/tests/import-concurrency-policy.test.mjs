@@ -41,6 +41,28 @@ test("import page caps each user selection at 12 ZIP files", async () => {
   assert.match(source, /const MAX_FILES = 12/);
 });
 
+test("upload auto-enqueues each file for import without a manual button press", async () => {
+  const source = await readFile(importerComponentPath, "utf8");
+  const handleFilesSource = source.slice(
+    source.indexOf("const handleFiles = useCallback"),
+    source.indexOf("function handleFilePick")
+  );
+
+  // after upload succeeds, importZip (enqueue) runs in the same flow
+  assert.match(handleFilesSource, /await uploadZip\(/);
+  assert.match(handleFilesSource, /await importZip\(/);
+  // and it navigates to the history page when all files are queued
+  assert.match(handleFilesSource, /window\.location\.assign\("\/dashboard\/log-import"\)/);
+});
+
+test("the manual queue button only retries files that failed to enqueue", async () => {
+  const source = await readFile(importerComponentPath, "utf8");
+
+  // canImport gate and retry filter both key off importStatus === "error"
+  assert.match(source, /const canImport = entries\.some\([\s\S]*?importStatus === "error"/);
+  assert.match(source, /ลองส่งเข้าคิวอีกครั้ง/);
+});
+
 test("import page hands zips to the queue and does not stream import progress", async () => {
   const source = await readFile(importerComponentPath, "utf8");
   const importZipSource = source.slice(
