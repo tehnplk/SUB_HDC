@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getDbStatusOnce } from "../lib/db-status-cache.mjs";
 import { compareVersions, getMaxUpdateVersion, getMaxVersionFromApi } from "../lib/update-log.mjs";
-import updateLog from "../update_log.json";
+import updateLog from "../version/update_log.json";
 
 const SUB_VERSION_API = "https://subhdc.plkhealth.go.th/api/sub-version";
 // รอบกระพริบ: จาง (fade out) ครึ่งรอบ แล้วสลับข้อความ + จางเข้า (fade in) ครึ่งรอบ

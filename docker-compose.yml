@@ -80,11 +80,17 @@ services:
       SYNC_TARGET_URL: "https://subhdc.plkhealth.go.th/api/data-sync-in"
       SYNC_JOBS_FILE: "/sync/sync-jobs.json"
       SYNC_RUN_ON_START: "true"
-      UPDATE_LOG_FILE: "/sync/update_log.json"
+      # อ่าน update_log ผ่านโฟลเดอร์ webapp/version (ไม่ใช่ mount ไฟล์เดี่ยว)
+      # เพราะ single-file bind mount pin inode ไฟล์ → พอ bump version สร้างไฟล์
+      # ใหม่ (inode ใหม่) sync ยังอ่านของเก่าจน recreate. mount โฟลเดอร์ pin inode
+      # โฟลเดอร์ ไฟล์ข้างในถูก resolve สดทุกครั้ง cron จึงอ่าน version ล่าสุดเสมอ
+      # ใช้โฟลเดอร์ย่อยเฉพาะ version/ (ไม่ mount ทั้ง webapp) เพื่อไม่ expose
+      # source code / .env ของ webapp ให้ sync container
+      UPDATE_LOG_FILE: "/webapp-version/update_log.json"
     command: ["sh", "-c", "node /sync/setup_cron.js && exec crond -f -l 8"]
     volumes:
       - ./sync:/sync
-      - ./webapp/update_log.json:/sync/update_log.json:ro
+      - ./webapp/version:/webapp-version:ro
 
 volumes:
   sub_hdc_mariadb_data:
