@@ -172,9 +172,48 @@ function readF43Files(zipPath, sourceFileName) {
     });
 }
 
+// เดาชื่อแฟ้มมาตรฐานจากชื่อไฟล์ที่มี suffix ต่อท้าย (เช่น
+// accident_07487_20251001085344 -> accident) โดยหา prefix ที่ยาวที่สุดใน
+// รายชื่อตารางจริงที่ชื่อไฟล์ขึ้นต้นด้วย เทียบกับรายชื่อจริงจึงจัดการชื่อที่มี
+// underscore ในตัว (drug_opd, charge_ipd) ได้ถูก ไม่ตัดพลาดเป็น drug/charge
+function guessCanonicalTable(tableName, existingTableNames) {
+  const name = String(tableName).toLowerCase();
+  let best = null;
+  for (const candidate of existingTableNames) {
+    const c = String(candidate).toLowerCase();
+    // ต้องขึ้นต้นด้วย candidate แล้วตามด้วยตัวคั่น (ไม่ใช่ prefix ของคำอื่น เช่น
+    // "drug" ไม่ควรแมตช์ "drugallergy") — suffix ที่ตามมาคือ _<hospcode>_<time>
+    if (name === c || name.startsWith(`${c}_`)) {
+      if (!best || c.length > best.length) best = c;
+    }
+  }
+  return best;
+}
+
 async function getExistingColumns(connection, tableName) {
-  const [rows] = await connection.execute(`SHOW COLUMNS FROM ${quoteIdentifier(tableName)}`);
-  return new Map(rows.map((row) => [row.Field.toLowerCase(), row.Field]));
+  try {
+    const [rows] = await connection.execute(`SHOW COLUMNS FROM ${quoteIdentifier(tableName)}`);
+    return new Map(rows.map((row) => [row.Field.toLowerCase(), row.Field]));
+  } catch (error) {
+    // ตารางไม่มี = ชื่อไฟล์ .txt ในซิปผิดรูปแบบ (มักมี suffix _hospcode_timestamp
+    // ต่อท้ายชื่อแฟ้ม) แปลง error เป็นข้อความไทยที่บอกวิธีแก้ให้ผู้ใช้เข้าใจ
+    if (error?.code === "ER_NO_SUCH_TABLE") {
+      let suggestion = "";
+      try {
+        // c_file คือทะเบียนชื่อแฟ้มมาตรฐาน (importable F43 tables) — ใช้ตัวนี้
+        // เดาชื่อ ไม่ใช่ information_schema ที่มีตารางระบบ (log_import_file ฯลฯ) ปน
+        const [tables] = await connection.execute("SELECT file_name FROM c_file");
+        const guess = guessCanonicalTable(tableName, tables.map((t) => t.file_name));
+        if (guess) suggestion = ` (ควรเป็น "${guess}.txt")`;
+      } catch {
+        // ถ้า query c_file ไม่ได้ ก็แจ้งแบบไม่มีชื่อที่แนะนำ
+      }
+      throw new Error(
+        `ชื่อไฟล์ในซิปไม่ตรงชื่อแฟ้มมาตรฐาน: "${tableName}.txt"${suggestion} กรุณา export ไฟล์ใหม่`
+      );
+    }
+    throw error;
+  }
 }
 
 // คืน Map ของ column (lowercase) -> ความยาวสูงสุดเป็นจำนวนอักขระ สำหรับชนิด
@@ -257,6 +296,7 @@ module.exports = {
   getColumnMaxLengths,
   getExistingColumns,
   getImportColumns,
+  guessCanonicalTable,
   md5,
   quoteIdentifier,
   readF43Files,

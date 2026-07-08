@@ -118,6 +118,66 @@ test("writeInvalidRowFiles writes {TABLE}_ERROR.txt with header and raw rows", a
   }
 });
 
+test("guessCanonicalTable strips hospcode/timestamp suffix using real table names", () => {
+  const importer = require("../lib/import_f43_node.js");
+  const tables = ["accident", "drug", "drug_opd", "drugallergy", "charge_ipd"];
+
+  // simple name with suffix
+  assert.equal(importer.guessCanonicalTable("accident_07487_20251001085344", tables), "accident");
+  // prefers the longest matching prefix so drug_opd wins over drug
+  assert.equal(importer.guessCanonicalTable("drug_opd_07487_20251001", tables), "drug_opd");
+  // does not match a bare prefix of a longer table (drug !~ drugallergy)
+  assert.equal(importer.guessCanonicalTable("drugallergy_07487_1", tables), "drugallergy");
+  // exact name (no suffix) still resolves
+  assert.equal(importer.guessCanonicalTable("charge_ipd", tables), "charge_ipd");
+  // nothing matches -> null
+  assert.equal(importer.guessCanonicalTable("unknownfile_123", tables), null);
+});
+
+test("getExistingColumns turns a missing table into a Thai file-name warning", async () => {
+  const importer = require("../lib/import_f43_node.js");
+  const connection = {
+    async execute(sql) {
+      if (/^SHOW COLUMNS/i.test(sql)) {
+        const err = new Error("Table 'sub_hdc.accident_07487_20251001085344' doesn't exist");
+        err.code = "ER_NO_SUCH_TABLE";
+        throw err;
+      }
+      if (/from c_file/i.test(sql)) {
+        return [[{ file_name: "accident" }, { file_name: "drug_opd" }]];
+      }
+      throw new Error(`unexpected: ${sql}`);
+    },
+  };
+
+  await assert.rejects(
+    () => importer.getExistingColumns(connection, "accident_07487_20251001085344"),
+    (error) => {
+      assert.match(error.message, /ชื่อไฟล์ในซิปไม่ตรงชื่อแฟ้มมาตรฐาน/);
+      assert.match(error.message, /"accident_07487_20251001085344\.txt"/);
+      assert.match(error.message, /ควรเป็น "accident\.txt"/);
+      assert.match(error.message, /export ไฟล์ใหม่/);
+      return true;
+    }
+  );
+});
+
+test("getExistingColumns rethrows non-missing-table errors untouched", async () => {
+  const importer = require("../lib/import_f43_node.js");
+  const connection = {
+    async execute() {
+      const err = new Error("Connection lost");
+      err.code = "PROTOCOL_CONNECTION_LOST";
+      throw err;
+    },
+  };
+
+  await assert.rejects(
+    () => importer.getExistingColumns(connection, "service"),
+    /Connection lost/
+  );
+});
+
 test("formatSkippedSummary lists skipped row numbers per table", () => {
   const importer = require("../lib/import_f43_node.js");
 

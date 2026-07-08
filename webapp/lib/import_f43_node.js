@@ -648,6 +648,7 @@ module.exports = {
   releaseTableImportLock,
   getAesKey: sharedImporter.getAesKey,
   getExistingColumns: sharedImporter.getExistingColumns,
+  guessCanonicalTable: sharedImporter.guessCanonicalTable,
   importFileWithLoadData: loadDataImporter.importFile,
   importFileWithInsert: insertImporter.importFile,
   loadImportConfig,
