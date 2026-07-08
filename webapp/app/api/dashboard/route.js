@@ -221,6 +221,28 @@ export async function GET(request) {
       });
     }
 
+    // ระหว่างมีการนำเข้า ตารางใหญ่ถูก LOAD DATA เขียนอยู่ การนับสด (GROUP BY
+    // ทั้งตาราง) จะแย่ง disk I/O กับ import ทำให้ทั้งหน้าจอและ import ช้าลงมาก
+    // จึงตอบ importing กลับไปให้หน้าจอแสดงข้อความแทน ไม่แตะตารางใหญ่เลย
+    const [[importingRow]] = await conn.query(
+      "SELECT COUNT(*) AS n FROM log_import_file WHERE status IN ('pending','processing')"
+    );
+    if (Number(importingRow.n) > 0) {
+      return Response.json({
+        importing: true,
+        files: [],
+        selectedFile: "",
+        selectedFiscalYear: "",
+        fiscalYears: [],
+        hasMonthly: false,
+        dateColumn: null,
+        months: MONTHS,
+        rows: [],
+        totalRows: 0,
+        centerName: process.env.CENTER_NAME || "เมือง",
+      });
+    }
+
     const [fileRows] = await conn.query("SELECT file_name FROM c_file ORDER BY file_name");
     const files = fileRows.map((row) => row.file_name);
     const requestedFile = url.searchParams.get("file");

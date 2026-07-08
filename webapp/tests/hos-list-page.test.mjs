@@ -19,3 +19,26 @@ test("hos-list filter is driven by URL query string", () => {
   assert.match(pageSource, /function updateFilterQuery\(\{ file, fiscalYear \}\)/);
   assert.match(pageSource, /router\.replace\(`\$\{pathname\}\$\{nextQuery \? `\?\$\{nextQuery\}` : ""\}`,\s*\{ scroll: false \}\);/);
 });
+
+import { readFileSync as readFileSync2 } from "node:fs";
+const routeSource = readFileSync2(new URL("../app/api/dashboard/route.js", import.meta.url), "utf8");
+
+test("dashboard API short-circuits with importing flag when an import is running", () => {
+  // checks log_import_file for active imports before touching the big tables
+  assert.match(routeSource, /status IN \('pending','processing'\)/);
+  assert.match(routeSource, /importing: true/);
+  // the guard runs before the heavy per-file query path (the c_file lookup that
+  // precedes reading the big tables — the last occurrence, not the summary block)
+  const guardIdx = routeSource.indexOf("importing: true");
+  const heavyIdx = routeSource.lastIndexOf("SELECT file_name FROM c_file");
+  assert.ok(guardIdx !== -1 && heavyIdx !== -1 && guardIdx < heavyIdx);
+});
+
+test("hos-list shows an importing notice instead of the table while importing", () => {
+  assert.match(pageSource, /const importing = Boolean\(data\?\.importing\)/);
+  assert.match(pageSource, /กำลังมีการนำเข้าข้อมูล/);
+  assert.match(pageSource, /กรุณากลับมาอีกครั้งเมื่อการนำเข้าสิ้นสุด/);
+  // table and filters are hidden while importing
+  assert.match(pageSource, /className="filterGrid" hidden=\{importing\}/);
+  assert.match(pageSource, /className="tableWrap monthlyTableWrap" hidden=\{importing\}/);
+});

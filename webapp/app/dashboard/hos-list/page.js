@@ -109,6 +109,7 @@ export default function HosListDashboard() {
     return () => controller.abort();
   }, [query, selectedFile, selectedFiscalYear]);
 
+  const importing = Boolean(data?.importing);
   const hasData = data && !error;
   const hasMonthly = Boolean(data?.hasMonthly);
   const rows = selectedFile ? data?.rows || [] : [];
@@ -263,7 +264,19 @@ export default function HosListDashboard() {
 
         {error ? <div className="error">{error}</div> : null}
 
-        <div className="filterGrid">
+        {importing ? (
+          <div className="importingNotice">
+            <LoaderCircle aria-hidden="true" className="importingSpinner" />
+            <div>
+              <p className="importingTitle">กำลังมีการนำเข้าข้อมูล</p>
+              <p className="importingText">
+                ไม่สามารถแสดงผลได้ในขณะนี้ กรุณากลับมาอีกครั้งเมื่อการนำเข้าสิ้นสุด
+              </p>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="filterGrid" hidden={importing}>
           <label className="field">
             <span>
               <FileText aria-hidden="true" />
@@ -318,7 +331,7 @@ export default function HosListDashboard() {
           </label>
         </div>
 
-        <div className="statGrid statGridCompact">
+        <div className="statGrid statGridCompact" hidden={importing}>
           <div className="statCard">
             <span className="statIcon"><Database aria-hidden="true" /></span>
             <span className="statValue">{formatNumber(data?.totalRows)}</span>
@@ -336,12 +349,12 @@ export default function HosListDashboard() {
           </div>
         </div>
 
-        <div className="tableMeta metaLine">
+        <div className="tableMeta metaLine" hidden={importing}>
           <TableProperties aria-hidden="true" />
           {loading ? "กำลังโหลด..." : getFileTypeLabel(hasMonthly)}
         </div>
 
-        <div className="tableWrap monthlyTableWrap">
+        <div className="tableWrap monthlyTableWrap" hidden={importing}>
           <table className="fileTable monthlyTable">
             <thead>
               <tr>

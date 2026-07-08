@@ -2711,3 +2711,40 @@ button:disabled {
     gap: 6px;
   }
 }
+
+/* แจ้งเตือนบนหน้า hos-list เมื่อมีการนำเข้าข้อมูล (งดแสดงตารางเพื่อไม่แย่ง I/O กับ import) */
+.importingNotice {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 18px 0;
+  padding: 20px 22px;
+  border: 1px solid #f0c674;
+  border-radius: var(--radius);
+  background: var(--warning-soft);
+}
+
+.importingNotice .importingSpinner {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  color: #b45309;
+  animation: importingSpin 1s linear infinite;
+}
+
+.importingTitle {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 850;
+  color: #92510a;
+}
+
+.importingText {
+  margin: 0;
+  font-size: 14px;
+  color: #a16207;
+}
+
+@keyframes importingSpin {
+  to { transform: rotate(360deg); }
+}
