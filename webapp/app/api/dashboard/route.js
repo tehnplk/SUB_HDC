@@ -1,4 +1,5 @@
 import { createDbConnection } from "@/lib/db";
+import { isImporting } from "@/lib/import-status.mjs";
 import { logImportOrderClause } from "@/lib/log-import.mjs";
 import {
   MONTHS,
@@ -224,10 +225,7 @@ export async function GET(request) {
     // ระหว่างมีการนำเข้า ตารางใหญ่ถูก LOAD DATA เขียนอยู่ การนับสด (GROUP BY
     // ทั้งตาราง) จะแย่ง disk I/O กับ import ทำให้ทั้งหน้าจอและ import ช้าลงมาก
     // จึงตอบ importing กลับไปให้หน้าจอแสดงข้อความแทน ไม่แตะตารางใหญ่เลย
-    const [[importingRow]] = await conn.query(
-      "SELECT COUNT(*) AS n FROM log_import_file WHERE status IN ('pending','processing')"
-    );
-    if (Number(importingRow.n) > 0) {
+    if (await isImporting(conn)) {
       return Response.json({
         importing: true,
         files: [],

@@ -24,8 +24,9 @@ import { readFileSync as readFileSync2 } from "node:fs";
 const routeSource = readFileSync2(new URL("../app/api/dashboard/route.js", import.meta.url), "utf8");
 
 test("dashboard API short-circuits with importing flag when an import is running", () => {
-  // checks log_import_file for active imports before touching the big tables
-  assert.match(routeSource, /status IN \('pending','processing'\)/);
+  // uses the shared isImporting helper before touching the big tables
+  assert.match(routeSource, /import \{ isImporting \} from "@\/lib\/import-status\.mjs"/);
+  assert.match(routeSource, /if \(await isImporting\(conn\)\)/);
   assert.match(routeSource, /importing: true/);
   // the guard runs before the heavy per-file query path (the c_file lookup that
   // precedes reading the big tables — the last occurrence, not the summary block)
