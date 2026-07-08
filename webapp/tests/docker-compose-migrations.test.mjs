@@ -21,7 +21,7 @@ test("docker compose includes hourly sync service mounted at /sync", async () =>
   assert.match(compose, /SYNC_JOBS_FILE:\s*"\/sync\/sync-jobs\.json"/);
   assert.match(compose, /SYNC_RUN_ON_START:\s*"true"/);
   assert.match(compose, /SYNC_TARGET_URL:\s*"https:\/\/subhdc\.plkhealth\.go\.th\/api\/data-sync-in"/);
-  assert.match(compose, /UPDATE_LOG_FILE:\s*"\/sync\/update_log\.json"/);
+  assert.match(compose, /UPDATE_LOG_FILE:\s*"\/webapp-version\/update_log\.json"/);
   assert.doesNotMatch(compose, /SYNC_SCRIPT/);
   assert.doesNotMatch(compose, /SYNC_PAYLOAD_FILE/);
   assert.match(
@@ -29,7 +29,11 @@ test("docker compose includes hourly sync service mounted at /sync", async () =>
     /command:\s*\["sh", "-c", "node \/sync\/setup_cron\.js && exec crond -f -l 8"\]/
   );
   assert.match(compose, /- \.\/sync:\/sync/);
-  assert.match(compose, /- \.\/webapp\/update_log\.json:\/sync\/update_log\.json:ro/);
+  // mount โฟลเดอร์ webapp/version (read-only) แทน single-file bind mount เพื่อให้
+  // cron อ่าน update_log.json ล่าสุดได้เสมอโดยไม่ต้อง recreate หลัง bump version
+  // (ใช้โฟลเดอร์ย่อยเฉพาะ version/ ไม่ expose source/.env ของ webapp)
+  assert.match(compose, /- \.\/webapp\/version:\/webapp-version:ro/);
+  assert.doesNotMatch(compose, /update_log\.json:\/sync\/update_log\.json/);
 });
 
 test("sync jobs schedule check every 30 minutes and service count every hour", async () => {
