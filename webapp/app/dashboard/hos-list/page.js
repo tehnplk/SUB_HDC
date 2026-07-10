@@ -130,6 +130,9 @@ export default function HosListDashboard() {
   const hasMonthly = Boolean(data?.hasMonthly);
   const rows = selectedFile ? data?.rows || [] : [];
   const months = data?.months || [];
+  // ชื่อย่อหน่วยบริการ (hospcode → hospname_short) — ว่างได้ถ้าไซต์ยังไม่โหลด
+  // lookup c_hospital ตารางจะแสดงแค่รหัสเหมือนเดิม
+  const hospNames = data?.hospNames || {};
 
   function currentUrl() {
     const currentQuery = searchParams.toString();
@@ -394,7 +397,12 @@ export default function HosListDashboard() {
               {rows.length ? (
                 rows.map((row) => (
                   <tr key={row.hospcode}>
-                    <td className="fileCol">{row.hospcode}</td>
+                    <td className="fileCol">
+                      {row.hospcode}
+                      {hospNames[row.hospcode] ? (
+                        <span className="hospNameShort">{hospNames[row.hospcode]}</span>
+                      ) : null}
+                    </td>
                     {hasMonthly ? (
                       renderMonthlyCells(row)
                     ) : (
@@ -440,6 +448,7 @@ export default function HosListDashboard() {
               <div>
                 <h2 id="raw-modal-title">
                   {selectedFile} — {rawModal.hospcode}
+                  {hospNames[rawModal.hospcode] ? ` ${hospNames[rawModal.hospcode]}` : ""}
                   {rawModal.monthLabel ? ` — ${rawModal.monthLabel}` : " — ทั้งปี"}
                 </h2>
                 <p>

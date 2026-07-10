@@ -82,8 +82,18 @@ export function buildMonthlyCountExpressions(dateColumn) {
   ).join(", ");
 }
 
+// คอลัมน์วันที่ที่เก็บเป็น 8 หลักล้วน (varchar(8), ยืนยัน 0 แถวผิดรูปแบบบน prod)
+// — เทียบ/ตัดปีงบได้ตรงจากค่าดิบ ไม่ต้อง LEFT ซึ่งบล็อก index ทำ full scan.
+// ส่วน datetime_admit/datetime_serv เป็น varchar(100) (มีเวลาต่อท้าย) ต้อง LEFT(,8)
+// เพื่อดึงเฉพาะวันที่ ก่อนเทียบ
+const PLAIN_DATE_COLUMNS = new Set(["date_serv", "date_admit", "bdate"]);
+
 export function datePrefixExpression(dateColumn) {
-  return `LEFT(${quoteIdentifier(dateColumn)}, 8)`;
+  const identifier = quoteIdentifier(dateColumn);
+  if (PLAIN_DATE_COLUMNS.has(String(dateColumn).toLowerCase())) {
+    return identifier;
+  }
+  return `LEFT(${identifier}, 8)`;
 }
 
 export function getMonthlyRowTotal(months, row) {

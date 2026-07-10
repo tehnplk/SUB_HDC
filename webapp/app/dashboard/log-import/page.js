@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
   CalendarClock,
+  ChevronLeft,
+  ChevronRight,
   CircleCheck,
   CircleX,
   Clock3,
@@ -89,14 +91,29 @@ export default function LogImportDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  // ค้นหาแบบ debounce — พิมพ์หยุด 400ms ค่อยยิง fetch (server-side filter)
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [expandedErrorId, setExpandedErrorId] = useState(null);
   const [activeStatusTab, setActiveStatusTab] = useState("success");
+  const [page, setPage] = useState(1);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm.trim());
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Lazy-load ทีละหน้าจาก server (20 แถว/หน้า) — tab/คำค้น/เลขหน้าอยู่ใน query
   const loadData = useCallback((signal) => {
     setLoading(true);
     setError(null);
 
-    return fetch("/api/dashboard?logImport=true", { signal })
+    const params = new URLSearchParams({ logImport: "true", page: String(page), status: activeStatusTab });
+    if (debouncedSearch) params.set("q", debouncedSearch);
+
+    return fetch(`/api/dashboard?${params}`, { signal })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to load log import data");
         return res.json();
@@ -108,7 +125,7 @@ export default function LogImportDashboard() {
         if (err.name !== "AbortError") setError(err.message);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [page, activeStatusTab, debouncedSearch]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -118,30 +135,24 @@ export default function LogImportDashboard() {
   }, [loadData]);
 
   const rows = data?.rows || [];
+  const counts = data?.counts || { success: 0, failed: 0, pending: 0 };
+  const total = Number(data?.total || 0);
+  const pageSize = Number(data?.pageSize || 20);
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   useEffect(() => {
-    const shouldRefresh = rows.some((row) => row.status === "processing" || row.status === "pending");
-    if (!shouldRefresh) return undefined;
+    if (!(counts.pending > 0)) return undefined;
     const interval = setInterval(() => {
       const controller = new AbortController();
       loadData(controller.signal);
     }, 5000);
     return () => clearInterval(interval);
-  }, [rows, loadData]);
+  }, [counts.pending, loadData]);
 
-  const pendingRows = useMemo(() => rows.filter((row) => ["pending", "processing"].includes(row.status)), [rows]);
-  const successRows = useMemo(() => rows.filter((row) => row.status === "complete"), [rows]);
-  const failedRows = useMemo(() => rows.filter((row) => ["not_complate", "no_complete"].includes(row.status)), [rows]);
-  const tabRows = activeStatusTab === "pending" ? pendingRows : activeStatusTab === "success" ? successRows : failedRows;
-
-  const filteredRows = useMemo(() => {
-    if (!searchTerm.trim()) return tabRows;
-    const term = searchTerm.toLowerCase();
-    return tabRows.filter((row) => 
-      row.file_name.toLowerCase().includes(term) ||
-      String(row.id).includes(term)
-    );
-  }, [tabRows, searchTerm]);
+  function switchTab(tab) {
+    setActiveStatusTab(tab);
+    setPage(1);
+  }
 
   return (
     <div className="main dashboardMain">
@@ -217,28 +228,28 @@ export default function LogImportDashboard() {
             type="button"
             className={`logImportStatusTab${activeStatusTab === "success" ? " logImportStatusTabActive" : ""}`}
             aria-pressed={activeStatusTab === "success"}
-            onClick={() => setActiveStatusTab("success")}
+            onClick={() => switchTab("success")}
           >
             <CircleCheck aria-hidden="true" />
-            สำเร็จ({successRows.length})
+            สำเร็จ({counts.success})
           </button>
           <button
             type="button"
             className={`logImportStatusTab${activeStatusTab === "failed" ? " logImportStatusTabActive" : ""}`}
             aria-pressed={activeStatusTab === "failed"}
-            onClick={() => setActiveStatusTab("failed")}
+            onClick={() => switchTab("failed")}
           >
             <CircleX aria-hidden="true" />
-            ไม่สำเร็จ({failedRows.length})
+            ไม่สำเร็จ({counts.failed})
           </button>
           <button
             type="button"
             className={`logImportStatusTab${activeStatusTab === "pending" ? " logImportStatusTabActive" : ""}`}
             aria-pressed={activeStatusTab === "pending"}
-            onClick={() => setActiveStatusTab("pending")}
+            onClick={() => switchTab("pending")}
           >
             <Clock3 aria-hidden="true" />
-            รอนำเข้า({pendingRows.length})
+            รอนำเข้า({counts.pending})
           </button>
         </div>
 
@@ -256,8 +267,8 @@ export default function LogImportDashboard() {
               </tr>
             </thead>
             <tbody>
-              {filteredRows.length ? (
-                filteredRows.map((row) => [
+              {rows.length ? (
+                rows.map((row) => [
                   <tr key={`row-${row.id}`}>
                     <td className="fileCol" style={{ color: "var(--accent-strong)" }}>{row.id}</td>
                     <td className="logImportFileCell">
@@ -315,6 +326,22 @@ export default function LogImportDashboard() {
             </tbody>
           </table>
         </div>
+
+        {total > pageSize ? (
+          <div className="pagination">
+            <button disabled={page <= 1 || loading} onClick={() => setPage(page - 1)}>
+              <ChevronLeft aria-hidden="true" />
+              ก่อน
+            </button>
+            <span>
+              หน้า {page} / {totalPages}
+            </span>
+            <button disabled={page >= totalPages || loading} onClick={() => setPage(page + 1)}>
+              ถัดไป
+              <ChevronRight aria-hidden="true" />
+            </button>
+          </div>
+        ) : null}
       </section>
     </div>
   );

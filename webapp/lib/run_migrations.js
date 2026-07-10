@@ -1,3 +1,4 @@
+const crypto = require("node:crypto");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 
@@ -7,6 +8,8 @@ const { loadEnvConfig } = require("@next/env");
 loadEnvConfig(process.cwd());
 
 const DEFAULT_MIGRATIONS_DIR = path.join(process.cwd(), "table_update");
+// dump ตาราง lookup (c_hospital, c_hostype, ...) — mount จาก ./table/lookup
+const DEFAULT_LOOKUP_DIR = path.join(process.cwd(), "table", "lookup");
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -89,10 +92,36 @@ async function applyMigrationFile(connection, filePath) {
   return { id, status: "applied" };
 }
 
+// id \u0E02\u0E2D\u0E07 lookup \u0E1C\u0E39\u0E01\u0E01\u0E31\u0E1A "\u0E40\u0E19\u0E37\u0E49\u0E2D\u0E44\u0E1F\u0E25\u0E4C" (content hash) \u0E44\u0E21\u0E48\u0E43\u0E0A\u0E48\u0E0A\u0E37\u0E48\u0E2D\u0E44\u0E1F\u0E25\u0E4C \u2014 \u0E44\u0E0B\u0E15\u0E4C\u0E17\u0E38\u0E01\u0E17\u0E35\u0E48\u0E23\u0E31\u0E19\u0E41\u0E04\u0E48
+// `docker compose up -d --build` \u0E14\u0E31\u0E07\u0E19\u0E31\u0E49\u0E19\u0E1E\u0E2D\u0E41\u0E01\u0E49 dump (\u0E40\u0E0A\u0E48\u0E19 \u0E40\u0E1E\u0E34\u0E48\u0E21 \u0E23\u0E1E.\u0E43\u0E2B\u0E21\u0E48) hash \u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19
+// \u2192 \u0E16\u0E39\u0E01\u0E42\u0E2B\u0E25\u0E14\u0E0B\u0E49\u0E33\u0E40\u0E2D\u0E07\u0E23\u0E2D\u0E1A\u0E16\u0E31\u0E14\u0E44\u0E1B \u0E42\u0E14\u0E22\u0E44\u0E1F\u0E25\u0E4C\u0E40\u0E14\u0E34\u0E21\u0E17\u0E35\u0E48\u0E42\u0E2B\u0E25\u0E14\u0E41\u0E25\u0E49\u0E27\u0E16\u0E39\u0E01\u0E02\u0E49\u0E32\u0E21. dump \u0E40\u0E1B\u0E47\u0E19
+// DROP TABLE IF EXISTS + CREATE + INSERT \u0E08\u0E36\u0E07\u0E23\u0E31\u0E19\u0E0B\u0E49\u0E33\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22
+function lookupMigrationId(filePath, sql) {
+  const hash = crypto.createHash("sha256").update(sql).digest("hex").slice(0, 12);
+  return `lookup_${migrationIdFromPath(filePath)}_${hash}`;
+}
+
+async function applyLookupFile(connection, filePath) {
+  const sql = (await fs.readFile(filePath, "utf8")).replace(/^\uFEFF/, "").trim();
+  const id = lookupMigrationId(filePath, sql);
+  if (!sql) {
+    return { id, status: "empty" };
+  }
+  if (await hasMigration(connection, id)) {
+    return { id, status: "skipped" };
+  }
+
+  await connection.query(sql);
+  await connection.query("INSERT INTO schema_migrations (id) VALUES (?)", [id]);
+  return { id, status: "applied" };
+}
+
 async function runMigrations(options = {}) {
   const migrationsDir = options.migrationsDir || DEFAULT_MIGRATIONS_DIR;
+  const lookupDir = options.lookupDir || DEFAULT_LOOKUP_DIR;
   const files = await listMigrationFiles(migrationsDir);
-  if (!files.length) {
+  const lookupFiles = await listMigrationFiles(lookupDir);
+  if (!files.length && !lookupFiles.length) {
     console.log("DB migrations: no migration files found");
     return [];
   }
@@ -109,6 +138,11 @@ async function runMigrations(options = {}) {
     for (const file of files) {
       const result = await applyMigrationFile(connection, file);
       console.log(`DB migration ${result.status}: ${result.id}`);
+      results.push(result);
+    }
+    for (const file of lookupFiles) {
+      const result = await applyLookupFile(connection, file);
+      console.log(`DB lookup ${result.status}: ${result.id}`);
       results.push(result);
     }
     return results;
@@ -129,11 +163,13 @@ if (require.main === module) {
 }
 
 module.exports = {
+  applyLookupFile,
   applyMigrationFile,
   ensureMigrationsTable,
   getConnectionConfig,
   hasMigration,
   listMigrationFiles,
+  lookupMigrationId,
   migrationIdFromPath,
   runMigrations,
 };

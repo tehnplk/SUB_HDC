@@ -1,14 +1,18 @@
 import { createDbConnection } from "@/lib/db";
 import { isImporting } from "@/lib/import-status.mjs";
-import { logImportOrderClause } from "@/lib/log-import.mjs";
+import { cacheGetJson, cacheSetJson } from "@/lib/redis.mjs";
+import { CACHE_TTL_SECONDS, hosListCacheKey, isCachedFile } from "@/lib/dashboard-cache.mjs";
+import {
+  getHospNameMap,
+  getMonthlyRows,
+  getTableColumns,
+  getTotalRows,
+} from "@/lib/hos-list-query.mjs";
 import {
   MONTHS,
-  buildMonthlyCountExpressions,
   chooseMonthlyDateColumn,
   chooseSelectedFile,
-  datePrefixExpression,
   getCurrentFiscalYearAd,
-  getFiscalYearRange,
   getRecentFiscalYearOptions,
   normalizeFiscalYear,
   quoteIdentifier,
@@ -16,75 +20,6 @@ import {
 } from "@/lib/dashboard-data.mjs";
 
 export const runtime = "nodejs";
-
-async function getTableColumns(conn, tableName) {
-  const [rows] = await conn.query(
-    "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?",
-    [tableName]
-  );
-  return rows.map((row) => row.COLUMN_NAME);
-}
-
-async function getFiscalYears(conn, tableName, dateColumn) {
-  const tableSql = quoteIdentifier(tableName);
-  const dateSql = datePrefixExpression(dateColumn);
-  const [rows] = await conn.query(
-    `SELECT DISTINCT
-       CASE
-         WHEN CAST(SUBSTRING(${dateSql}, 5, 2) AS UNSIGNED) >= 10
-           THEN CAST(SUBSTRING(${dateSql}, 1, 4) AS UNSIGNED) + 1
-         ELSE CAST(SUBSTRING(${dateSql}, 1, 4) AS UNSIGNED)
-       END AS fiscal_year_ad
-     FROM ${tableSql}
-     WHERE ${dateSql} REGEXP '^[0-9]{8}$'
-       AND SUBSTRING(${dateSql}, 5, 2) BETWEEN '01' AND '12'
-     ORDER BY fiscal_year_ad DESC`
-  );
-
-  return rows
-    .map((row) => Number(row.fiscal_year_ad))
-    .filter((year) => Number.isInteger(year) && year > 0);
-}
-
-async function getMonthlyRows(conn, tableName, dateColumn, fiscalYearAd) {
-  const tableSql = quoteIdentifier(tableName);
-  const dateSql = datePrefixExpression(dateColumn);
-  const monthSql = buildMonthlyCountExpressions(dateColumn);
-  const range = getFiscalYearRange(fiscalYearAd);
-
-  const [rows] = await conn.query(
-    `SELECT hospcode, ${monthSql}
-     FROM ${tableSql}
-     WHERE ${dateSql} REGEXP '^[0-9]{8}$'
-       AND ${dateSql} >= ?
-       AND ${dateSql} < ?
-     GROUP BY hospcode
-     ORDER BY hospcode`,
-    [range.start, range.end]
-  );
-
-  return rows.map((row) => {
-    const item = { hospcode: row.hospcode };
-    for (const month of MONTHS) {
-      item[month.key] = Number(row[month.key] || 0);
-    }
-    return item;
-  });
-}
-
-async function getTotalRows(conn, tableName) {
-  const [rows] = await conn.query(
-    `SELECT hospcode, COUNT(*) AS total
-     FROM ${quoteIdentifier(tableName)}
-     GROUP BY hospcode
-     ORDER BY hospcode`
-  );
-
-  return rows.map((row) => ({
-    hospcode: row.hospcode,
-    total: Number(row.total || 0),
-  }));
-}
 
 export async function GET(request) {
   let conn;
@@ -152,11 +87,51 @@ export async function GET(request) {
 
     const isLogImport = url.searchParams.get("logImport") === "true";
     if (isLogImport) {
+      // Lazy-load ทีละหน้า (20 แถว) แทนโหลด 500 แถวรวดเดียว — tab/ค้นหา filter
+      // ที่ SQL, default sort id ล่าสุดก่อน (ลำดับการสร้างรายการนำเข้า)
+      const LOG_IMPORT_PAGE_SIZE = 20;
+      const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
+      const statusTab = url.searchParams.get("status") || "success";
+      const q = (url.searchParams.get("q") || "").trim();
+
+      const statusesByTab = {
+        success: ["complete"],
+        failed: ["not_complate", "no_complete"],
+        pending: ["pending", "processing"],
+      };
+      const statuses = statusesByTab[statusTab] || statusesByTab.success;
+
+      const where = [`status IN (${statuses.map(() => "?").join(", ")})`];
+      const params = [...statuses];
+      if (q) {
+        where.push("(file_name LIKE ? OR CAST(id AS CHAR) LIKE ?)");
+        params.push(`%${q}%`, `%${q}%`);
+      }
+      const whereSql = `WHERE ${where.join(" AND ")}`;
+
+      // จำนวนต่อ tab นับจากทั้งตาราง (ไม่ผูกกับคำค้น — พฤติกรรมเดิมของหน้า)
+      const [countRows] = await conn.query(
+        "SELECT status, COUNT(*) AS n FROM log_import_file GROUP BY status"
+      );
+      const counts = { success: 0, failed: 0, pending: 0 };
+      for (const row of countRows) {
+        if (row.status === "complete") counts.success += Number(row.n);
+        else if (row.status === "not_complate" || row.status === "no_complete") counts.failed += Number(row.n);
+        else if (row.status === "pending" || row.status === "processing") counts.pending += Number(row.n);
+      }
+
+      const [[{ total }]] = await conn.query(
+        `SELECT COUNT(*) AS total FROM log_import_file ${whereSql}`,
+        params
+      );
+
       const [rows] = await conn.query(
         `SELECT id, file_name, file_size, import_date_time, status, finish_date_time, not_complete_msg, progress_percent
          FROM log_import_file
-         ORDER BY ${logImportOrderClause()}
-         LIMIT 500`
+         ${whereSql}
+         ORDER BY id DESC
+         LIMIT ? OFFSET ?`,
+        [...params, LOG_IMPORT_PAGE_SIZE, (page - 1) * LOG_IMPORT_PAGE_SIZE]
       );
       return Response.json({
         rows: rows.map((r) => ({
@@ -172,6 +147,10 @@ export async function GET(request) {
           finish_date_time: r.finish_date_time,
           not_complete_msg: r.not_complete_msg,
         })),
+        total: Number(total),
+        page,
+        pageSize: LOG_IMPORT_PAGE_SIZE,
+        counts,
         centerName: process.env.CENTER_NAME || "เมือง",
       });
     }
@@ -279,7 +258,22 @@ export async function GET(request) {
 
       fiscalYears = fiscalYearOptions;
       selectedFiscalYear = toFiscalYearLabel(selectedFiscalYearAd);
-      rows = await getMonthlyRows(conn, selectedFile, dateColumn, selectedFiscalYearAd);
+
+      // แฟ้มใหญ่ (charge/diagnosis opd+ipd, labfu) นับสด GROUP BY ช้ามาก (charge_opd
+      // ~13 นาที) — อ่านผลที่ summarize นับล่วงหน้าไว้ใน Redis. miss (cache ยังไม่ถูก
+      // สร้าง/หมดอายุ/Redis ล่ม) → นับสดแล้วเขียนกลับ (self-heal) ครั้งถัดไปจึงเร็ว
+      if (isCachedFile(selectedFile)) {
+        const cacheKey = hosListCacheKey(selectedFile, selectedFiscalYear);
+        const cached = await cacheGetJson(cacheKey);
+        if (cached) {
+          rows = cached;
+        } else {
+          rows = await getMonthlyRows(conn, selectedFile, dateColumn, selectedFiscalYearAd);
+          await cacheSetJson(cacheKey, rows, CACHE_TTL_SECONDS);
+        }
+      } else {
+        rows = await getMonthlyRows(conn, selectedFile, dateColumn, selectedFiscalYearAd);
+      }
     } else {
       rows = await getTotalRows(conn, selectedFile);
     }
@@ -299,6 +293,8 @@ export async function GET(request) {
       months: MONTHS,
       rows,
       totalRows,
+      // ชื่อย่อหน่วยบริการแสดงคู่ hospcode — merge สดทุก response ไม่ผูกกับ cache
+      hospNames: await getHospNameMap(conn),
       centerName: process.env.CENTER_NAME || "เมือง",
     });
   } catch (error) {

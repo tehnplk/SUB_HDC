@@ -107,23 +107,45 @@ test("log import grid shows file size after file name and falls back to dash", a
   assert.match(pageSource, /colSpan=\{7\}/);
 });
 
-test("log import page splits rows into waiting success and failed tabs with counts", async () => {
+test("log import page splits rows into waiting success and failed tabs with server counts", async () => {
   const pageSource = await readFile(pagePath, "utf8");
+  const routeSource = await readFile(routePath, "utf8");
   const cssSource = await readFile(cssPath, "utf8");
 
   assert.match(pageSource, /const \[activeStatusTab, setActiveStatusTab\] = useState\("success"\)/);
-  assert.match(pageSource, /const pendingRows = useMemo\(\(\) => rows\.filter\(\(row\) => \["pending", "processing"\]\.includes\(row\.status\)\)/);
-  assert.match(pageSource, /const successRows = useMemo\(\(\) => rows\.filter\(\(row\) => row\.status === "complete"\)/);
-  assert.match(pageSource, /const failedRows = useMemo\(\(\) => rows\.filter\(\(row\) => \["not_complate", "no_complete"\]\.includes\(row\.status\)\)/);
-  assert.match(pageSource, /const tabRows = activeStatusTab === "pending" \? pendingRows : activeStatusTab === "success" \? successRows : failedRows/);
-  assert.match(pageSource, /รอนำเข้า\(\{pendingRows\.length\}\)/);
-  assert.match(pageSource, /สำเร็จ\(\{successRows\.length\}\)/);
-  assert.match(pageSource, /ไม่สำเร็จ\(\{failedRows\.length\}\)/);
+  // tab filter ทำที่ SQL — หน้าส่ง status ไปกับ query แล้วแสดง counts จาก server
+  assert.match(pageSource, /status: activeStatusTab/);
+  assert.match(pageSource, /const counts = data\?\.counts/);
+  assert.match(pageSource, /รอนำเข้า\(\{counts\.pending\}\)/);
+  assert.match(pageSource, /สำเร็จ\(\{counts\.success\}\)/);
+  assert.match(pageSource, /ไม่สำเร็จ\(\{counts\.failed\}\)/);
   assert.match(pageSource, /aria-pressed=\{activeStatusTab === "pending"\}/);
   assert.match(pageSource, /aria-pressed=\{activeStatusTab === "success"\}/);
   assert.match(pageSource, /aria-pressed=\{activeStatusTab === "failed"\}/);
+  assert.match(routeSource, /success: \["complete"\]/);
+  assert.match(routeSource, /failed: \["not_complate", "no_complete"\]/);
+  assert.match(routeSource, /pending: \["pending", "processing"\]/);
   assert.match(cssSource, /\.logImportStatusTabs/);
   assert.match(cssSource, /\.logImportStatusTabActive/);
+});
+
+test("log import page lazy-loads 20 rows per page sorted by id desc", async () => {
+  const pageSource = await readFile(pagePath, "utf8");
+  const routeSource = await readFile(routePath, "utf8");
+
+  // server-side pagination: LIMIT/OFFSET + default sort id ล่าสุดก่อน
+  assert.match(routeSource, /const LOG_IMPORT_PAGE_SIZE = 20/);
+  assert.match(routeSource, /ORDER BY id DESC/);
+  assert.match(routeSource, /LIMIT \? OFFSET \?/);
+  // หน้าเปลี่ยน page → fetch ใหม่ (lazy) + ปุ่มเลื่อนหน้าอยู่ล่างตาราง
+  assert.match(pageSource, /page: String\(page\)/);
+  assert.match(pageSource, /className="pagination"/);
+  assert.match(pageSource, /หน้า \{page\} \/ \{totalPages\}/);
+  assert.match(pageSource, /setPage\(page - 1\)/);
+  assert.match(pageSource, /setPage\(page \+ 1\)/);
+  // เปลี่ยน tab/คำค้น ต้องกลับหน้า 1
+  assert.match(pageSource, /function switchTab/);
+  assert.match(pageSource, /setPage\(1\)/);
 });
 
 test("log import page hides the total history label row", async () => {

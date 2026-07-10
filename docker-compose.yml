@@ -14,6 +14,12 @@ services:
     volumes:
       - sub_hdc_mariadb_data:/var/lib/mysql
       - ./table:/docker-entrypoint-initdb.d:ro
+      # entrypoint ของ MariaDB ไม่อ่าน subdirectory ใน initdb.d — ต้อง mount
+      # ไฟล์ lookup เข้า top-level เอง (รันเฉพาะตอน init DB ครั้งแรก เหมือน
+      # table/*.sql; DB ที่ init ไปแล้ว run_migrations ของ webapp โหลดให้เอง
+      # ตอน start — ดู mount table/lookup ที่ service webapp)
+      - ./table/lookup/c_hospital.sql:/docker-entrypoint-initdb.d/lookup_c_hospital.sql:ro
+      - ./table/lookup/c_hostype.sql:/docker-entrypoint-initdb.d/lookup_c_hostype.sql:ro
       - ./my.cnf:/etc/mysql/conf.d/custom.cnf:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
@@ -21,6 +27,28 @@ services:
       timeout: 5s
       retries: 30
       start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    container_name: sub_hdc_redis
+    restart: unless-stopped
+    # cache infra ใช้ร่วมทั้งระบบ. จำกัด maxmemory + LRU eviction กันโตไม่จำกัด
+    # (Redis default ไม่จำกัด). appendonly เก็บ cache รอด restart. ข้อมูล cache
+    # ของหน้า dashboard เล็ก (~พันแถว) 128MB เหลือเฟือ เผื่อใช้อย่างอื่นในอนาคต
+    command: >
+      redis-server
+      --maxmemory 128mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --save ""
+    volumes:
+      - sub_hdc_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
 
   webapp:
     build:
@@ -31,6 +59,8 @@ services:
     restart: unless-stopped
     depends_on:
       mariadb:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     ports:
       - "80:3000"
@@ -44,11 +74,18 @@ services:
     volumes:
       - ./webapp/tmp:/app/tmp
       - ./table_update:/app/table_update:ro
+      # lookup dumps โหลดผ่าน run_migrations (content-hash: แก้ไฟล์แล้วโหลดซ้ำ
+      # เองรอบถัดไป) — ครอบไซต์เก่าที่ initdb ไม่รันซ้ำ โดย user สั่งแค่
+      # `docker compose up -d --build` เหมือนเดิม
+      - ./table/lookup:/app/table/lookup:ro
 
   importer:
     image: sub-hdc-webapp
     container_name: sub_hdc_importer
     restart: unless-stopped
+    # ไม่มี depends_on: redis — importer ไม่ได้ใช้ redis เลย (ยังไม่มี cache
+    # invalidation) การนำเข้าเป็นงาน critical ต้องไม่ถูก block เพราะ cache
+    # infra start ไม่ขึ้น ถ้าอนาคตเขียน invalidation ค่อยพิจารณาใส่กลับ
     depends_on:
       mariadb:
         condition: service_healthy
@@ -61,6 +98,26 @@ services:
     command: node lib/import_daemon.js
     volumes:
       - ./webapp/tmp:/app/tmp
+
+  summarize:
+    image: sub-hdc-webapp
+    container_name: sub_hdc_summarize
+    restart: unless-stopped
+    # นับสรุป hos-list ของแฟ้มใหญ่ล่วงหน้าเก็บ Redis ทุก 24 ชม. (+ ตอน start)
+    # ใช้ webapp image เดียวกับ importer/sync. depends_on redis เพราะเขียน cache,
+    # mariadb เพราะอ่านตารางใหญ่. ข้ามรอบเองถ้ากำลัง import
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - ./webapp/.env
+    environment:
+      TZ: Asia/Bangkok
+    command: node lib/summarize_daemon.js
 
   sync:
     build:
@@ -94,3 +151,4 @@ services:
 
 volumes:
   sub_hdc_mariadb_data:
+  sub_hdc_redis_data:

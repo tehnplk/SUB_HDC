@@ -247,3 +247,66 @@ test("service chiefcomp is text in initial schema and migration", async () => {
     /ALTER\s+TABLE\s+`service`\s+MODIFY\s+`chiefcomp`\s+text\s+NOT\s+NULL;/i
   );
 });
+
+// ---- lookup dumps (table/lookup/*.sql) โหลดอัตโนมัติผ่าน run_migrations ----
+// ไซต์ทุกที่รันแค่ `docker compose up -d --build` — id ผูก content hash:
+// ไฟล์เดิมโหลดครั้งเดียว แก้ไฟล์แล้วโหลดซ้ำเองรอบถัดไป
+
+function makeMigrationConn() {
+  const executed = [];
+  const applied = new Set();
+  return {
+    executed,
+    applied,
+    async query(sql, params) {
+      if (/SELECT id FROM schema_migrations/.test(sql)) {
+        return [applied.has(params[0]) ? [{ id: params[0] }] : []];
+      }
+      if (/INSERT INTO schema_migrations/.test(sql)) {
+        applied.add(params[0]);
+        return [{}];
+      }
+      executed.push(sql);
+      return [{}];
+    },
+  };
+}
+
+test("lookupMigrationId is bound to file content, not just the name", () => {
+  const idA = migrations.lookupMigrationId("/x/c_hospital.sql", "INSERT A");
+  const idASame = migrations.lookupMigrationId("/y/c_hospital.sql", "INSERT A");
+  const idB = migrations.lookupMigrationId("/x/c_hospital.sql", "INSERT B");
+
+  assert.match(idA, /^lookup_c_hospital_[0-9a-f]{12}$/);
+  assert.equal(idA, idASame);
+  assert.notEqual(idA, idB);
+});
+
+test("applyLookupFile loads a dump once and reloads only when its content changes", async () => {
+  await withTempDir(async (dir) => {
+    const file = path.join(dir, "c_hostype.sql");
+    await writeFile(file, "DROP TABLE IF EXISTS `c_hostype`; CREATE TABLE `c_hostype` (a int);");
+    const conn = makeMigrationConn();
+
+    const first = await migrations.applyLookupFile(conn, file);
+    assert.equal(first.status, "applied");
+    assert.equal(conn.executed.length, 1);
+
+    // ไฟล์เดิม → ข้าม ไม่รันซ้ำ
+    const second = await migrations.applyLookupFile(conn, file);
+    assert.equal(second.status, "skipped");
+    assert.equal(conn.executed.length, 1);
+
+    // แก้เนื้อไฟล์ (เช่น เพิ่ม รพ.ใหม่) → hash เปลี่ยน → โหลดซ้ำอัตโนมัติ
+    await writeFile(file, "DROP TABLE IF EXISTS `c_hostype`; CREATE TABLE `c_hostype` (a int, b int);");
+    const third = await migrations.applyLookupFile(conn, file);
+    assert.equal(third.status, "applied");
+    assert.equal(conn.executed.length, 2);
+    assert.notEqual(third.id, first.id);
+  });
+});
+
+test("compose mounts table/lookup into webapp so run_migrations can load dumps", async () => {
+  const compose = await readFile(path.resolve(process.cwd(), "..", "docker-compose.yml"), "utf8");
+  assert.match(compose, /- \.\/table\/lookup:\/app\/table\/lookup:ro/);
+});
