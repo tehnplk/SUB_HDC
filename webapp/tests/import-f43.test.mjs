@@ -268,6 +268,11 @@ test("load-data import writes log_import_id metadata instead of source file colu
       throw new Error(`Unexpected execute: ${sql} ${values}`);
     },
     async query(sql) {
+      // importFile ตั้ง net_read/write_timeout ต่อ session ก่อน LOAD DATA
+      // กัน connection แขวนตอน network สะดุด — ข้าม statement นั้นในการตรวจ
+      if (/^SET SESSION/i.test(sql.trim())) {
+        return [{}];
+      }
       const match = sql.match(/LOAD DATA LOCAL INFILE '([^']+)'/);
       assert.ok(match);
       loadedSource = await readFile(match[1], "utf8");
@@ -312,7 +317,10 @@ test("load-data import adds table column context to MySQL errors", async () => {
       }
       throw new Error(`Unexpected execute: ${sql}`);
     },
-    async query() {
+    async query(sql) {
+      if (/^SET SESSION/i.test(sql.trim())) {
+        return [{}];
+      }
       const error = new Error("Data too long for column 'house' at row 1");
       error.code = "ER_DATA_TOO_LONG";
       throw error;

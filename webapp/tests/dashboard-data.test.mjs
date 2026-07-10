@@ -38,6 +38,14 @@ test("chooseMonthlyDateColumn returns null when monthly date columns are missing
 
 test("datePrefixExpression reads the first 8 digits from datetime columns", () => {
   assert.equal(datePrefixExpression("datetime_admit"), "LEFT(`datetime_admit`, 8)");
+  assert.equal(datePrefixExpression("datetime_serv"), "LEFT(`datetime_serv`, 8)");
+});
+
+test("datePrefixExpression uses plain 8-digit date columns directly (no LEFT, index-friendly)", () => {
+  // date_serv/date_admit/bdate เป็น varchar(8) สะอาด — ตัด LEFT ออกให้ใช้ index ได้
+  assert.equal(datePrefixExpression("date_serv"), "`date_serv`");
+  assert.equal(datePrefixExpression("date_admit"), "`date_admit`");
+  assert.equal(datePrefixExpression("bdate"), "`bdate`");
 });
 
 test("getFiscalYearRange supports Thai Buddhist fiscal year labels", () => {

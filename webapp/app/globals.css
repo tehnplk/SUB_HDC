@@ -50,7 +50,9 @@ body {
   display: grid;
   min-height: 100vh;
   place-items: center;
-  padding: 32px;
+  /* ซ้าย-ขวาห่างขอบจอ 20px ให้ content กว้างคุ้มพื้นที่จอ (mobile มี media
+     query ลดของมันเองอยู่แล้ว) */
+  padding: 32px 20px;
 }
 
 .panel {
@@ -67,7 +69,9 @@ body {
 }
 
 .panelWide {
-  width: min(1160px, 100%);
+  /* เต็มความกว้างที่เหลือจากขอบ 20px ของ .main — ไม่ cap 1160px แล้ว
+     เพื่อใช้พื้นที่จอกว้างให้คุ้ม (หน้าแคบอย่าง login ใช้ .panel เดิม 580px) */
+  width: 100%;
   max-width: 100%;
 }
 
@@ -749,6 +753,14 @@ button:disabled {
 }
 
 .fileCol {
+}
+
+/* ชื่อย่อหน่วยบริการต่อท้าย hospcode ในตาราง hos-list */
+.hospNameShort {
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: 0.85em;
+  white-space: nowrap;
 }
 
 .tableCellIcon {
@@ -2135,7 +2147,8 @@ button:disabled {
 
 .chatPanel {
   display: grid;
-  width: min(900px, 100%);
+  /* ไม่ cap ความกว้างเอง — ใช้เต็ม layout ตาม .panelWide (จอกว้างได้พื้นที่
+     แสดงตาราง/กราฟจาก AI มากขึ้น) */
   gap: 10px;
   min-height: min(620px, calc(100vh - 64px));
   padding: 20px;
@@ -2245,7 +2258,9 @@ button:disabled {
 
 .chatBubble {
   width: fit-content;
-  max-width: min(760px, 100%);
+  /* กว้างขึ้นตาม layout ใหม่ — คำตอบ AI มีตาราง/SQL/กราฟ ได้พื้นที่เต็มที่
+     (fit-content ทำให้ข้อความสั้นยังกะทัดรัดเหมือนเดิม) */
+  max-width: min(1100px, 100%);
   padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -2254,7 +2269,7 @@ button:disabled {
 }
 
 .chatMessage.user .chatBubble {
-  max-width: min(650px, 100%);
+  max-width: min(760px, 100%);
 }
 
 .chatBubble p {
@@ -2359,7 +2374,7 @@ button:disabled {
 
 .chatChart {
   display: grid;
-  width: min(540px, 100%);
+  width: min(880px, 100%);
   gap: 7px;
   margin-top: 8px;
   padding: 9px;

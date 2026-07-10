@@ -13,7 +13,9 @@ export const IMPORT_SETTING_DEFAULTS = {
   queueConcurrency: 1,
   queueCapacity: 120,
   userMaxZips: 12,
-  staleMinutes: 120,
+  // sweep เป็น file-aware แล้ว (mark เฉพาะ row ที่ไฟล์หายจริง) — เลขนี้เป็นแค่
+  // minimum age กัน race ตอนสร้างไฟล์ ไม่ใช่เพดานรอคิว จึงตั้งสั้นได้
+  staleMinutes: 30,
 };
 
 function importConfigPath() {

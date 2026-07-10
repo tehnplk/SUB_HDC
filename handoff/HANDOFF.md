@@ -329,6 +329,12 @@ The local Docker deployment is also running through port 80:
 http://localhost
 ```
 
+## 2026-07-09 Update — Import Hang Incident & Prevention
+
+รายละเอียดแยกเป็นไฟล์ของตัวเอง: **[handoff-import-issue.md](handoff-import-issue.md)**
+
+สรุปย่อ: import job 330 (F43_07492) แขวน ~40 นาที (half-open TCP กลาง LOAD DATA) ขวางคิว. restart importer แก้เฉพาะหน้า ข้อมูล F43_07492 ตกหล่น (**ผู้ใช้ตัดสินใจไม่ re-upload 2026-07-10 — ปิดประเด็น**). แก้ป้องกันครบใน local: net timeout 3600 + watchdog 2 ชม. + re-queue-not-delete (signal-kill = interrupted ซึ่งเป็นสาเหตุแท้ที่ 330 หาย, แยก network/data error, retry cap 3) + **คิวเรียงไฟล์เล็กก่อน** + **file-aware sweep** (mark เฉพาะ row ที่ไฟล์หายจริง, staleMinutes 120→30). ทดสอบจริงบน local docker ผ่านทุกเคส, **ยังไม่ commit/deploy**.
+
 ## Suggested Skills
 
 - `handoff`: Use when updating this document for the next session.

@@ -62,6 +62,15 @@ async function writeLoadDataTempFile(tmpDir, file, importColumns, logImportId) {
   return tempPath;
 }
 
+// LOAD DATA สตรีมไฟล์ผ่าน socket — ถ้า network สะดุดกลางคัน (half-open TCP)
+// ทั้ง client และ server จะรอกันชั่วนิรันดร์ (client ค้าง ep_poll, server ค้าง
+// "Reading from net"). ตั้ง net_read/write_timeout ต่อ session เป็นเพดานที่รู้ค่า
+// แน่นอนไม่ว่า server config เป็นอะไร — กัน config drift ไม่ใช่ตัวตัดหลัก
+// (ตัวตัดหลักคือ watchdog ใน import_daemon.js).
+// ค่า default ต้องเท่า my.cnf (3600) — ห้ามต่ำกว่า: เคยตั้ง 600 แล้วตัด
+// connection กลาง import chronicfu (365k แถว ใช้ ~619 วิ บนเครื่อง disk-bound)
+const LOAD_DATA_NET_TIMEOUT_SECONDS = Number(process.env.IMPORT_LOAD_NET_TIMEOUT || 3600);
+
 async function importFile(connection, file, batchSize, onDuplicate, onBatchComplete, logImportId, options = {}) {
   const existingColumns = await getExistingColumns(connection, file.tableName);
   const { importColumns, missingColumns } = getImportColumns(existingColumns, file, logImportId);
@@ -72,6 +81,11 @@ async function importFile(connection, file, batchSize, onDuplicate, onBatchCompl
     const sql = buildLoadDataSql(file.tableName, importColumns, tempPath, onDuplicate);
     const execute = typeof connection.query === "function" ? connection.query.bind(connection) : connection.execute.bind(connection);
     try {
+      const netTimeout = Number(options.netTimeoutSeconds ?? LOAD_DATA_NET_TIMEOUT_SECONDS);
+      if (Number.isInteger(netTimeout) && netTimeout > 0) {
+        // ตั้งเฉพาะ session นี้ — ไม่กระทบ connection อื่นใน pool/ทั้ง server
+        await execute(`SET SESSION net_read_timeout = ${netTimeout}, net_write_timeout = ${netTimeout}`);
+      }
       await execute(sql);
     } catch (error) {
       throw addLoadDataErrorContext(error, file);
