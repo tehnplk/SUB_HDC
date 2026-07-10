@@ -10,5 +10,17 @@
     "script": "post/post_count_file_service.js",
     "cron": "0 * * * *",
     "enabled": true
+  },
+  {
+    "name": "sync_kpi",
+    "script": "post/post_sync_kpi.js",
+    "cron": "* * * * *",
+    "enabled": true
+  },
+  {
+    "name": "refresh_sync_sql_data",
+    "script": "post/pull_sql_for_sync_data.js",
+    "cron": "*/15 * * * *",
+    "enabled": true
   }
 ]

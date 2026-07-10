@@ -11,5 +11,6 @@ CREATE TABLE `diagnosis_ipd` (
   `cid` varchar(255) NOT NULL DEFAULT '',
   `cid_aes` varchar(2000) NOT NULL DEFAULT '',
   `log_import_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`hospcode`,`pid`,`an`,`datetime_admit`,`diagcode`)
+  PRIMARY KEY (`hospcode`,`pid`,`an`,`datetime_admit`,`diagcode`),
+  KEY `idx_diagnosis_ipd_diagcode_admit_cid` (`diagcode`,`datetime_admit`,`cid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;

@@ -12,5 +12,6 @@ CREATE TABLE `card` (
   `cid` varchar(255) NOT NULL DEFAULT '',
   `cid_aes` varchar(2000) NOT NULL DEFAULT '',
   `log_import_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`hospcode`,`pid`,`instype_new`)
+  PRIMARY KEY (`hospcode`,`pid`,`instype_new`),
+  KEY `idx_card_cid` (`cid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;

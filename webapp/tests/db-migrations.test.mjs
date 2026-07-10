@@ -141,6 +141,38 @@ test("schema sql files do not force ascii charset or collation", async () => {
   assert.deepEqual(offenders, []);
 });
 
+test("sql_for_sync_data schema is available through the initial schema and migration", async () => {
+  const tablePath = path.resolve(process.cwd(), "..", "table", "sql_for_sync_data.sql");
+  const migrationPath = path.resolve(
+    process.cwd(),
+    "..",
+    "table_update",
+    "20260710_create_sql_for_sync_data.sql"
+  );
+  const expectedColumns = [
+    "id",
+    "kpi_name",
+    "topic",
+    "kpi_group",
+    "interval_minute",
+    "tables_use",
+    "sql_command",
+    "note",
+    "d_update",
+    "is_active",
+  ];
+
+  for (const source of [await readFile(tablePath, "utf8"), await readFile(migrationPath, "utf8")]) {
+    assert.match(source, /CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+`sql_for_sync_data`/i);
+    for (const column of expectedColumns) {
+      assert.match(source, new RegExp("`" + column + "`", "i"));
+    }
+    assert.match(source, /KEY\s+`idx_sql_for_sync_data_topic`\s+\(`topic`\)/i);
+    assert.match(source, /KEY\s+`idx_sql_for_sync_data_kpi_name`\s+\(`kpi_name`\)/i);
+    assert.match(source, /KEY\s+`idx_sql_for_sync_data_active`\s+\(`is_active`\)/i);
+  }
+});
+
 test("initial table primary keys fit the table charset key length limit", async () => {
   const tableDir = path.resolve(process.cwd(), "..", "table");
   const files = (await readdir(tableDir)).filter((file) => file.endsWith(".sql"));
@@ -246,6 +278,116 @@ test("service chiefcomp is text in initial schema and migration", async () => {
     migrationSource,
     /ALTER\s+TABLE\s+`service`\s+MODIFY\s+`chiefcomp`\s+text\s+NOT\s+NULL;/i
   );
+});
+
+test("report query indexes exist in initial schemas and migrations", async () => {
+  const tableDir = path.resolve(process.cwd(), "..", "table");
+  const migrationDir = path.resolve(process.cwd(), "..", "table_update");
+
+  const expected = [
+    ["20260710_report_query_indexes.sql", "person.sql", "person", "idx_person_cid", "(`cid`)"],
+    [
+      "20260710_report_query_indexes.sql",
+      "labfu.sql",
+      "labfu",
+      "idx_labfu_labtest_dateserv_cid",
+      "(`labtest`,`date_serv`,`cid`)",
+    ],
+    [
+      "20260710_report_query_indexes.sql",
+      "diagnosis_opd.sql",
+      "diagnosis_opd",
+      "idx_diagnosis_opd_diagcode_dateserv_cid",
+      "(`diagcode`,`date_serv`,`cid`)",
+    ],
+    [
+      "20260710_report_query_indexes.sql",
+      "diagnosis_ipd.sql",
+      "diagnosis_ipd",
+      "idx_diagnosis_ipd_diagcode_admit_cid",
+      "(`diagcode`,`datetime_admit`,`cid`)",
+    ],
+    [
+      "20260710_service_drug_indexes.sql",
+      "service.sql",
+      "service",
+      "idx_service_cid_dateserv",
+      "(`cid`,`date_serv`)",
+    ],
+    [
+      "20260710_service_drug_indexes.sql",
+      "service.sql",
+      "service",
+      "idx_service_dateserv_cid",
+      "(`date_serv`,`cid`)",
+    ],
+    [
+      "20260710_service_drug_indexes.sql",
+      "drug_opd.sql",
+      "drug_opd",
+      "idx_drug_opd_didstd_dateserv_cid",
+      "(`didstd`,`date_serv`,`cid`)",
+    ],
+    [
+      "20260710_service_drug_indexes.sql",
+      "drug_ipd.sql",
+      "drug_ipd",
+      "idx_drug_ipd_didstd_admit_cid",
+      "(`didstd`,`datetime_admit`,`cid`)",
+    ],
+    ...[
+      ["nutrition", "idx_nutrition_cid_dateserv", "(`cid`,`date_serv`)"],
+      ["nutrition", "idx_nutrition_dateserv_cid", "(`date_serv`,`cid`)"],
+      [
+        "procedure_opd",
+        "idx_procedure_opd_procedcode_dateserv_cid",
+        "(`procedcode`,`date_serv`,`cid`)",
+      ],
+      ["procedure_opd", "idx_procedure_opd_cid_dateserv", "(`cid`,`date_serv`)"],
+      ["specialpp", "idx_specialpp_ppspecial_dateserv_cid", "(`ppspecial`,`date_serv`,`cid`)"],
+      ["specialpp", "idx_specialpp_cid_dateserv", "(`cid`,`date_serv`)"],
+      ["appointment", "idx_appointment_cid_dateserv", "(`cid`,`date_serv`)"],
+      ["card", "idx_card_cid", "(`cid`)"],
+      ["chronicfu", "idx_chronicfu_cid_dateserv", "(`cid`,`date_serv`)"],
+      ["chronicfu", "idx_chronicfu_dateserv_cid", "(`date_serv`,`cid`)"],
+      ["address", "idx_address_cid", "(`cid`)"],
+      ["chronic", "idx_chronic_chronic_cid", "(`chronic`,`cid`)"],
+      ["chronic", "idx_chronic_cid", "(`cid`)"],
+      ["rehabilitation", "idx_rehabilitation_cid_dateserv", "(`cid`,`date_serv`)"],
+      [
+        "procedure_ipd",
+        "idx_procedure_ipd_procedcode_admit_cid",
+        "(`procedcode`,`datetime_admit`,`cid`)",
+      ],
+      ["accident", "idx_accident_cid_datetimeserv", "(`cid`,`datetime_serv`)"],
+      ["epi", "idx_epi_vaccinetype_dateserv_cid", "(`vaccinetype`,`date_serv`,`cid`)"],
+      ["epi", "idx_epi_cid_dateserv", "(`cid`,`date_serv`)"],
+      ["ncdscreen", "idx_ncdscreen_cid_dateserv", "(`cid`,`date_serv`)"],
+      ["dental", "idx_dental_cid_dateserv", "(`cid`,`date_serv`)"],
+    ].map(([tableName, indexName, columns]) => [
+      "20260710_wide_report_indexes.sql",
+      `${tableName}.sql`,
+      tableName,
+      indexName,
+      columns,
+    ]),
+  ];
+
+  for (const [migrationFile, schemaFile, tableName, indexName, columns] of expected) {
+    const schemaSource = await readFile(path.join(tableDir, schemaFile), "utf8");
+    assert.ok(
+      schemaSource.includes(`KEY \`${indexName}\` ${columns}`),
+      `${schemaFile} should define ${indexName} on ${columns}`
+    );
+    const migrationSource = await readFile(path.join(migrationDir, migrationFile), "utf8");
+    const columnsWithSpaces = columns.replace(/,/g, ", ");
+    assert.ok(
+      migrationSource.includes(
+        `ALTER TABLE \`${tableName}\` ADD INDEX IF NOT EXISTS \`${indexName}\` ${columnsWithSpaces};`
+      ),
+      `${migrationFile} should add ${indexName} to ${tableName}`
+    );
+  }
 });
 
 // ---- lookup dumps (table/lookup/*.sql) โหลดอัตโนมัติผ่าน run_migrations ----

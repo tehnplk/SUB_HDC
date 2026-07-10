@@ -1,8 +1,8 @@
 const fs = require("node:fs");
 const path = require("node:path");
-const { resolveTargetUrl } = require("./resolve_target_url");
+const { resolvePostUrl } = require("./sync_config");
 
-const TARGET_URL = resolveTargetUrl();
+const TARGET_URL = resolvePostUrl("check-version");
 const UPDATE_LOG_FILE = process.env.UPDATE_LOG_FILE || path.resolve(__dirname, "../../webapp/version/update_log.json");
 
 function compareVersions(left, right) {

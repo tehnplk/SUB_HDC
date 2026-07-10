@@ -85,9 +85,12 @@ function runStartupJobs(jobs) {
   }
 }
 
-const { resolveTargetUrl } = require("./post/resolve_target_url");
+const { resolveBaseUrl, resolveGetUrl, resolvePostUrl, getSecret } = require("./post/sync_config");
 
-console.log(`sync target: ${resolveTargetUrl()}`);
+console.log(`sync base url: ${resolveBaseUrl()}`);
+console.log(`sync post targets: check-version=${resolvePostUrl("check-version")}, count-visit=${resolvePostUrl("count-visit")}`);
+console.log(`sync get targets: sql-command=${resolveGetUrl("sql-command")}`);
+console.log(`sync secret: ${getSecret() ? "configured" : "not set"}`);
 console.log(`sync jobs file: ${jobsFile}`);
 
 const jobs = readJobs();

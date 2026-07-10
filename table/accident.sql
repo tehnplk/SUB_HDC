@@ -25,5 +25,6 @@ CREATE TABLE `accident` (
   `cid` varchar(255) NOT NULL DEFAULT '',
   `cid_aes` varchar(2000) NOT NULL DEFAULT '',
   `log_import_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`hospcode`,`pid`,`seq`,`datetime_serv`)
+  PRIMARY KEY (`hospcode`,`pid`,`seq`,`datetime_serv`),
+  KEY `idx_accident_cid_datetimeserv` (`cid`,`datetime_serv`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
