@@ -11,5 +11,6 @@ CREATE TABLE `labfu` (
   `provider` varchar(255) NOT NULL DEFAULT '',
   `cid_aes` varchar(2000) NOT NULL DEFAULT '',
   `log_import_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`hospcode`,`pid`,`date_serv`,`labtest`)
+  PRIMARY KEY (`hospcode`,`pid`,`date_serv`,`labtest`),
+  KEY `idx_labfu_labtest_dateserv_cid` (`labtest`,`date_serv`,`cid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;

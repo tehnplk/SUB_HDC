@@ -10,5 +10,7 @@ CREATE TABLE `epi` (
   `cid` varchar(255) NOT NULL DEFAULT '',
   `cid_aes` varchar(2000) NOT NULL DEFAULT '',
   `log_import_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`hospcode`,`pid`,`date_serv`,`vaccinetype`)
+  PRIMARY KEY (`hospcode`,`pid`,`date_serv`,`vaccinetype`),
+  KEY `idx_epi_vaccinetype_dateserv_cid` (`vaccinetype`,`date_serv`,`cid`),
+  KEY `idx_epi_cid_dateserv` (`cid`,`date_serv`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;

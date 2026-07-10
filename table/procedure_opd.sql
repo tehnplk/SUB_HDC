@@ -11,5 +11,7 @@ CREATE TABLE `procedure_opd` (
   `cid` varchar(255) NOT NULL DEFAULT '',
   `cid_aes` varchar(2000) NOT NULL DEFAULT '',
   `log_import_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`hospcode`,`pid`,`seq`,`date_serv`,`procedcode`)
+  PRIMARY KEY (`hospcode`,`pid`,`seq`,`date_serv`,`procedcode`),
+  KEY `idx_procedure_opd_procedcode_dateserv_cid` (`procedcode`,`date_serv`,`cid`),
+  KEY `idx_procedure_opd_cid_dateserv` (`cid`,`date_serv`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;

@@ -36,7 +36,7 @@ test("docker compose includes hourly sync service mounted at /sync", async () =>
   assert.doesNotMatch(compose, /update_log\.json:\/sync\/update_log\.json/);
 });
 
-test("sync jobs schedule check every 30 minutes and service count every hour", async () => {
+test("sync jobs include a 15-minute sync SQL refresh", async () => {
   const jobsPath = path.resolve(process.cwd(), "..", "sync", "sync-jobs.json");
   const jobs = JSON.parse(await readFile(jobsPath, "utf8"));
 
@@ -53,6 +53,18 @@ test("sync jobs schedule check every 30 minutes and service count every hour", a
         name: "service_count",
         script: "post/post_count_file_service.js",
         cron: "0 * * * *",
+        enabled: true,
+      },
+      {
+        name: "sync_kpi",
+        script: "post/post_sync_kpi.js",
+        cron: "* * * * *",
+        enabled: true,
+      },
+      {
+        name: "refresh_sync_sql_data",
+        script: "post/pull_sql_for_sync_data.js",
+        cron: "*/15 * * * *",
         enabled: true,
       },
     ]

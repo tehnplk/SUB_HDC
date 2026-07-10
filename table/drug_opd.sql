@@ -16,5 +16,6 @@ CREATE TABLE `drug_opd` (
   `cid` varchar(255) NOT NULL DEFAULT '',
   `cid_aes` varchar(2000) NOT NULL DEFAULT '',
   `log_import_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`hospcode`,`pid`,`seq`,`date_serv`,`didstd`)
+  PRIMARY KEY (`hospcode`,`pid`,`seq`,`date_serv`,`didstd`),
+  KEY `idx_drug_opd_didstd_dateserv_cid` (`didstd`,`date_serv`,`cid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
