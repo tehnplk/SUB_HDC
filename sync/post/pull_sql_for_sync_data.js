@@ -66,17 +66,18 @@ function nullableInteger(value) {
 function normalizeRow(row) {
   const id = String(row?.id || "").trim();
   const kpiName = String(row?.kpi_name || "").trim();
+  const topic = String(row?.topic || "").trim();
   const sqlCommand = String(row?.sql_command || "").trim();
   const dUpdate = String(row?.d_update || "").trim();
 
-  if (!id || !kpiName || !sqlCommand || !dUpdate) {
-    throw new Error("sync SQL row requires id, kpi_name, sql_command, and d_update");
+  if (!id || !kpiName || !topic || !sqlCommand || !dUpdate) {
+    throw new Error("sync SQL row requires id, kpi_name, topic, sql_command, and d_update");
   }
 
   return [
     id,
     kpiName,
-    nullableText(row.topic),
+    topic,
     nullableText(row.kpi_group),
     nullableInteger(row.interval_minute),
     JSON.stringify(row.tables_use ?? []),
@@ -86,27 +87,17 @@ function normalizeRow(row) {
   ];
 }
 
-const UPSERT_SQL = `
-  INSERT INTO sql_for_sync_data
+const REPLACE_SQL = `
+  REPLACE INTO sql_for_sync_data
     (id, kpi_name, topic, kpi_group, interval_minute, tables_use, sql_command, note, d_update)
   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  ON DUPLICATE KEY UPDATE
-    kpi_name = VALUES(kpi_name),
-    topic = VALUES(topic),
-    kpi_group = VALUES(kpi_group),
-    interval_minute = VALUES(interval_minute),
-    tables_use = VALUES(tables_use),
-    sql_command = VALUES(sql_command),
-    note = VALUES(note),
-    d_update = VALUES(d_update),
-    is_active = 1
 `;
 
 async function saveSqlPayload(connection, rows) {
   await connection.beginTransaction();
   try {
     for (const row of rows) {
-      await connection.execute(UPSERT_SQL, normalizeRow(row));
+      await connection.execute(REPLACE_SQL, normalizeRow(row));
     }
     await connection.commit();
   } catch (error) {
@@ -138,4 +129,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { DEFAULT_INTERVAL_MINUTES, UPSERT_SQL, normalizeRow, saveSqlPayload };
+module.exports = { DEFAULT_INTERVAL_MINUTES, REPLACE_SQL, normalizeRow, saveSqlPayload };

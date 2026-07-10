@@ -149,6 +149,12 @@ test("sql_for_sync_data schema is available through the initial schema and migra
     "table_update",
     "20260710_create_sql_for_sync_data.sql"
   );
+  const uniqueTopicMigrationPath = path.resolve(
+    process.cwd(),
+    "..",
+    "table_update",
+    "20260710_make_sql_sync_topic_unique.sql"
+  );
   const expectedColumns = [
     "id",
     "kpi_name",
@@ -167,10 +173,18 @@ test("sql_for_sync_data schema is available through the initial schema and migra
     for (const column of expectedColumns) {
       assert.match(source, new RegExp("`" + column + "`", "i"));
     }
-    assert.match(source, /KEY\s+`idx_sql_for_sync_data_topic`\s+\(`topic`\)/i);
     assert.match(source, /KEY\s+`idx_sql_for_sync_data_kpi_name`\s+\(`kpi_name`\)/i);
     assert.match(source, /KEY\s+`idx_sql_for_sync_data_active`\s+\(`is_active`\)/i);
   }
+
+  const initialSchema = await readFile(tablePath, "utf8");
+  assert.match(initialSchema, /`topic`\s+varchar\(255\)\s+NOT\s+NULL/i);
+  assert.match(initialSchema, /UNIQUE\s+KEY\s+`uq_sql_for_sync_data_topic`\s+\(`topic`\)/i);
+
+  const uniqueTopicMigration = await readFile(uniqueTopicMigrationPath, "utf8");
+  assert.match(uniqueTopicMigration, /MODIFY\s+COLUMN\s+`topic`\s+varchar\(255\)\s+NOT\s+NULL/i);
+  assert.match(uniqueTopicMigration, /DROP\s+INDEX\s+IF\s+EXISTS\s+`idx_sql_for_sync_data_topic`/i);
+  assert.match(uniqueTopicMigration, /ADD\s+UNIQUE\s+INDEX\s+IF\s+NOT\s+EXISTS\s+`uq_sql_for_sync_data_topic`\s+\(`topic`\)/i);
 });
 
 test("initial table primary keys fit the table charset key length limit", async () => {

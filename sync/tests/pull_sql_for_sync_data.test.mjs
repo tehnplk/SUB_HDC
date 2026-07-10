@@ -32,7 +32,19 @@ test("normalizeRow preserves the sync SQL payload fields", () => {
   );
 });
 
-test("saveSqlPayload upserts every fetched row in one transaction", async () => {
+test("normalizeRow requires a non-empty topic", () => {
+  assert.throws(
+    () => normalizeRow({
+      id: "7",
+      kpi_name: "MMR2 coverage",
+      sql_command: "SELECT 1",
+      d_update: "2026-07-10 13:23:40",
+    }),
+    /requires id, kpi_name, topic, sql_command, and d_update/
+  );
+});
+
+test("saveSqlPayload replaces every fetched row in one transaction", async () => {
   const calls = [];
   const connection = {
     async beginTransaction() { calls.push("begin"); },
@@ -45,6 +57,7 @@ test("saveSqlPayload upserts every fetched row in one transaction", async () => 
     {
       id: 3,
       kpi_name: "Screening",
+      topic: "screening",
       tables_use: ["person"],
       sql_command: "SELECT 1",
       d_update: "2026-07-10 13:23:40",
@@ -52,10 +65,10 @@ test("saveSqlPayload upserts every fetched row in one transaction", async () => 
   ]);
 
   assert.equal(calls[0], "begin");
-  assert.match(calls[1].sql, /INSERT INTO sql_for_sync_data/i);
-  assert.match(calls[1].sql, /ON DUPLICATE KEY UPDATE/i);
+  assert.match(calls[1].sql, /REPLACE INTO sql_for_sync_data/i);
+  assert.doesNotMatch(calls[1].sql, /ON DUPLICATE KEY UPDATE/i);
   assert.deepEqual(calls[1].values, [
-    "3", "Screening", null, null, 90, '["person"]', "SELECT 1", null, "2026-07-10 13:23:40",
+    "3", "Screening", "screening", null, 90, '["person"]', "SELECT 1", null, "2026-07-10 13:23:40",
   ]);
   assert.equal(calls[2], "commit");
 });
