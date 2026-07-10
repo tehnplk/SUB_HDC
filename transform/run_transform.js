@@ -19,6 +19,10 @@ const RUN_AT = process.env.TRANSFORM_RUN_AT || "00:00";
 const RUN_ON_START = (process.env.TRANSFORM_RUN_ON_START || "true") === "true";
 // จังหวะ retry เมื่อรอบโดนเลื่อนเพราะกำลัง import
 const POLL_MS = Number(process.env.TRANSFORM_POLL_MS || 5 * 60 * 1000);
+const HOURLY_SQL_FILES = (process.env.TRANSFORM_HOURLY_SQL_FILES || "s_visit_montly.sql")
+  .split(",")
+  .map((name) => name.trim().toLowerCase())
+  .filter(Boolean);
 
 function getDbConfig() {
   return {
@@ -43,6 +47,11 @@ function listSqlFiles(dir = SQL_DIR) {
     if (error.code === "ENOENT") return [];
     throw error;
   }
+}
+
+function listHourlySqlFiles(files = listSqlFiles(), names = HOURLY_SQL_FILES) {
+  const hourlyNames = new Set(names.map((name) => String(name).toLowerCase()));
+  return files.filter((file) => hourlyNames.has(path.basename(file).toLowerCase()));
 }
 
 async function isImporting(conn) {
@@ -143,12 +152,19 @@ function msUntilNextRun(runAt = RUN_AT, now = new Date()) {
   return next.getTime() - now.getTime();
 }
 
+function msUntilNextHour(now = new Date()) {
+  const next = new Date(now);
+  next.setMinutes(0, 0, 0);
+  next.setHours(next.getHours() + 1);
+  return next.getTime() - now.getTime();
+}
+
 // พยายามรันจนจบรอบ — ถ้าโดนเลื่อนเพราะกำลัง import (runOnce คืน false)
 // หรือ DB ล่มชั่วคราว retry ทุก POLL_MS จนกว่าจะสำเร็จ
-async function runUntilDone() {
+async function runUntilDone(files) {
   for (;;) {
     try {
-      if (await runOnce()) return;
+      if (await runOnce(files)) return;
     } catch (error) {
       console.error(`[transform] cycle error: ${error.message}`);
     }
@@ -157,13 +173,20 @@ async function runUntilDone() {
 }
 
 async function main() {
-  console.log(`transform daemon started: dir=${SQL_DIR} run_at=${RUN_AT} poll=${POLL_MS}ms`);
+  console.log(
+    `transform daemon started: dir=${SQL_DIR} run_at=${RUN_AT} hourly=${HOURLY_SQL_FILES.join(",")} poll=${POLL_MS}ms`
+  );
   if (RUN_ON_START) await runUntilDone();
   while (true) {
-    const waitMs = msUntilNextRun();
-    console.log(`[transform] next run in ${Math.round(waitMs / 60000)} min (${RUN_AT})`);
+    const dailyWaitMs = msUntilNextRun();
+    const hourlyFiles = listHourlySqlFiles();
+    const hourlyWaitMs = hourlyFiles.length ? msUntilNextHour() : Infinity;
+    const runDaily = dailyWaitMs <= hourlyWaitMs;
+    const waitMs = runDaily ? dailyWaitMs : hourlyWaitMs;
+    const schedule = runDaily ? RUN_AT : "hourly visit summary";
+    console.log(`[transform] next run in ${Math.round(waitMs / 60000)} min (${schedule})`);
     await sleep(waitMs);
-    await runUntilDone();
+    await runUntilDone(runDaily ? undefined : hourlyFiles);
   }
 }
 
@@ -174,4 +197,11 @@ if (require.main === module) {
   });
 }
 
-module.exports = { isImporting, listSqlFiles, msUntilNextRun, runOnce };
+module.exports = {
+  isImporting,
+  listHourlySqlFiles,
+  listSqlFiles,
+  msUntilNextHour,
+  msUntilNextRun,
+  runOnce,
+};
