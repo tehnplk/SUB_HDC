@@ -18,8 +18,6 @@ services:
       # ไฟล์ lookup เข้า top-level เอง (รันเฉพาะตอน init DB ครั้งแรก เหมือน
       # table/*.sql; DB ที่ init ไปแล้ว run_migrations ของ webapp โหลดให้เอง
       # ตอน start — ดู mount table/lookup ที่ service webapp)
-      - ./table/lookup/c_hospital.sql:/docker-entrypoint-initdb.d/lookup_c_hospital.sql:ro
-      - ./table/lookup/c_hostype.sql:/docker-entrypoint-initdb.d/lookup_c_hostype.sql:ro
       - ./my.cnf:/etc/mysql/conf.d/custom.cnf:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
