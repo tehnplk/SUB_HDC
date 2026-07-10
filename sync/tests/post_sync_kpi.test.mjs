@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 import test from "node:test";
 
 const require = createRequire(import.meta.url);
-const { buildPayload, isDue, loadScheduledKpis, postKpiResult } = require("../post/post_sync_kpi.js");
+const { buildPayload, isDue, loadScheduledKpis, postKpiResult } = require("../jobs/post_sync_kpi.js");
 
 test("isDue follows the interval_minute slot", () => {
   const minute30 = Date.UTC(2026, 6, 10, 6, 30, 0);

@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const tableDir = path.resolve(__dirname, '..', 'table');
+const tableDir = path.resolve(__dirname, '..', '..', 'migrate', 'table');
 
 const db = await mysql.createConnection({
   host: 'localhost',

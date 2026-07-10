@@ -5,11 +5,25 @@ import test from "node:test";
 
 const composePath = path.resolve(process.cwd(), "..", "docker-compose.yml");
 
-test("docker compose starts webapp through database migrations", async () => {
+test("docker compose runs database migrations in a one-shot migrate service", async () => {
   const compose = await readFile(composePath, "utf8");
 
-  assert.match(compose, /command:\s*sh -c "node lib\/run_migrations\.js && npm run start"/);
-  assert.match(compose, /- \.\/table_update:\/app\/table_update:ro/);
+  assert.match(compose, /\n  migrate:/);
+  assert.match(compose, /container_name:\s*sub_hdc_migrate/);
+  // migrate เป็นบริการแยก build จากโฟลเดอร์ migrate/ ของตัวเอง
+  assert.match(compose, /migrate:\s*\n\s+build:\s*\n\s+context: \.\/migrate/);
+  assert.match(compose, /image:\s*sub-hdc-migrate/);
+  // one-shot: ต้องไม่ restart ไม่งั้นวนรัน migration ซ้ำ
+  assert.match(compose, /migrate:[\s\S]*?restart:\s*"no"/);
+  assert.match(compose, /- \.\/migrate\/table_update:\/migrate\/table_update:ro/);
+  assert.match(compose, /- \.\/migrate\/table:\/docker-entrypoint-initdb\.d:ro/);
+  // webapp/importer/summarize/transform ต้องรอ migration จบสำเร็จก่อน start
+  assert.equal(
+    (compose.match(/condition:\s*service_completed_successfully/g) || []).length,
+    4
+  );
+  // webapp ไม่รัน migration เองแล้ว — ใช้ CMD จาก Dockerfile ตรง ๆ
+  assert.doesNotMatch(compose, /node lib\/run_migrations\.js && npm run start/);
 });
 
 test("docker compose includes hourly sync service mounted at /sync", async () => {
@@ -45,25 +59,19 @@ test("sync jobs include a 15-minute sync SQL refresh", async () => {
     [
       {
         name: "check",
-        script: "post/post_check_sub_center.js",
+        script: "jobs/post_check_sub_center.js",
         cron: "*/30 * * * *",
         enabled: true,
       },
       {
-        name: "service_count",
-        script: "post/post_count_file_service.js",
-        cron: "0 * * * *",
-        enabled: true,
-      },
-      {
         name: "sync_kpi",
-        script: "post/post_sync_kpi.js",
+        script: "jobs/post_sync_kpi.js",
         cron: "* * * * *",
         enabled: true,
       },
       {
         name: "refresh_sync_sql_data",
-        script: "post/pull_sql_for_sync_data.js",
+        script: "jobs/pull_sql_for_sync_data.js",
         cron: "*/15 * * * *",
         enabled: true,
       },

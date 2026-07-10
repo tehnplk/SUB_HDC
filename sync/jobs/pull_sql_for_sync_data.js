@@ -87,17 +87,25 @@ function normalizeRow(row) {
   ];
 }
 
-const REPLACE_SQL = `
-  REPLACE INTO sql_for_sync_data
+const INSERT_SQL = `
+  INSERT INTO sql_for_sync_data
     (id, kpi_name, topic, kpi_group, interval_minute, tables_use, sql_command, note, d_update)
   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
+// full replace: ล้างตารางแล้ว insert ใหม่ทั้งชุด เพื่อให้แถวที่ถูกลบที่
+// ส่วนกลางหายจาก local ด้วย (REPLACE เดิมทิ้งแถวเก่าค้าง). ใช้ DELETE ไม่ใช่
+// TRUNCATE เพราะ TRUNCATE เป็น DDL implicit commit — ถ้า insert พังจะ
+// rollback กลับไม่ได้ ตารางว่างเปล่า. payload ว่างถือว่าผิดปกติ ไม่ล้างทิ้ง
 async function saveSqlPayload(connection, rows) {
+  if (!rows.length) {
+    throw new Error("sync SQL payload is empty; refusing to clear sql_for_sync_data");
+  }
   await connection.beginTransaction();
   try {
+    await connection.execute("DELETE FROM sql_for_sync_data");
     for (const row of rows) {
-      await connection.execute(REPLACE_SQL, normalizeRow(row));
+      await connection.execute(INSERT_SQL, normalizeRow(row));
     }
     await connection.commit();
   } catch (error) {
@@ -129,4 +137,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { DEFAULT_INTERVAL_MINUTES, REPLACE_SQL, normalizeRow, saveSqlPayload };
+module.exports = { DEFAULT_INTERVAL_MINUTES, INSERT_SQL, normalizeRow, saveSqlPayload };

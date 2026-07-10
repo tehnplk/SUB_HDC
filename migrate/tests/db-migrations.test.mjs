@@ -6,7 +6,7 @@ import { createRequire } from "node:module";
 import test from "node:test";
 
 const require = createRequire(import.meta.url);
-const migrations = require("../lib/run_migrations.js");
+const migrations = require("../run_migrations.js");
 
 async function withTempDir(callback) {
   const dir = await mkdtemp(path.join(os.tmpdir(), "sub-hdc-migrations-"));
@@ -108,7 +108,7 @@ test("applyMigrationFile applies sql and records migration id", async () => {
 });
 
 test("initial table schemas define hospcode columns as varchar 10", async () => {
-  const tableDir = path.resolve(process.cwd(), "..", "table");
+  const tableDir = path.resolve(process.cwd(), "table");
   const files = (await readdir(tableDir)).filter((file) => file.endsWith(".sql"));
   const offenders = [];
 
@@ -123,8 +123,8 @@ test("initial table schemas define hospcode columns as varchar 10", async () => 
 
 test("schema sql files do not force ascii charset or collation", async () => {
   const schemaDirs = [
-    path.resolve(process.cwd(), "..", "table"),
-    path.resolve(process.cwd(), "..", "table_update"),
+    path.resolve(process.cwd(), "table"),
+    path.resolve(process.cwd(), "table_update"),
   ];
   const offenders = [];
 
@@ -142,16 +142,14 @@ test("schema sql files do not force ascii charset or collation", async () => {
 });
 
 test("sql_for_sync_data schema is available through the initial schema and migration", async () => {
-  const tablePath = path.resolve(process.cwd(), "..", "table", "sql_for_sync_data.sql");
+  const tablePath = path.resolve(process.cwd(), "table", "sql_for_sync_data.sql");
   const migrationPath = path.resolve(
     process.cwd(),
-    "..",
     "table_update",
     "20260710_create_sql_for_sync_data.sql"
   );
   const uniqueTopicMigrationPath = path.resolve(
     process.cwd(),
-    "..",
     "table_update",
     "20260710_make_sql_sync_topic_unique.sql"
   );
@@ -188,7 +186,7 @@ test("sql_for_sync_data schema is available through the initial schema and migra
 });
 
 test("initial table primary keys fit the table charset key length limit", async () => {
-  const tableDir = path.resolve(process.cwd(), "..", "table");
+  const tableDir = path.resolve(process.cwd(), "table");
   const files = (await readdir(tableDir)).filter((file) => file.endsWith(".sql"));
   const offenders = [];
 
@@ -208,11 +206,10 @@ test("initial table primary keys fit the table charset key length limit", async 
 });
 
 test("hospcode varchar 10 migration covers c_file tables with hospcode", async () => {
-  const tableDir = path.resolve(process.cwd(), "..", "table");
+  const tableDir = path.resolve(process.cwd(), "table");
   const cFileSource = await readFile(path.join(tableDir, "c_file.sql"), "utf8");
   const migrationPath = path.resolve(
     process.cwd(),
-    "..",
     "table_update",
     "20260701_hospcode_varchar_10.sql"
   );
@@ -237,11 +234,10 @@ test("hospcode varchar 10 migration covers c_file tables with hospcode", async (
 });
 
 test("address house_id is AES-sized in initial schema and migration", async () => {
-  const tableDir = path.resolve(process.cwd(), "..", "table");
+  const tableDir = path.resolve(process.cwd(), "table");
   const addressSource = await readFile(path.join(tableDir, "address.sql"), "utf8");
   const migrationPath = path.resolve(
     process.cwd(),
-    "..",
     "table_update",
     "20260702_address_house_id_aes_varchar_1000.sql"
   );
@@ -255,11 +251,10 @@ test("address house_id is AES-sized in initial schema and migration", async () =
 });
 
 test("log import file schema stores uploaded file size after file name", async () => {
-  const tableDir = path.resolve(process.cwd(), "..", "table");
+  const tableDir = path.resolve(process.cwd(), "table");
   const schemaSource = await readFile(path.join(tableDir, "log_import_file.sql"), "utf8");
   const migrationPath = path.resolve(
     process.cwd(),
-    "..",
     "table_update",
     "20260702_log_import_file_file_size.sql"
   );
@@ -276,11 +271,10 @@ test("log import file schema stores uploaded file size after file name", async (
 });
 
 test("service chiefcomp is text in initial schema and migration", async () => {
-  const tableDir = path.resolve(process.cwd(), "..", "table");
+  const tableDir = path.resolve(process.cwd(), "table");
   const serviceSource = await readFile(path.join(tableDir, "service.sql"), "utf8");
   const migrationPath = path.resolve(
     process.cwd(),
-    "..",
     "table_update",
     "20260703_service_chiefcomp_text.sql"
   );
@@ -295,8 +289,8 @@ test("service chiefcomp is text in initial schema and migration", async () => {
 });
 
 test("report query indexes exist in initial schemas and migrations", async () => {
-  const tableDir = path.resolve(process.cwd(), "..", "table");
-  const migrationDir = path.resolve(process.cwd(), "..", "table_update");
+  const tableDir = path.resolve(process.cwd(), "table");
+  const migrationDir = path.resolve(process.cwd(), "table_update");
 
   const expected = [
     ["20260710_report_query_indexes.sql", "person.sql", "person", "idx_person_cid", "(`cid`)"],
@@ -462,7 +456,7 @@ test("applyLookupFile loads a dump once and reloads only when its content change
   });
 });
 
-test("compose mounts table/lookup into webapp so run_migrations can load dumps", async () => {
+test("compose mounts table/lookup into migrate so run_migrations can load dumps", async () => {
   const compose = await readFile(path.resolve(process.cwd(), "..", "docker-compose.yml"), "utf8");
-  assert.match(compose, /- \.\/table\/lookup:\/app\/table\/lookup:ro/);
+  assert.match(compose, /- \.\/migrate\/table\/lookup:\/migrate\/table\/lookup:ro/);
 });

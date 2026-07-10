@@ -1,0 +1,6 @@
+# image มีแค่ run_migrations.js + deps — SQL (table/, table_update/) mount
+# สดจาก host ตอนรัน (ดู docker-compose.yml) ไม่ต้องเข้า build context
+node_modules
+tests
+table
+table_update

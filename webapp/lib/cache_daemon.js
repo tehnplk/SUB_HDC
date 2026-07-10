@@ -1,6 +1,6 @@
-// Summarize daemon: นับสรุป hos-list ของแฟ้มใหญ่ (charge/diagnosis opd+ipd, labfu)
+﻿// Cache daemon: นับสรุป hos-list ของแฟ้มใหญ่ (charge/diagnosis opd+ipd, labfu)
 // ล่วงหน้าเก็บลง Redis ทุก 24 ชม. + รันทันทีตอน start (กัน cold start หลัง deploy).
-// รันเป็น container ของตัวเอง (service `summarize`) ใช้ webapp image ร่วมกัน เหมือน
+// รันเป็น container ของตัวเอง (service `cache` — sub_hdc_cache) ใช้ webapp image ร่วมกัน เหมือน
 // importer/sync. อ่านตารางใหญ่หนัก จึง:
 //   - ข้ามรอบถ้ากำลัง import (LOAD DATA เขียนตารางอยู่ อย่าแย่ง disk I/O)
 //   - guard กันรอบซ้อน (ถ้ารอบก่อนยังไม่จบ ข้าม)
@@ -9,10 +9,10 @@ const { loadEnvConfig } = require("@next/env");
 
 loadEnvConfig(process.cwd());
 
-const CYCLE_MS = Number(process.env.SUMMARIZE_INTERVAL_MS || 24 * 60 * 60 * 1000);
+const CYCLE_MS = Number(process.env.CACHE_INTERVAL_MS || 24 * 60 * 60 * 1000);
 // เช็คบ่อยกว่ารอบจริง เพื่อ (1) รู้ว่าถึงเวลารอบใหม่ (2) ถ้ารอบก่อนโดนข้ามเพราะ
 // import อยู่ จะได้ลองใหม่เร็วขึ้นเมื่อ import จบ ไม่ต้องรอเต็ม 24 ชม.
-const POLL_MS = Number(process.env.SUMMARIZE_POLL_MS || 5 * 60 * 1000);
+const POLL_MS = Number(process.env.CACHE_POLL_MS || 5 * 60 * 1000);
 
 function getDbConfig() {
   return {
@@ -42,22 +42,22 @@ let shuttingDown = false;
 let cycleRunning = false; // guard กันรอบซ้อน
 
 // รันหนึ่งรอบ: ข้ามถ้ากำลัง import, ข้ามถ้ารอบก่อนยังไม่จบ. คืน true ถ้ารันจริง
-async function runOnce({ isImporting, runSummarizeCycle }) {
+async function runOnce({ isImporting, runCacheCycle }) {
   if (cycleRunning) {
-    console.log("[summarize] previous cycle still running, skip");
+    console.log("[cache] previous cycle still running, skip");
     return false;
   }
   cycleRunning = true;
   try {
     return await withDb(async (conn) => {
       if (await isImporting(conn)) {
-        console.log("[summarize] import in progress, skip this cycle");
+        console.log("[cache] import in progress, skip this cycle");
         return false;
       }
       const started = Date.now();
       // เช็ค import ก่อนทุกแฟ้ม — รอบเต็มบนเครื่องจริงยาวหลายสิบนาที ถ้า user
       // สั่ง import กลางรอบต้องหยุดทันที ไม่แย่ง disk I/O กับ LOAD DATA
-      const summary = await runSummarizeCycle(conn, {
+      const summary = await runCacheCycle(conn, {
         shouldAbort: () => isImporting(conn),
       });
       const secs = Math.round((Date.now() - started) / 1000);
@@ -65,12 +65,12 @@ async function runOnce({ isImporting, runSummarizeCycle }) {
         // ไม่นับเป็นรอบสำเร็จ → lastRun ไม่ถูกตั้ง → poll (5 นาที) จะเริ่มรอบ
         // ใหม่เองหลัง import จบ ไม่ต้องรอเต็ม 24 ชม.
         console.log(
-          `[summarize] cycle aborted after ${secs}s (import started): files=${summary.files} keys=${summary.keys}`
+          `[cache] cycle aborted after ${secs}s (import started): files=${summary.files} keys=${summary.keys}`
         );
         return false;
       }
       console.log(
-        `[summarize] cycle done in ${secs}s: files=${summary.files} keys=${summary.keys} errors=${summary.errors}`
+        `[cache] cycle done in ${secs}s: files=${summary.files} keys=${summary.keys} errors=${summary.errors}`
       );
       return true;
     });
@@ -83,7 +83,7 @@ async function runOnce({ isImporting, runSummarizeCycle }) {
         ? error.errors.map((e) => e?.message || String(e)).join("; ")
         : "") ||
       String(error);
-    console.error(`[summarize] cycle error: ${detail}`);
+    console.error(`[cache] cycle error: ${detail}`);
     return false;
   } finally {
     cycleRunning = false;
@@ -92,16 +92,16 @@ async function runOnce({ isImporting, runSummarizeCycle }) {
 
 async function main() {
   const { isImporting } = await import("./import-status.mjs");
-  const { runSummarizeCycle } = await import("./summarize.mjs");
+  const { runCacheCycle } = await import("./cache.mjs");
   const { waitRedisReady } = await import("./redis.mjs");
-  const deps = { isImporting, runSummarizeCycle };
+  const deps = { isImporting, runCacheCycle };
 
-  console.log(`summarize daemon started: interval=${CYCLE_MS}ms poll=${POLL_MS}ms`);
+  console.log(`cache daemon started: interval=${CYCLE_MS}ms poll=${POLL_MS}ms`);
 
   // รอ Redis ต่อเสร็จก่อนรอบแรก — ไม่งั้น write แรก ๆ ของรอบบูตถูกโยนทิ้งเงียบ
   // (enableOfflineQueue:false) key จะขาดไปจน cycle ถัดไป
   if (!(await waitRedisReady())) {
-    console.log("[summarize] redis not ready after wait — first cycle may write nothing");
+    console.log("[cache] redis not ready after wait — first cycle may write nothing");
   }
 
   // รันทันทีตอน start (กัน cold start หลัง deploy) — ถ้า import อยู่จะข้ามแล้วรอ

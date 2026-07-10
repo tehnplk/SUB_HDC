@@ -1,4 +1,4 @@
-import assert from "node:assert/strict";
+﻿import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
@@ -6,7 +6,7 @@ import test from "node:test";
 // Redis จริง — เน้นว่าวนครบทุกแฟ้ม/ปีงบ และ error ราย file ไม่ล้มทั้งรอบ
 process.env.REDIS_DISABLED = "1";
 
-const { fiscalYearsToWarm, runSummarizeCycle } = await import("../lib/summarize.mjs");
+const { fiscalYearsToWarm, runCacheCycle } = await import("../lib/cache.mjs");
 
 test("fiscalYearsToWarm returns current fiscal year plus one back", () => {
   assert.deepEqual(fiscalYearsToWarm(2026), [2026, 2025]);
@@ -29,10 +29,10 @@ function makeFakeConn() {
   };
 }
 
-test("runSummarizeCycle warms every cached file across the given fiscal years", async () => {
+test("runCacheCycle warms every cached file across the given fiscal years", async () => {
   const conn = makeFakeConn();
   const silent = { log() {}, error() {} };
-  const summary = await runSummarizeCycle(conn, {
+  const summary = await runCacheCycle(conn, {
     files: ["charge_opd", "labfu"],
     fiscalYearAds: [2026, 2025],
     logger: silent,
@@ -47,11 +47,11 @@ test("runSummarizeCycle warms every cached file across the given fiscal years", 
   assert.equal(conn.calls.monthly, 4); // 2 files × 2 fiscal years
 });
 
-test("runSummarizeCycle aborts mid-cycle when an import starts", async () => {
+test("runCacheCycle aborts mid-cycle when an import starts", async () => {
   const conn = makeFakeConn();
   const silent = { log() {}, error() {} };
   let checks = 0;
-  const summary = await runSummarizeCycle(conn, {
+  const summary = await runCacheCycle(conn, {
     files: ["charge_opd", "labfu", "drug_opd"],
     fiscalYearAds: [2026],
     logger: silent,
@@ -64,7 +64,7 @@ test("runSummarizeCycle aborts mid-cycle when an import starts", async () => {
   assert.equal(conn.calls.monthly, 1);
 });
 
-test("runSummarizeCycle isolates a failing file without aborting the whole cycle", async () => {
+test("runCacheCycle isolates a failing file without aborting the whole cycle", async () => {
   const silent = { log() {}, error() {} };
   const conn = {
     async query(sql) {
@@ -75,7 +75,7 @@ test("runSummarizeCycle isolates a failing file without aborting the whole cycle
     },
   };
 
-  const summary = await runSummarizeCycle(conn, {
+  const summary = await runCacheCycle(conn, {
     files: ["charge_opd", "labfu"],
     fiscalYearAds: [2026],
     logger: silent,
@@ -85,9 +85,9 @@ test("runSummarizeCycle isolates a failing file without aborting the whole cycle
   assert.equal(summary.keys, 0);
 });
 
-test("compose defines the summarize container on the webapp image with mariadb+redis deps", async () => {
+test("compose defines the cache container on the webapp image with mariadb+redis deps", async () => {
   const compose = await readFile(new URL("../../docker-compose.yml", import.meta.url), "utf8");
-  assert.match(compose, /\n  summarize:/);
-  assert.match(compose, /container_name:\s*sub_hdc_summarize/);
-  assert.match(compose, /command:\s*node lib\/summarize_daemon\.js/);
+  assert.match(compose, /\n  cache:/);
+  assert.match(compose, /container_name:\s*sub_hdc_cache/);
+  assert.match(compose, /command:\s*node lib\/cache_daemon\.js/);
 });

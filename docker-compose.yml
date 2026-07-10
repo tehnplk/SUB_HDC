@@ -13,11 +13,11 @@ services:
       - "3308:3306"
     volumes:
       - sub_hdc_mariadb_data:/var/lib/mysql
-      - ./table:/docker-entrypoint-initdb.d:ro
+      - ./migrate/table:/docker-entrypoint-initdb.d:ro
       # entrypoint ของ MariaDB ไม่อ่าน subdirectory ใน initdb.d — ต้อง mount
       # ไฟล์ lookup เข้า top-level เอง (รันเฉพาะตอน init DB ครั้งแรก เหมือน
-      # table/*.sql; DB ที่ init ไปแล้ว run_migrations ของ webapp โหลดให้เอง
-      # ตอน start — ดู mount table/lookup ที่ service webapp)
+      # migrate/table/*.sql; DB ที่ init ไปแล้ว service migrate โหลดให้เอง
+      # ตอน start — ดู mount table/lookup ที่ service migrate)
       - ./my.cnf:/etc/mysql/conf.d/custom.cnf:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
@@ -48,6 +48,30 @@ services:
       retries: 20
       start_period: 5s
 
+  migrate:
+    build:
+      context: ./migrate
+      dockerfile: Dockerfile
+    image: sub-hdc-migrate
+    container_name: sub_hdc_migrate
+    # one-shot: รัน migration จบแล้ว exit — ห้าม restart ไม่งั้นวนรันซ้ำ
+    # service อื่นรอผ่าน service_completed_successfully (exit 0)
+    restart: "no"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    env_file:
+      - ./webapp/.env
+    environment:
+      TZ: Asia/Bangkok
+    volumes:
+      - ./migrate/table_update:/migrate/table_update:ro
+      # lookup dumps โหลดผ่าน run_migrations (content-hash: แก้ไฟล์แล้วโหลดซ้ำ
+      # เองรอบถัดไป) — ครอบไซต์เก่าที่ initdb ไม่รันซ้ำ โดย user สั่งแค่
+      # `docker compose up -d --build` เหมือนเดิม
+      # mount สดจาก host แทนการ bake ใน image เพื่อให้แก้ SQL แล้วรันได้เลย
+      - ./migrate/table/lookup:/migrate/table/lookup:ro
+
   webapp:
     build:
       context: ./webapp
@@ -56,8 +80,8 @@ services:
     container_name: sub_hdc_web
     restart: unless-stopped
     depends_on:
-      mariadb:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
     ports:
@@ -68,14 +92,8 @@ services:
       - ./webapp/.env
     environment:
       TZ: Asia/Bangkok
-    command: sh -c "node lib/run_migrations.js && npm run start"
     volumes:
       - ./webapp/tmp:/app/tmp
-      - ./table_update:/app/table_update:ro
-      # lookup dumps โหลดผ่าน run_migrations (content-hash: แก้ไฟล์แล้วโหลดซ้ำ
-      # เองรอบถัดไป) — ครอบไซต์เก่าที่ initdb ไม่รันซ้ำ โดย user สั่งแค่
-      # `docker compose up -d --build` เหมือนเดิม
-      - ./table/lookup:/app/table/lookup:ro
 
   importer:
     image: sub-hdc-webapp
@@ -84,9 +102,10 @@ services:
     # ไม่มี depends_on: redis — importer ไม่ได้ใช้ redis เลย (ยังไม่มี cache
     # invalidation) การนำเข้าเป็นงาน critical ต้องไม่ถูก block เพราะ cache
     # infra start ไม่ขึ้น ถ้าอนาคตเขียน invalidation ค่อยพิจารณาใส่กลับ
+    # รอ migrate จบก่อน (ครอบ mariadb healthy ในตัว) กัน import ลง schema เก่า
     depends_on:
-      mariadb:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     extra_hosts:
       - "host.docker.internal:host-gateway"
     env_file:
@@ -97,16 +116,17 @@ services:
     volumes:
       - ./webapp/tmp:/app/tmp
 
-  summarize:
+  cache:
     image: sub-hdc-webapp
-    container_name: sub_hdc_summarize
+    container_name: sub_hdc_cache
     restart: unless-stopped
     # นับสรุป hos-list ของแฟ้มใหญ่ล่วงหน้าเก็บ Redis ทุก 24 ชม. (+ ตอน start)
     # ใช้ webapp image เดียวกับ importer/sync. depends_on redis เพราะเขียน cache,
-    # mariadb เพราะอ่านตารางใหญ่. ข้ามรอบเองถ้ากำลัง import
+    # migrate เพราะอ่านตารางใหญ่ (รอ schema ล่าสุด + mariadb healthy ในตัว).
+    # ข้ามรอบเองถ้ากำลัง import (โค้ดอยู่ webapp/lib/cache_daemon.js)
     depends_on:
-      mariadb:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
     extra_hosts:
@@ -115,7 +135,29 @@ services:
       - ./webapp/.env
     environment:
       TZ: Asia/Bangkok
-    command: node lib/summarize_daemon.js
+    command: node lib/cache_daemon.js
+
+  transform:
+    build:
+      context: ./transform
+      dockerfile: Dockerfile
+    image: sub-hdc-transform
+    container_name: sub_hdc_transform
+    restart: unless-stopped
+    # รัน transform/sql/*.sql สร้างตารางสรุป s_* วันละครั้งเวลา 00:00
+    # (+ ตอน start) ให้หน้า dashboard/report ใช้. เลื่อนรอบเองถ้ากำลัง import
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - ./webapp/.env
+    environment:
+      TZ: Asia/Bangkok
+    volumes:
+      # mount สด — เพิ่ม/แก้คิวรี่แล้วมีผลรอบถัดไป ไม่ต้อง rebuild
+      - ./transform/sql:/transform/sql:ro
 
   sync:
     build:

@@ -1,8 +1,0 @@
-{
-  "base_url": "https://subhdc.plkhealth.go.th",
-  "secret": "",
-  "endpoint-get": {
-    "sql-command": "/api/sync-sql"
-  },
-  "endpoint-post": "/api/data-sync-in"
-}

@@ -3,13 +3,19 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 
 const mysql = require("mysql2/promise");
-const { loadEnvConfig } = require("@next/env");
 
-loadEnvConfig(process.cwd());
+// ใน container ได้ env จาก compose env_file อยู่แล้ว — โหลด webapp/.env เผื่อ
+// รันตรง ๆ นอก docker (จาก repo root: `node migrate/run_migrations.js`)
+// env ที่ตั้งมาก่อนชนะค่าในไฟล์ ไฟล์ไม่มี (เช่นใน container) ก็ข้ามเงียบ ๆ
+try {
+  process.loadEnvFile(path.join(__dirname, "..", "webapp", ".env"));
+} catch {}
 
-const DEFAULT_MIGRATIONS_DIR = path.join(process.cwd(), "table_update");
-// dump ตาราง lookup (c_hospital, c_hostype, ...) — mount จาก ./table/lookup
-const DEFAULT_LOOKUP_DIR = path.join(process.cwd(), "table", "lookup");
+// table_update/ กับ table/ อยู่ในโฟลเดอร์ migrate/ เอง — อิง __dirname เพื่อให้
+// รันได้ทั้ง local (จาก cwd ไหนก็ได้) และใน container (mount ทับ /migrate/...)
+const DEFAULT_MIGRATIONS_DIR = path.join(__dirname, "table_update");
+// dump ตาราง lookup (c_hospital, c_hostype, ...)
+const DEFAULT_LOOKUP_DIR = path.join(__dirname, "table", "lookup");
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
