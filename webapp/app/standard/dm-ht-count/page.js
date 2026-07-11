@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   Building2,
+  FileSpreadsheet,
   HeartPulse,
   RefreshCw,
   Search,
@@ -140,6 +141,7 @@ export default function DmHtCountDashboard() {
                 <th className="numCol">HT อย่างเดียว</th>
                 <th className="numCol">DM ร่วม HT</th>
                 <th className="numCol targetPopulationHeader">ผู้ป่วยรวม</th>
+                <th className="exportCol">รายชื่อแบบปกปิด</th>
               </tr>
             </thead>
             <tbody>
@@ -156,10 +158,20 @@ export default function DmHtCountDashboard() {
                   <td className="numCol">{formatNumber(row.htOnly)}</td>
                   <td className="numCol">{formatNumber(row.dmHt)}</td>
                   <td className="numCol targetPopulationCell">{formatNumber(row.patients)}</td>
+                  <td className="exportCol">
+                    <a
+                      className="exportXlsxLink"
+                      href={`/api/dm-ht-count/export?hospcode=${encodeURIComponent(row.hospcode)}`}
+                      title={`ส่งออกทะเบียน DM/HT ${row.hospcode} เป็น xlsx`}
+                      aria-label={`ส่งออกทะเบียน DM/HT ${row.hospcode} เป็น xlsx`}
+                    >
+                      <FileSpreadsheet aria-hidden="true" />
+                    </a>
+                  </td>
                 </tr>
               )) : (
                 <tr>
-                  <td className="emptyCell" colSpan={6}>
+                  <td className="emptyCell" colSpan={7}>
                     {loading ? "กำลังโหลดข้อมูล..." : "ไม่พบทะเบียนผู้ป่วย DM/HT"}
                   </td>
                 </tr>

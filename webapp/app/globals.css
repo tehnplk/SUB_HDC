@@ -768,6 +768,29 @@ button:disabled {
   font-weight: 900;
 }
 
+.exportCol {
+  width: 64px;
+  text-align: center;
+}
+
+.exportXlsxLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #166534;
+  transition: color 0.18s ease, transform 0.18s ease;
+}
+
+.exportXlsxLink:hover {
+  color: #15803d;
+  transform: scale(1.15);
+}
+
+.exportXlsxLink .lucide {
+  width: 20px;
+  height: 20px;
+}
+
 .personTargetTotal {
   color: var(--accent-strong);
   font-weight: 850;

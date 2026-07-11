@@ -35,6 +35,16 @@ test("dm-ht-count page and API count the DM/HT register per registered unit", ()
   assert.match(dmHtApiSource, /getHospNameMap/);
 });
 
+test("dm-ht-count exports the unit register as xlsx without cid", () => {
+  const exportSource = readFileSync(new URL("../app/api/dm-ht-count/export/route.js", import.meta.url), "utf8");
+  assert.match(exportSource, /requireApiJwt/);
+  assert.match(exportSource, /FIND_IN_SET\(\?, \\`hos_person_type_1_3\\`\)/);
+  assert.doesNotMatch(exportSource, /"cid"/);
+  assert.match(exportSource, /Content-Disposition/);
+  assert.match(dmHtPageSource, /\/api\/dm-ht-count\/export\?hospcode=/);
+  assert.match(dmHtPageSource, /FileSpreadsheet/);
+});
+
 test("population pyramid API reads the transform table and preserves both sexes", () => {
   assert.match(pyramidApiSource, /s_person_pyramid/);
   assert.match(pyramidApiSource, /SELECT hospcode, age_range, male, female/);
