@@ -22,9 +22,13 @@ export async function GET(request) {
   // ลิงก์นี้เปิดจาก browser ตรง ๆ จึง redirect ไปหน้าแจ้งเตือนแทนตอบ 401 JSON
   const unauthorized = await requireApiJwt(request);
   if (unauthorized) {
-    const errorUrl = new URL("/error/msg", request.url);
-    errorUrl.searchParams.set("msg", "ต้องเข้าสู่ระบบก่อนจึงจะส่งออกรายชื่อแบบปกปิดได้");
-    return Response.redirect(errorUrl, 302);
+    // Location แบบ relative — อิง request.url ไม่ได้เพราะหลัง reverse proxy
+    // จะเห็นเป็น host ภายใน container (localhost:3000)
+    const msg = encodeURIComponent("ต้องเข้าสู่ระบบก่อนจึงจะส่งออกรายชื่อแบบปกปิดได้");
+    return new Response(null, {
+      status: 302,
+      headers: { Location: `/error/msg?msg=${msg}` },
+    });
   }
 
   const hospcode = new URL(request.url).searchParams.get("hospcode") || "";
