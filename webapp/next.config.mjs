@@ -6,13 +6,28 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: "/dashboard/log-import",
+        destination: "/import-check/log-import",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/hos-list",
+        destination: "/import-check/hos-list",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/person-target",
+        destination: "/standard/person-typearea",
+        permanent: true,
+      },
+      {
         source: "/dashbord/hos-list",
-        destination: "/dashboard/hos-list",
+        destination: "/import-check/hos-list",
         permanent: true,
       },
       {
         source: "/dasboard/hos-list",
-        destination: "/dashboard/hos-list",
+        destination: "/import-check/hos-list",
         permanent: true,
       },
       {
@@ -27,17 +42,17 @@ const nextConfig = {
       },
       {
         source: "/dashboard",
-        destination: "/dashboard/hos-list",
+        destination: "/import-check/hos-list",
         permanent: true,
       },
       {
         source: "/dashbord",
-        destination: "/dashboard/hos-list",
+        destination: "/import-check/hos-list",
         permanent: true,
       },
       {
         source: "/dasboard",
-        destination: "/dashboard/hos-list",
+        destination: "/import-check/hos-list",
         permanent: true,
       },
     ];

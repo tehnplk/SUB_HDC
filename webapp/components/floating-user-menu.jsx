@@ -3,14 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { Bot, ChevronDown, ChevronUp, FileText, LogIn, LogOut, Upload, UserRound, Users } from "lucide-react";
+import { Bot, ChevronDown, ChevronUp, Database, FileText, LogIn, LogOut, Upload, UserRound, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 const menuItems = [
   { href: "/upload", label: "Upload", icon: Upload },
   { href: "/ai/chat", label: "AI Chat", icon: Bot },
   { href: "/person", label: "Person", icon: Users },
-  { href: "/dashboard/report", label: "Report", icon: FileText },
+  { href: "/standard/index", label: "ข้อมูลมาตรฐาน", icon: Database },
+  { href: "/import-check/index", label: "ปริมาณข้อมูล", icon: FileText },
+  { href: "/report/index", label: "รายงาน", icon: FileText },
 ];
 
 export default function FloatingUserMenu({ userName, centerName }) {

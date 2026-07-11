@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, ChevronLeft, ChevronRight, TableProperties, UsersRound } from "lucide-react";
+import { ChevronLeft, ChevronRight, TableProperties } from "lucide-react";
+import ModuleHeader from "@/components/module-header";
 
 const PAGE_SIZE = 50;
 
@@ -23,32 +23,17 @@ export default function PersonPage() {
       .finally(() => setLoading(false));
   }, [page]);
 
-  if (loading) return <div className="main"><section className="panel"><div className="loading">กำลังโหลด...</div></section></div>;
-  if (error) return <div className="main"><section className="panel"><div className="error">{error}</div></section></div>;
+  if (loading) return <div className="main dashboardMain"><section className="panel panelWide dashboardPanel"><ModuleHeader subtitle="ข้อมูลประชากรรายบุคคล" /><div className="loading">กำลังโหลด...</div></section></div>;
+  if (error) return <div className="main dashboardMain"><section className="panel panelWide dashboardPanel"><ModuleHeader subtitle="ข้อมูลประชากรรายบุคคล" /><div className="error">{error}</div></section></div>;
 
   const totalPages = Math.ceil(data.total / PAGE_SIZE);
 
   const centerSuffix = data?.centerName ? ` ${data.centerName}` : "";
 
   return (
-    <div className="main">
-      <section className="panel panelWide">
-        <div className="headerRow">
-          <div className="titleRow">
-            <span className="iconBadge">
-              <UsersRound aria-hidden="true" />
-            </span>
-            <div className="titleText">
-              <h4 className="pageHeaderTitle">SUB-HDC{centerSuffix}</h4>
-              <h1 style={{ fontSize: "28px", margin: "0 0 10px" }}>PERSON</h1>
-              <p className="lead">{data.total.toLocaleString()} รายการ</p>
-            </div>
-          </div>
-          <Link href="/" className="navLink">
-            <ArrowLeft aria-hidden="true" />
-            แดชบอร์ด
-          </Link>
-        </div>
+    <div className="main dashboardMain">
+      <section className="panel panelWide dashboardPanel">
+        <ModuleHeader subtitle={`${data.total.toLocaleString()} รายการ${centerSuffix}`} />
 
         <div className="tableMeta metaLine">
           <TableProperties aria-hidden="true" />

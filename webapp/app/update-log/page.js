@@ -1,4 +1,5 @@
 import updateLog from "@/version/update_log.json";
+import ModuleHeader from "@/components/module-header";
 
 export const metadata = {
   title: "Version Update Log",
@@ -16,13 +17,7 @@ export default function UpdateLogPage() {
   return (
     <div className="main dashboardMain">
       <section className="panel panelWide dashboardPanel">
-        <div className="headerRow">
-          <div className="titleRow">
-            <div className="titleText">
-              <h4 className="pageHeaderTitle">Version Update Log</h4>
-            </div>
-          </div>
-        </div>
+        <ModuleHeader subtitle="ประวัติการปรับปรุงระบบ" />
 
         <div className="tableWrap">
           <table className="fileTable">

@@ -15,9 +15,7 @@ import {
   UploadCloud,
   X,
 } from "lucide-react";
-import DashboardHeaderImage from "@/components/dashboard-header-image";
-import DashboardPageTitle from "@/components/dashboard-page-title";
-import DashboardTabs from "@/components/dashboard-tabs";
+import ModuleHeader from "@/components/module-header";
 import { getFileTypeLabel, getMonthlyRowTotal } from "@/lib/dashboard-data.mjs";
 
 function formatNumber(value) {
@@ -265,21 +263,7 @@ export default function HosListDashboard() {
   return (
     <div className="main dashboardMain">
       <section className="panel panelWide dashboardPanel">
-        <div className="headerRow">
-          <div className="titleRow">
-            <DashboardHeaderImage />
-            <div className="titleText">
-              <DashboardPageTitle />
-              <p className="lead">จำนวนข้อมูลแต่ละแฟ้ม แยกตาม HOSCODE</p>
-            </div>
-          </div>
-          <Link href="/upload" className="navLink">
-            <UploadCloud aria-hidden="true" />
-            นำเข้าไฟล์
-          </Link>
-        </div>
-
-        <DashboardTabs />
+        <ModuleHeader subtitle="จำนวนข้อมูลแต่ละแฟ้ม แยกตาม HOSCODE" />
 
         {error ? <div className="error">{error}</div> : null}
 

@@ -24,6 +24,8 @@
   --radius-sm: 8px;
   --radius: 10px;
   --radius-lg: 14px;
+  --app-content-width: 1440px;
+  --app-gutter: clamp(16px, 2vw, 32px);
 }
 
 * {
@@ -50,9 +52,7 @@ body {
   display: grid;
   min-height: 100vh;
   place-items: center;
-  /* ซ้าย-ขวาห่างขอบจอ 20px ให้ content กว้างคุ้มพื้นที่จอ (mobile มี media
-     query ลดของมันเองอยู่แล้ว) */
-  padding: 32px 20px;
+  padding: 32px var(--app-gutter);
 }
 
 .panel {
@@ -69,9 +69,8 @@ body {
 }
 
 .panelWide {
-  /* เต็มความกว้างที่เหลือจากขอบ 20px ของ .main — ไม่ cap 1160px แล้ว
-     เพื่อใช้พื้นที่จอกว้างให้คุ้ม (หน้าแคบอย่าง login ใช้ .panel เดิม 580px) */
-  width: 100%;
+  /* One shell for every application module. Login and modals keep their own narrow widths. */
+  width: min(var(--app-content-width), 100%);
   max-width: 100%;
 }
 
@@ -193,6 +192,57 @@ button .lucide {
 
 .titleText {
   min-width: 0;
+}
+
+.moduleHeader {
+  margin-bottom: 22px;
+}
+
+.moduleHeaderCore {
+  padding-bottom: 18px;
+  border-bottom: 1px dashed var(--border);
+}
+
+.moduleHeader .tabsContainer {
+  margin-bottom: 0;
+}
+
+.moduleBreadcrumb {
+  margin-top: 12px;
+}
+
+.moduleBreadcrumb ol {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.moduleBreadcrumb li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.moduleBreadcrumb a {
+  color: var(--accent-strong);
+  text-decoration: none;
+}
+
+.moduleBreadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.moduleBreadcrumb .lucide {
+  width: 14px;
+  height: 14px;
+  color: var(--muted);
 }
 
 .inlineIconLabel {
@@ -387,6 +437,18 @@ button:disabled {
   gap: 7px;
 }
 
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
 .filterGrid .field > span,
 .filterGrid .field > label {
   display: none;
@@ -579,6 +641,318 @@ button:disabled {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.personTargetStatGrid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin: 16px 0 20px;
+}
+
+.personTargetToolbar,
+.personTargetMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.personTargetSearch {
+  width: min(100%, 440px);
+}
+
+.personTargetRefresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 15px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--accent-strong);
+  background: #ffffff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.personTargetRefresh:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--panel-tint);
+}
+
+.personTargetRefresh:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.personTargetRefresh .lucide {
+  width: 17px;
+  height: 17px;
+}
+
+.personTargetSpin {
+  animation: personTargetSpin 0.8s linear infinite;
+}
+
+@keyframes personTargetSpin {
+  to { transform: rotate(360deg); }
+}
+
+.personTargetMeta {
+  margin: 14px 0 10px;
+  color: var(--muted-strong);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.personTargetMeta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.personTargetMeta .lucide {
+  width: 16px;
+  height: 16px;
+  color: var(--accent-strong);
+}
+
+.personTargetTableWrap {
+  max-height: none;
+  overflow: auto;
+}
+
+.personTargetTable th,
+.personTargetTable td {
+  white-space: nowrap;
+}
+
+.personTargetRank {
+  width: 52px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.personTargetUnit span,
+.personTargetUnit small {
+  display: block;
+}
+
+.personTargetUnit small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.type1Header {
+  color: #1d4ed8 !important;
+  background: #e3edfd !important;
+}
+
+.type1Cell {
+  color: #1d4ed8;
+  background: #eff5fe;
+  font-weight: 850;
+}
+
+.type3Header {
+  color: #b45309 !important;
+  background: #fdf0dc !important;
+}
+
+.type3Cell {
+  color: #b45309;
+  background: #fef7ea;
+  font-weight: 850;
+}
+
+.targetPopulationHeader {
+  color: #166534 !important;
+  background: #e5f5e8 !important;
+}
+
+.targetPopulationCell {
+  color: #166534;
+  background: #f0faef;
+  font-weight: 900;
+}
+
+.personTargetTotal {
+  color: var(--accent-strong);
+  font-weight: 850;
+}
+
+/* Module topic lists and population-pyramid views. */
+.standardPanel {
+  max-width: 100%;
+}
+
+.moduleTopicList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.moduleTopicList li + li {
+  border-top: 1px dashed var(--border);
+}
+
+.moduleTopicLink {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 4px;
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.18s ease, background 0.18s ease;
+}
+
+.moduleTopicLink:hover {
+  color: var(--accent-strong);
+  background: linear-gradient(90deg, var(--accent-glow), transparent 65%);
+}
+
+.moduleTopicBullet {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  align-self: start;
+  margin-top: 7px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-glow);
+}
+
+.standardMenuText {
+  display: grid;
+  gap: 7px;
+}
+
+.standardMenuText strong {
+  color: #174c2e;
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.standardMenuText small {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.55;
+}
+
+.standardMenuArrow {
+  width: 20px;
+  height: 20px;
+  color: #4d9c65;
+}
+
+.pyramidToolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 20px 0 0;
+}
+
+.pyramidSelect {
+  width: min(100%, 480px);
+}
+
+.pyramidStatGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 16px 0 20px;
+}
+
+.pyramidChart {
+  display: grid;
+  gap: 7px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, #fbfefb, #ffffff);
+}
+
+.pyramidLegend,
+.pyramidRow {
+  display: grid;
+  grid-template-columns: minmax(80px, 1fr) 66px minmax(80px, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.pyramidLegend {
+  padding: 0 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.pyramidMaleLegend { color: #2f6fed; text-align: right; }
+.pyramidFemaleLegend { color: #bf4f82; text-align: left; }
+
+.pyramidBarSide {
+  display: flex;
+  height: 24px;
+  align-items: center;
+}
+
+.pyramidMaleSide { justify-content: flex-end; }
+.pyramidMaleSide span,
+.pyramidFemaleSide span {
+  display: block;
+  min-width: 2px;
+  height: 100%;
+  border-radius: 5px;
+}
+
+.pyramidMaleSide span { background: linear-gradient(90deg, #9ec5fb, #2f6fed); }
+.pyramidFemaleSide span { background: linear-gradient(90deg, #d9719c, #f3b7cc); }
+
+.pyramidAge {
+  color: var(--foreground);
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.pyramidEmpty {
+  padding: 34px;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .personTargetToolbar,
+  .personTargetMeta {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .personTargetSearch,
+  .personTargetRefresh {
+    width: 100%;
+  }
+
+  .pyramidStatGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .pyramidToolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pyramidSelect,
+  .pyramidToolbar .personTargetRefresh {
+    width: 100%;
+  }
 }
 
 .tableMeta {
@@ -1097,7 +1471,7 @@ button:disabled {
 
 .uploadPanel {
   display: grid;
-  width: min(900px, 100%);
+  width: min(var(--app-content-width), 100%);
   gap: 10px;
   min-height: min(620px, calc(100vh - 64px));
   padding: 20px;

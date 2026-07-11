@@ -14,9 +14,7 @@ import {
   UploadCloud,
   X,
 } from "lucide-react";
-import DashboardHeaderImage from "@/components/dashboard-header-image";
-import DashboardPageTitle from "@/components/dashboard-page-title";
-import DashboardTabs from "@/components/dashboard-tabs";
+import ModuleHeader from "@/components/module-header";
 import { ImportingNotice, useImportingGuard } from "@/components/importing-guard";
 
 function formatDate(value) {
@@ -284,21 +282,7 @@ export default function ReportDashboard() {
   return (
     <div className="main dashboardMain">
       <section className="panel panelWide dashboardPanel">
-        <div className="headerRow">
-          <div className="titleRow">
-            <DashboardHeaderImage />
-            <div className="titleText">
-              <DashboardPageTitle />
-              <p className="lead">รายการรายงานจากตาราง report</p>
-            </div>
-          </div>
-          <Link href="/upload" className="navLink">
-            <UploadCloud aria-hidden="true" />
-            นำเข้าไฟล์
-          </Link>
-        </div>
-
-        <DashboardTabs />
+        <ModuleHeader subtitle="รายการรายงานจากตาราง report" />
 
         {error ? <div className="error">{error}</div> : null}
 

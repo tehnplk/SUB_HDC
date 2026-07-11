@@ -196,7 +196,7 @@ export default function ZipImporter() {
       setGlobalMsg(summarizeImportResults(outcomes));
       // เด้งไปหน้าประวัตินำเข้าเมื่อทุกไฟล์เข้าคิวสำเร็จ
       if (outcomes.length && outcomes.every((o) => o.ok)) {
-        window.location.assign("/dashboard/log-import");
+        window.location.assign("/import-check/log-import");
       }
     });
   }, [entries]);
@@ -236,7 +236,7 @@ export default function ZipImporter() {
       );
       setGlobalMsg(summarizeImportResults(results));
       if (results.every((result) => result.ok)) {
-        window.location.assign("/dashboard/log-import");
+        window.location.assign("/import-check/log-import");
       }
     } catch (error) {
       setGlobalMsg(`เกิดข้อผิดพลาด: ${error.message}`);

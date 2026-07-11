@@ -15,9 +15,7 @@ import {
   UploadCloud,
   X,
 } from "lucide-react";
-import DashboardHeaderImage from "@/components/dashboard-header-image";
-import DashboardPageTitle from "@/components/dashboard-page-title";
-import DashboardTabs from "@/components/dashboard-tabs";
+import ModuleHeader from "@/components/module-header";
 
 function formatDateTime(isoString) {
   if (!isoString) return "-";
@@ -157,21 +155,7 @@ export default function LogImportDashboard() {
   return (
     <div className="main dashboardMain">
       <section className="panel panelWide dashboardPanel">
-        <div className="headerRow">
-          <div className="titleRow">
-            <DashboardHeaderImage />
-            <div className="titleText">
-              <DashboardPageTitle />
-              <p className="lead">ประวัติการนำเข้าไฟล์ข้อมูลและรายงานสถิติ</p>
-            </div>
-          </div>
-          <Link href="/upload" className="navLink">
-            <UploadCloud aria-hidden="true" />
-            นำเข้าไฟล์
-          </Link>
-        </div>
-
-        <DashboardTabs />
+        <ModuleHeader subtitle="ประวัติการนำเข้าไฟล์ข้อมูลและรายงานสถิติ" />
 
         {error ? <div className="error">{error}</div> : null}
 

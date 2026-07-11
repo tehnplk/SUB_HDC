@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, Bot, Download, Send, Sparkles, UserRound, X } from "lucide-react";
+import { Bot, Download, Send, UserRound, X } from "lucide-react";
 import { ImportingNotice, useImportingGuard } from "@/components/importing-guard";
+import ModuleHeader from "@/components/module-header";
 
 const INITIAL_MESSAGES = [
   {
@@ -519,21 +519,7 @@ export default function AiChatPage() {
   return (
     <main className="main chatMain">
       <section className="panel panelWide chatPanel">
-        <div className="headerRow chatHeader">
-          <div className="titleRow">
-            <span className="iconBadge">
-              <Sparkles aria-hidden="true" />
-            </span>
-            <div className="titleText">
-              <p className="eyebrow">DeepSeek</p>
-              <h1>AI Chat</h1>
-            </div>
-          </div>
-          <Link href="/dashboard/hos-list" className="navLink">
-            <ArrowLeft aria-hidden="true" />
-            Dashboard
-          </Link>
-        </div>
+        <ModuleHeader subtitle="สนทนาและวิเคราะห์ข้อมูลด้วย AI" />
 
         <div ref={chatBoxRef} className="chatBox" aria-live="polite">
           {messages.map((message, index) => (

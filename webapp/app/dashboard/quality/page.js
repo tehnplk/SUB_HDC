@@ -12,9 +12,7 @@ import {
   TableProperties,
   UploadCloud,
 } from "lucide-react";
-import DashboardHeaderImage from "@/components/dashboard-header-image";
-import DashboardPageTitle from "@/components/dashboard-page-title";
-import DashboardTabs from "@/components/dashboard-tabs";
+import ModuleHeader from "@/components/module-header";
 
 function formatNumber(value) {
   return Number(value || 0).toLocaleString();
@@ -217,21 +215,7 @@ export default function QualityDashboard() {
   return (
     <div className="main dashboardMain">
       <section className="panel panelWide dashboardPanel">
-        <div className="headerRow">
-          <div className="titleRow">
-            <DashboardHeaderImage />
-            <div className="titleText">
-              <DashboardPageTitle />
-              <p className="lead">คุณภาพ/ความถูกต้องของข้อมูลรายแฟ้มและหน่วยงาน</p>
-            </div>
-          </div>
-          <Link href="/upload" className="navLink">
-            <UploadCloud aria-hidden="true" />
-            นำเข้าไฟล์
-          </Link>
-        </div>
-
-        <DashboardTabs />
+        <ModuleHeader subtitle="คุณภาพ/ความถูกต้องของข้อมูลรายแฟ้มและหน่วยงาน" />
 
         {error ? <div className="error">{error}</div> : null}
 
@@ -248,7 +232,7 @@ export default function QualityDashboard() {
                 setSelectedHospcode(event.target.value);
               }}
             >
-              <option value="">ทั้งหมด</option>
+              <option value="">ทุกหน่วยงาน (HOSCODE)</option>
               {(data?.hospcodes || []).map((code) => (
                 <option key={code} value={code}>
                   {code}
@@ -269,7 +253,7 @@ export default function QualityDashboard() {
                 setSelectedTablename(event.target.value);
               }}
             >
-              <option value="">ทั้งหมด</option>
+              <option value="">ทุกแฟ้ม</option>
               {(data?.tablenames || []).map((name) => (
                 <option key={name} value={name}>
                   {name}
