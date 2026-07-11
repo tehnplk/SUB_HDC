@@ -25,11 +25,18 @@ const BREADCRUMB_MODULES = [
     pages: {
       "/standard/person-typearea": "ประชากรแยกตาม TYPEAREA",
       "/standard/person-pyramid": "ประชากรแยกช่วงอายุ 5 ปี",
-      "/standard/dm-ht-count": "จำนวนผู้ป่วย DM/HT",
     },
   },
   { prefix: "/quality", href: "/quality", label: "คุณภาพ" },
-  { prefix: "/target-group", href: "/target-group/index", label: "ทะเบียนกลุ่มเป้าหมาย" },
+  {
+    prefix: "/target-group",
+    href: "/target-group/index",
+    label: "ทะเบียนกลุ่มเป้าหมาย",
+    pages: {
+      "/target-group/kpi": "กลุ่มเป้าหมายตามตัวชี้วัด",
+      "/target-group/kpi/dm-ht-count": "จำนวนผู้ป่วย DM/HT",
+    },
+  },
   { prefix: "/rapid", href: "/rapid/index", label: "งานเร่งรัดติดตาม" },
   { prefix: "/report", href: "/report/index", label: "รายงาน" },
   { prefix: "/dashboard/report", href: "/report/index", label: "รายงาน" },

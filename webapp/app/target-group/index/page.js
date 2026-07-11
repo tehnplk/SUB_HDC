@@ -2,10 +2,9 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
 
-// ยังไม่มีหน้าปลายทาง — href "#" ไว้ก่อน เปิดใช้จริงค่อยเปลี่ยนเป็น route
 const menuItems = [
   {
-    href: "#",
+    href: "/target-group/kpi",
     title: "กลุ่มเป้าหมายตามตัวชี้วัด",
     description: "ทะเบียนรายคนของกลุ่มเป้าหมายที่ใช้นับตัวชี้วัด",
   },

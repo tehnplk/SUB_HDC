@@ -26,6 +26,11 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: "/standard/dm-ht-count",
+        destination: "/target-group/kpi/dm-ht-count",
+        permanent: true,
+      },
+      {
         source: "/dashbord/hos-list",
         destination: "/import-check/files-count",
         permanent: true,

@@ -13,11 +13,6 @@ const menuItems = [
     title: "ประชากรแยกช่วงอายุ 5 ปี",
     description: "ปิรามิดประชากรชาย–หญิง จาก Typearea 1 และ 3 โดยรวมช่วงอายุ 85 ปีขึ้นไป",
   },
-  {
-    href: "/standard/dm-ht-count",
-    title: "จำนวนผู้ป่วย DM/HT",
-    description: "ผู้ป่วยเบาหวาน/ความดันโลหิตสูงในเขต (Typearea 1+3) รายหน่วยบริการ จากการให้รหัสโรค",
-  },
 ];
 
 export default function StandardIndexPage() {
