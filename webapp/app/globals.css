@@ -3572,17 +3572,30 @@ button:disabled {
   font-weight: 400;
 }
 
-/* SUB-HDC น้อยกว่า HDC ใน type1/type3 — ตัวเลขส่วนต่างเป็น badge แดงสว่าง */
+/* SUB-HDC น้อยกว่า HDC ใน type1/type3: เกิน 20 เป็นส้ม, เกิน 100 เป็นแดง */
+.diffPlain {
+  color: var(--text);
+}
+
+.diffBadgeWarning,
 .diffBadgeDanger {
   display: inline-flex;
   align-items: center;
   min-height: 20px;
   padding: 2px 8px;
   border-radius: 999px;
-  background: #ef2d2d;
-  color: #ffffff;
   font-size: 11px;
   font-weight: 400;
   font-variant-numeric: tabular-nums;
   line-height: 1.3;
+}
+
+.diffBadgeWarning {
+  background: #f59e0b;
+  color: #1f2937;
+}
+
+.diffBadgeDanger {
+  background: #ef2d2d;
+  color: #ffffff;
 }

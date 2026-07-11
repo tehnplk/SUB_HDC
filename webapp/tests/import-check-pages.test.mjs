@@ -31,15 +31,20 @@ test("Import Check owns the canonical child routes", () => {
   assert.doesNotMatch(mainTabSource, /dashboard\/hos-list/);
 });
 
-test("compare-hdc-person compares both sources per unit with red badges on short type1/3", () => {
+test("compare-hdc-person applies warning thresholds to short type1/3 differences", () => {
   // group ละ 3 คอลัมน์: HDC / SUB-HDC / ส่วนต่าง ครบทั้ง type1-5
   assert.match(compareHdcSource, /"Type 1", "Type 2", "Type 3", "Type 4", "Type 5"/);
   assert.match(compareHdcSource, />HDC<\/th>/);
   assert.match(compareHdcSource, />SUB-HDC<\/th>/);
   assert.match(compareHdcSource, />ส่วนต่าง<\/th>/);
-  // badge แดงเฉพาะ type1/type3 (index 0, 2) เมื่อ SUB-HDC น้อยกว่า
+  // TYPE 1/3: deficit <=20 plain, >20 orange, >100 red
   assert.match(compareHdcSource, /ALERT_TYPE_INDEXES = new Set\(\[0, 2\]\)/);
+  assert.match(compareHdcSource, /function getNegativeDifferenceBadgeClass/);
+  assert.match(compareHdcSource, /deficit > 100.*diffBadgeDanger/);
+  assert.match(compareHdcSource, /deficit > 20.*diffBadgeWarning/);
   assert.match(compareHdcSource, /diffBadgeDanger/);
+  assert.match(compareHdcSource, /diffBadgeWarning/);
+  assert.match(compareHdcSource, /diffPlain/);
   assert.match(compareHdcSource, /function formatSignedNumber/);
   assert.match(compareHdcSource, /number > 0 \? `\+\$\{formatted\}`/);
   assert.match(compareHdcSource, /formatSignedNumber\(type\.diff\)/);
@@ -47,6 +52,7 @@ test("compare-hdc-person compares both sources per unit with red badges on short
   assert.match(globalStyles, /\.compareHdcTable tbody \.numCol\s*\{\s*font-size:\s*11px;/);
   assert.match(globalStyles, /\.diffBadgeDanger\s*\{[\s\S]*?font-weight:\s*400;/);
   assert.doesNotMatch(globalStyles, /\.diffBadgeDanger\s*\{[\s\S]*?font-weight:\s*900;/);
+  assert.match(globalStyles, /\.diffBadgeWarning\s*\{[\s\S]*?background:\s*#f59e0b;/);
   assert.match(compareHdcSource, /ModuleHeader/);
   assert.match(compareHdcSource, /hospNameShort/);
   assert.match(compareHdcSource, /\/api\/compare-hdc-person/);

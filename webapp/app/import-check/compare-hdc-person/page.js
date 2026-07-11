@@ -19,6 +19,13 @@ function formatSignedNumber(value) {
   return number > 0 ? `+${formatted}` : `-${formatted}`;
 }
 
+function getNegativeDifferenceBadgeClass(value) {
+  const deficit = Math.abs(Number(value || 0));
+  if (deficit > 100) return "diffBadgeDanger";
+  if (deficit > 20) return "diffBadgeWarning";
+  return "";
+}
+
 function formatDate(value) {
   if (!value) return "ยังไม่มีข้อมูล";
   const date = new Date(value);
@@ -95,6 +102,9 @@ export default function CompareHdcPersonPage() {
                   </td>
                   {row.types.map((type, index) => {
                     const tone = ALERT_TYPE_INDEXES.has(index) ? " compareTargetCell" : " compareDimCol";
+                    const differenceBadgeClass = ALERT_TYPE_INDEXES.has(index) && type.diff < 0
+                      ? getNegativeDifferenceBadgeClass(type.diff)
+                      : "";
                     return [
                       <td key={`${row.hospcode}-${index}-hdc`} className={`numCol compareGroupCol${tone}`}>
                         {formatNumber(type.hdc)}
@@ -106,10 +116,12 @@ export default function CompareHdcPersonPage() {
                         key={`${row.hospcode}-${index}-diff`}
                         className={`numCol compareDiffCell${tone}${ALERT_TYPE_INDEXES.has(index) ? " compareTargetDiff" : ""}`}
                       >
-                        {ALERT_TYPE_INDEXES.has(index) && type.diff < 0 ? (
-                          <span className="diffBadgeDanger">{formatSignedNumber(type.diff)}</span>
+                        {differenceBadgeClass ? (
+                          <span className={differenceBadgeClass}>{formatSignedNumber(type.diff)}</span>
                         ) : (
-                          ALERT_TYPE_INDEXES.has(index) ? formatSignedNumber(type.diff) : formatNumber(type.diff)
+                          <span className={ALERT_TYPE_INDEXES.has(index) && type.diff < 0 ? "diffPlain" : undefined}>
+                            {ALERT_TYPE_INDEXES.has(index) ? formatSignedNumber(type.diff) : formatNumber(type.diff)}
+                          </span>
                         )}
                       </td>,
                     ];
