@@ -1,5 +1,6 @@
 ﻿-- นับประชากรแฟ้ม person แยกตาม typearea (1-5) รายหน่วยบริการ
--- เฉพาะ discharge = 9 (ยังไม่จำหน่าย) — upsert: hospcode เดิมอัปเดตค่าทับ
+-- เฉพาะ discharge = 9 (ยังไม่จำหน่าย) — full replace: hospcode ที่หายจาก
+-- แฟ้ม person (เช่นถูกลบทิ้ง) ต้องหายจากตารางสรุปด้วย upsert เดิมทิ้งแถวค้าง
 CREATE TABLE IF NOT EXISTS `s_person_type_count` (
   `hospcode` varchar(10) NOT NULL,
   `type_1` int NOT NULL DEFAULT 0,
@@ -9,6 +10,10 @@ CREATE TABLE IF NOT EXISTS `s_person_type_count` (
   `type_5` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`hospcode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+START TRANSACTION;
+
+DELETE FROM `s_person_type_count`;
 
 INSERT INTO `s_person_type_count`
   (`hospcode`, `type_1`, `type_2`, `type_3`, `type_4`, `type_5`)
@@ -21,10 +26,6 @@ SELECT
   SUM(`typearea` = '5') AS `type_5`
 FROM `person`
 WHERE `discharge` = '9'
-GROUP BY `hospcode`
-ON DUPLICATE KEY UPDATE
-  `type_1` = VALUES(`type_1`),
-  `type_2` = VALUES(`type_2`),
-  `type_3` = VALUES(`type_3`),
-  `type_4` = VALUES(`type_4`),
-  `type_5` = VALUES(`type_5`);
+GROUP BY `hospcode`;
+
+COMMIT;
