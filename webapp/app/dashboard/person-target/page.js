@@ -150,9 +150,11 @@ export default function PersonTargetDashboard() {
               {rows.length ? rows.map((row, index) => (
                 <tr key={row.hospcode}>
                   <td className="personTargetRank">{index + 1}</td>
-                  <td className="fileCol personTargetUnit">
-                    <span>{row.hospname || "ไม่พบชื่อหน่วยบริการ"}</span>
-                    <small>{row.hospcode}</small>
+                  <td className="fileCol">
+                    {row.hospcode}
+                    {row.hospname ? (
+                      <span className="hospNameShort">{row.hospname}</span>
+                    ) : null}
                   </td>
                   <td className="numCol type1Cell">{formatNumber(row.type1)}</td>
                   <td className="numCol">{formatNumber(row.type2)}</td>

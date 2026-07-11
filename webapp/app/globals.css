@@ -735,18 +735,6 @@ button:disabled {
   text-align: center;
 }
 
-.personTargetUnit span,
-.personTargetUnit small {
-  display: block;
-}
-
-.personTargetUnit small {
-  margin-top: 2px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
 .type1Header {
   color: #1d4ed8 !important;
   background: #e3edfd !important;
