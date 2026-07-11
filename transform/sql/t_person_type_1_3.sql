@@ -7,6 +7,8 @@ DROP TABLE IF EXISTS `t_person_type_1_3`;
 CREATE TABLE `t_person_type_1_3` (
   `fiscal_year` smallint UNSIGNED NOT NULL,
   `cid` varchar(255) NOT NULL,
+  `name` text DEFAULT NULL,
+  `hn` text DEFAULT NULL,
   `hos` text DEFAULT NULL,
   `pid` text DEFAULT NULL,
   `type` text DEFAULT NULL,
@@ -35,6 +37,8 @@ CREATE TEMPORARY TABLE `tmp_person_type_1_3` AS
 SELECT
   @fiscal_year AS `fiscal_year`,
   p.`cid`,
+  NULLIF(p.`name`, '') AS `name`,
+  NULLIF(p.`hn`, '') AS `hn`,
   p.`hospcode` AS `hos`,
   p.`pid`,
   p.`typearea` AS `type`,
@@ -99,6 +103,8 @@ CREATE TEMPORARY TABLE `tmp_person_type_1_3_detail` AS
 SELECT
   p.`fiscal_year`,
   p.`cid`,
+  p.`name`,
+  p.`hn`,
   p.`hos`,
   p.`pid`,
   p.`type`,
@@ -143,10 +149,12 @@ LEFT JOIN `tmp_person_type_1_3_card` c
 LEFT JOIN `home` h ON h.`hospcode` = p.`hos` AND h.`hid` = p.`hid`;
 
 INSERT INTO `t_person_type_1_3`
-  (`fiscal_year`, `cid`, `hos`, `pid`, `type`, `sex`, `nation`, `bdate`, `age_y`, `age_m`, `age_d`, `inscl`, `village_id`)
+  (`fiscal_year`, `cid`, `name`, `hn`, `hos`, `pid`, `type`, `sex`, `nation`, `bdate`, `age_y`, `age_m`, `age_d`, `inscl`, `village_id`)
 SELECT
   `fiscal_year`,
   `cid`,
+  GROUP_CONCAT(IFNULL(`name`, '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `name`,
+  GROUP_CONCAT(IFNULL(`hn`, '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `hn`,
   GROUP_CONCAT(IFNULL(`hos`, '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `hos`,
   GROUP_CONCAT(IFNULL(`pid`, '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `pid`,
   GROUP_CONCAT(IFNULL(`type`, '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `type`,

@@ -31,7 +31,7 @@
     "transform_table": "t_person_type_1_3",
     "sql_file": "t_person_type_1_3.sql",
     "f43_tables": ["person", "card", "home"],
-    "stored_data": "เก็บประชากร Typearea 1 หรือ 3 ที่ยังไม่จำหน่าย แยกตามหน่วยบริการและ PID โดยรวมข้อมูลของ CID เดียวกันเป็นค่า CSV พร้อมอายุ ณ วันแรกของปีงบประมาณ 2569 สิทธิการรักษาจากแฟ้ม card และรหัสหมู่บ้าน 8 หลักจากแฟ้ม home",
-    "schema": "fiscal_year,cid,hos,pid,type,sex,nation,bdate,age_y,age_m,age_d,inscl,village_id"
+    "stored_data": "เก็บประชากร Typearea 1 หรือ 3 ที่ยังไม่จำหน่าย แยกตามหน่วยบริการและ PID โดยรวมข้อมูลของ CID เดียวกันเป็นค่า CSV พร้อมชื่อ อายุ ณ วันแรกของปีงบประมาณ 2569 สิทธิการรักษาจากแฟ้ม card และรหัสหมู่บ้าน 8 หลักจากแฟ้ม home",
+    "schema": "fiscal_year,cid,name,hn,hos,pid,type,sex,nation,bdate,age_y,age_m,age_d,inscl,village_id"
   }
 ]
