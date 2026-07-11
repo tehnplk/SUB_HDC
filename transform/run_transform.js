@@ -1,6 +1,7 @@
 // Transform daemon: รันไฟล์ transform/sql/*.sql ทุกไฟล์ วันละครั้งเวลา RUN_AT
-// (default 00:00) + รอบแรกตอน start — สร้าง/เติมตารางสรุป s_* ให้หน้า
-// dashboard/report ใช้. เลื่อนรอบถ้ากำลัง import (retry ทุก POLL_MS จนสำเร็จ)
+// (default 23:00) — สร้าง/เติมตารางสรุป s_* ให้หน้า dashboard/report ใช้.
+// เลื่อนรอบถ้ากำลัง import (retry ทุก POLL_MS จนสำเร็จ)
+// default ไม่รันตอน start (RUN_ON_START=false) — รอถึงรอบ 23:00 เท่านั้น
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -13,10 +14,10 @@ try {
 
 const SQL_DIR = process.env.TRANSFORM_SQL_DIR || path.join(__dirname, "sql");
 // รันทุกวันเวลานี้ (HH:MM ตาม TZ ของ container = Asia/Bangkok)
-const RUN_AT = process.env.TRANSFORM_RUN_AT || "00:00";
-// รอบแรกตอน container start ด้วย — เครื่องติดตั้งใหม่จะได้มีตาราง s_* ทันที
-// ไม่ต้องรอเที่ยงคืน (ตั้ง "false" ถ้าไม่ต้องการ)
-const RUN_ON_START = (process.env.TRANSFORM_RUN_ON_START || "true") === "true";
+const RUN_AT = process.env.TRANSFORM_RUN_AT || "23:00";
+// default ไม่รันรอบแรกตอน container start — รอถึงเวลา RUN_AT เท่านั้น
+// (ตั้ง TRANSFORM_RUN_ON_START="true" ถ้าต้องการให้รันทันทีตอน start)
+const RUN_ON_START = (process.env.TRANSFORM_RUN_ON_START || "false") === "true";
 // จังหวะ retry เมื่อรอบโดนเลื่อนเพราะกำลัง import
 const POLL_MS = Number(process.env.TRANSFORM_POLL_MS || 5 * 60 * 1000);
 const HOURLY_SQL_FILES = (process.env.TRANSFORM_HOURLY_SQL_FILES || "s_visit_montly.sql")
