@@ -80,18 +80,18 @@ export default function DmHtCountDashboard() {
           </div>
           <div className="statCard">
             <span className="statIcon"><Activity aria-hidden="true" /></span>
-            <span className="statValue">{loading ? "…" : formatNumber(summary?.dm)}</span>
-            <span className="statLabel">เบาหวาน (DM)</span>
+            <span className="statValue">{loading ? "…" : formatNumber(summary?.dmOnly)}</span>
+            <span className="statLabel">DM อย่างเดียว</span>
           </div>
           <div className="statCard">
             <span className="statIcon"><HeartPulse aria-hidden="true" /></span>
-            <span className="statValue">{loading ? "…" : formatNumber(summary?.ht)}</span>
-            <span className="statLabel">ความดันโลหิตสูง (HT)</span>
+            <span className="statValue">{loading ? "…" : formatNumber(summary?.htOnly)}</span>
+            <span className="statLabel">HT อย่างเดียว</span>
           </div>
           <div className="statCard">
             <span className="statIcon"><Activity aria-hidden="true" /></span>
             <span className="statValue">{loading ? "…" : formatNumber(summary?.dmHt)}</span>
-            <span className="statLabel">ทั้ง DM และ HT</span>
+            <span className="statLabel">DM ร่วม HT</span>
           </div>
           <div className="statCard">
             <span className="statIcon"><Building2 aria-hidden="true" /></span>
@@ -136,9 +136,9 @@ export default function DmHtCountDashboard() {
               <tr>
                 <th>#</th>
                 <th>หน่วยบริการ</th>
-                <th className="numCol">DM</th>
-                <th className="numCol">HT</th>
-                <th className="numCol">DM+HT</th>
+                <th className="numCol">DM อย่างเดียว</th>
+                <th className="numCol">HT อย่างเดียว</th>
+                <th className="numCol">DM ร่วม HT</th>
                 <th className="numCol targetPopulationHeader">ผู้ป่วยรวม</th>
               </tr>
             </thead>
@@ -152,8 +152,8 @@ export default function DmHtCountDashboard() {
                       <span className="hospNameShort">{row.hospname}</span>
                     ) : null}
                   </td>
-                  <td className="numCol">{formatNumber(row.dm)}</td>
-                  <td className="numCol">{formatNumber(row.ht)}</td>
+                  <td className="numCol">{formatNumber(row.dmOnly)}</td>
+                  <td className="numCol">{formatNumber(row.htOnly)}</td>
                   <td className="numCol">{formatNumber(row.dmHt)}</td>
                   <td className="numCol targetPopulationCell">{formatNumber(row.patients)}</td>
                 </tr>

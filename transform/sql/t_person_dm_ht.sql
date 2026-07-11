@@ -5,15 +5,18 @@
 --   date_dx_dm / date_dx_ht = วันที่ dx ครั้งแรกของแต่ละ รพ. (YYYYMMDD) คั่นด้วย ,
 --                 ตำแหน่งตรงกับ hos_dx_* เช่น hos_dx_dm=07491,10676
 --                 date_dx_dm=20230626,20250109 → 07491 dx แรก 20230626
---   type_1_3_at = hospcode ที่ขึ้นทะเบียน type 1/3 คั่นด้วย , เรียงตาม hospcode
---   pid_hos_type_1_3 = pid ของคนนั้นในแต่ละ รพ. ตำแหน่งตรงกับ type_1_3_at
+--   hos_person_type_1_3 = hospcode ที่ขึ้นทะเบียน type 1/3 คั่นด้วย , เรียงตาม hospcode
+--   pid_at_hos_type_1_3 = pid ของคนนั้นในแต่ละ รพ. ตำแหน่งตรงกับ hos_person_type_1_3
 -- แหล่ง dx: diagnosis_opd + diagnosis_ipd + chronic — รพ. ไหนก็ได้ ไม่จำกัดพื้นที่
 -- ขั้นตอน: สร้าง temp ราย dx (cid×hospcode×รหัส + วันแรก) → ยุบลงตารางจริง
 -- (CREATE/DROP TEMPORARY ไม่ implicit commit จึงอยู่ใน transaction ได้ทั้งก้อน)
-CREATE TABLE IF NOT EXISTS `t_person_dm_ht` (
+-- เปลี่ยนชื่อคอลัมน์ (2026-07-11) — DROP ทิ้งให้ไซต์เก่าได้ schema ใหม่
+DROP TABLE IF EXISTS `t_person_dm_ht`;
+
+CREATE TABLE `t_person_dm_ht` (
   `cid` varchar(255) NOT NULL,
-  `type_1_3_at` text DEFAULT NULL,
-  `pid_hos_type_1_3` text DEFAULT NULL,
+  `hos_person_type_1_3` text DEFAULT NULL,
+  `pid_at_hos_type_1_3` text DEFAULT NULL,
   `dm_code` text DEFAULT NULL,
   `hos_dx_dm` text DEFAULT NULL,
   `date_dx_dm` text DEFAULT NULL,
@@ -135,8 +138,8 @@ JOIN (
   ) ph
   GROUP BY `cid`
 ) p ON p.`cid` = t.`cid`
-SET t.`type_1_3_at` = p.`at_hos`,
-    t.`pid_hos_type_1_3` = p.`at_pid`;
+SET t.`hos_person_type_1_3` = p.`at_hos`,
+    t.`pid_at_hos_type_1_3` = p.`at_pid`;
 
 COMMIT;
 

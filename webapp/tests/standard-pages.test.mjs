@@ -31,7 +31,7 @@ test("dm-ht-count page and API count the DM/HT register per registered unit", ()
   assert.match(dmHtPageSource, /fetch\("\/api\/dm-ht-count"/);
   assert.match(dmHtPageSource, /hospNameShort/);
   assert.match(dmHtApiSource, /t_person_dm_ht/);
-  assert.match(dmHtApiSource, /FIND_IN_SET\(u\.hospcode, t\.type_1_3_at\)/);
+  assert.match(dmHtApiSource, /FIND_IN_SET\(u\.hospcode, t\.hos_person_type_1_3\)/);
   assert.match(dmHtApiSource, /getHospNameMap/);
 });
 

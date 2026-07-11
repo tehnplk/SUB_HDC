@@ -12,24 +12,25 @@ export async function GET() {
 
   try {
     conn = await createDbConnection();
-    // นับรายหน่วยที่ขึ้นทะเบียน (type_1_3_at เก็บ hospcode คั่น ,) — คนหนึ่ง
+    // นับรายหน่วยที่ขึ้นทะเบียน (hos_person_type_1_3 เก็บ hospcode คั่น ,) — คนหนึ่ง
     // ขึ้นทะเบียนหลายหน่วยได้ ผลรวมรายหน่วยจึงมากกว่าจำนวนคนจริง
+    // แยกกลุ่มไม่ทับซ้อน: DM อย่างเดียว / HT อย่างเดียว / เป็นทั้งคู่
     const [sourceRows] = await conn.query(`
       SELECT
         u.hospcode,
-        SUM(t.dm_code IS NOT NULL) AS dm,
-        SUM(t.ht_code IS NOT NULL) AS ht,
+        SUM(t.dm_code IS NOT NULL AND t.ht_code IS NULL) AS dm_only,
+        SUM(t.ht_code IS NOT NULL AND t.dm_code IS NULL) AS ht_only,
         SUM(t.dm_code IS NOT NULL AND t.ht_code IS NOT NULL) AS dm_ht
       FROM \`s_person_type_count\` u
-      JOIN \`t_person_dm_ht\` t ON FIND_IN_SET(u.hospcode, t.type_1_3_at)
+      JOIN \`t_person_dm_ht\` t ON FIND_IN_SET(u.hospcode, t.hos_person_type_1_3)
       GROUP BY u.hospcode
       ORDER BY u.hospcode
     `);
     const [[totals]] = await conn.query(`
       SELECT
         COUNT(*) AS patients,
-        SUM(dm_code IS NOT NULL) AS dm,
-        SUM(ht_code IS NOT NULL) AS ht,
+        SUM(dm_code IS NOT NULL AND ht_code IS NULL) AS dm_only,
+        SUM(ht_code IS NOT NULL AND dm_code IS NULL) AS ht_only,
         SUM(dm_code IS NOT NULL AND ht_code IS NOT NULL) AS dm_ht
       FROM \`t_person_dm_ht\`
     `);
@@ -51,17 +52,17 @@ export async function GET() {
     }
 
     const rows = sourceRows.map((row) => {
-      const dm = toCount(row.dm);
-      const ht = toCount(row.ht);
+      const dmOnly = toCount(row.dm_only);
+      const htOnly = toCount(row.ht_only);
       const dmHt = toCount(row.dm_ht);
 
       return {
         hospcode: row.hospcode,
         hospname: hospNames[row.hospcode] || "",
-        dm,
-        ht,
+        dmOnly,
+        htOnly,
         dmHt,
-        patients: dm + ht - dmHt,
+        patients: dmOnly + htOnly + dmHt,
       };
     }).sort((left, right) => (
       right.patients - left.patients || left.hospcode.localeCompare(right.hospcode)
@@ -69,8 +70,8 @@ export async function GET() {
 
     const summary = {
       units: rows.length,
-      dm: toCount(totals?.dm),
-      ht: toCount(totals?.ht),
+      dmOnly: toCount(totals?.dm_only),
+      htOnly: toCount(totals?.ht_only),
       dmHt: toCount(totals?.dm_ht),
       patients: toCount(totals?.patients),
     };
