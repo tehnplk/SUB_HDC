@@ -7,6 +7,8 @@ const path = require("node:path");
 
 const mysql = require("mysql2/promise");
 
+const { RUN_ORDER, runOrderRank } = require("./run_order.js");
+
 // รัน local นอก docker: โหลด webapp/.env ให้เอง (ใน container ได้จาก env_file)
 try {
   process.loadEnvFile(path.join(__dirname, "..", "webapp", ".env"));
@@ -43,7 +45,10 @@ function listSqlFiles(dir = SQL_DIR) {
       .readdirSync(dir, { withFileTypes: true })
       .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith(".sql"))
       .map((entry) => path.join(dir, entry.name))
-      .sort((a, b) => path.basename(a).localeCompare(path.basename(b)));
+      .sort((a, b) => {
+        const rank = runOrderRank(a) - runOrderRank(b);
+        return rank !== 0 ? rank : path.basename(a).localeCompare(path.basename(b));
+      });
   } catch (error) {
     if (error.code === "ENOENT") return [];
     throw error;
@@ -202,6 +207,7 @@ module.exports = {
   isImporting,
   listHourlySqlFiles,
   listSqlFiles,
+  RUN_ORDER,
   msUntilNextHour,
   msUntilNextRun,
   runOnce,

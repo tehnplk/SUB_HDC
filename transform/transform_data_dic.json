@@ -24,8 +24,8 @@
     "transform_table": "t_person_dm_ht",
     "sql_file": "t_person_dm_ht.sql",
     "f43_tables": ["person", "diagnosis_opd", "diagnosis_ipd", "chronic"],
-    "stored_data": "เก็บทะเบียนผู้ป่วยเบาหวาน (E10-E14) และความดันโลหิตสูง (I10-I15) ที่เป็นประชากร typearea 1 หรือ 3 โดยเก็บ CID, หน่วยบริการและ PID ที่ขึ้นทะเบียน, รหัสโรค, หน่วยบริการที่วินิจฉัย และวันที่วินิจฉัยครั้งแรก",
-    "schema": "cid,hos_person_type_1_3,pid_at_hos_type_1_3,dm_code,hos_dx_dm,date_dx_dm,ht_code,hos_dx_ht,date_dx_ht"
+    "stored_data": "เก็บทะเบียนผู้ป่วยเบาหวาน (E10-E14) และความดันโลหิตสูง (I10-I15) ที่เป็นประชากร typearea 1 หรือ 3 โดยเก็บ CID, หน่วยบริการและ PID/HN/สัญชาติที่ขึ้นทะเบียน, รหัสโรค, หน่วยบริการที่วินิจฉัย และวันที่วินิจฉัยครั้งแรก (ประชากรในเขต+ทะเบียน/PID/HN/สัญชาติ อ่านจากตารางสรุป t_person_type_1_3 จึงต้องรันหลังตารางนั้น)",
+    "schema": "cid,hos_person_type_1_3,pid_at_hos_type_1_3,hn,nation,dm_code,hos_dx_dm,date_dx_dm,ht_code,hos_dx_ht,date_dx_ht"
   },
   {
     "transform_table": "t_person_type_1_3",

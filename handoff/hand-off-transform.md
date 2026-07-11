@@ -27,6 +27,21 @@
 - ทุก task log ลง `log_transform` — แถวที่ `finish_at` เป็น NULL คือรอบ fail;
   หน้าเว็บใช้ `finish_at` ล่าสุดแสดง "Transform ล่าสุด"
 
+## ลำดับการรัน (`run_order.js`)
+
+รอบเต็มรันไฟล์ `sql/*.sql` ตามลำดับที่ `listSqlFiles` คืน — ลำดับมาจาก
+[transform/run_order.js](../transform/run_order.js) ไม่ใช่การเรียงตามชื่อไฟล์เฉย ๆ
+
+- `RUN_ORDER` เป็น array ชื่อไฟล์ (lowercase) = source of truth ของลำดับ; ไฟล์
+  ที่ **ไม่อยู่ในลิสต์** รันต่อท้ายโดยเรียงตามชื่อ (alphabetical)
+- ใช้เมื่อ transform หนึ่งอ่าน**ตารางสรุปของอีก transform** เป็นต้นทาง — ตัวที่
+  เป็นต้นทางต้องอยู่ก่อนในลิสต์ ไม่งั้นจะได้ข้อมูลรอบก่อน (ค้าง 1 วัน) หรือ
+  ตารางว่างในรอบแรก. ตัวอย่าง: `t_person_dm_ht` อ่าน `t_person_type_1_3` →
+  `t_person_type_1_3.sql` ต้องมาก่อน `t_person_dm_ht.sql` (โดยชื่อ 'dm_ht'
+  เรียงมาก่อน 'type_1_3' ตามตัวอักษร — ถ้าไม่ระบุลำดับจะรันผิด)
+- ถ้าเพิ่ม transform ที่มี dependency ต้อง**ลงทะเบียนใน `RUN_ORDER`** ให้ครบและ
+  เรียงถูก + เพิ่ม test ยืนยันลำดับใน `tests/run_transform.test.mjs`
+
 ## สั่งรันเองหนึ่งรอบ
 
 `runOnce(files)` ถูก export ไว้ — ไม่ส่ง `files` = รันทุกไฟล์
@@ -69,6 +84,19 @@ cd transform
 npm install          # ครั้งแรกบนเครื่องใหม่
 node --test tests\*.test.mjs
 ```
+
+## เพิ่ม transform ใหม่ (ทำตามลำดับ)
+
+1. **research transform table ที่มีอยู่ก่อน** — อ่าน `transform/transform_data_dic.json`
+   (+ `transform/sql/*.sql`) ว่ามีตารางสรุปที่เก็บ population/คอลัมน์ที่ต้องการ
+   อยู่แล้วหรือไม่ ถ้ามีให้ **ต่อยอดจากตารางสรุปนั้น ไม่ query raw ซ้ำ** (เช่น
+   `t_person_dm_ht` ดึงทะเบียน/pid/hn/nation จาก `t_person_type_1_3` แทน raw
+   `person`) — ประหยัดงาน + ได้ค่าตรงกันทั้งระบบ (single source of truth)
+2. ถ้าไปอ่านตารางสรุปของ transform อื่น → **ลงทะเบียนลำดับใน `run_order.js`**
+   (ดูหัวข้อ "ลำดับการรัน" ด้านบน) ให้ตัวต้นทางรันก่อน
+3. เขียนไฟล์ SQL ตาม "กติกาการเขียนไฟล์ SQL" (full replace, DROP ก่อน CREATE ฯลฯ)
+4. เพิ่ม entry ใน `transform_data_dic.json` (ดูด้านล่าง)
+5. เพิ่ม test ใน `tests/` — read-source assertion ของ SQL + ลำดับใน run_order ถ้ามี
 
 ## Transform data dictionary
 
