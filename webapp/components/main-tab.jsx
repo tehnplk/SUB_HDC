@@ -6,8 +6,8 @@ import { ClipboardList, Database, FileText, ShieldCheck, Sparkles } from "lucide
 
 const TABS = [
   { href: "/import-check/index", label: "ปริมาณข้อมูล", Icon: FileText },
-  { href: "/standard/index", label: "ข้อมูลมาตรฐาน", Icon: Database },
   { href: "/dashboard/quality", label: "คุณภาพ", Icon: ShieldCheck },
+  { href: "/standard/index", label: "ข้อมูลมาตรฐาน", Icon: Database },
   { href: "/report/index", label: "รายงาน", Icon: ClipboardList },
   { href: "/ai/chat", label: "Ask AI", Icon: Sparkles },
 ];
