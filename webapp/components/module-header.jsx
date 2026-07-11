@@ -24,6 +24,7 @@ const BREADCRUMB_MODULES = [
     pages: {
       "/standard/person-typearea": "ประชากรแยกตาม TYPEAREA",
       "/standard/person-pyramid": "ประชากรแยกช่วงอายุ 5 ปี",
+      "/standard/dm-ht-count": "จำนวนผู้ป่วย DM/HT",
     },
   },
   { prefix: "/dashboard/quality", href: "/dashboard/quality", label: "คุณภาพ" },
