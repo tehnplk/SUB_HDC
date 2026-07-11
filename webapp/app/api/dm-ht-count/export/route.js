@@ -19,8 +19,13 @@ const EXPORT_COLUMNS = [
 
 export async function GET(request) {
   // ทะเบียนรายคน (มี pid) — ต้อง login ก่อนจึงส่งออกได้
+  // ลิงก์นี้เปิดจาก browser ตรง ๆ จึง redirect ไปหน้าแจ้งเตือนแทนตอบ 401 JSON
   const unauthorized = await requireApiJwt(request);
-  if (unauthorized) return unauthorized;
+  if (unauthorized) {
+    const errorUrl = new URL("/error/msg", request.url);
+    errorUrl.searchParams.set("msg", "ต้องเข้าสู่ระบบก่อนจึงจะส่งออกรายชื่อแบบปกปิดได้");
+    return Response.redirect(errorUrl, 302);
+  }
 
   const hospcode = new URL(request.url).searchParams.get("hospcode") || "";
   if (!/^\w{1,10}$/.test(hospcode)) {
