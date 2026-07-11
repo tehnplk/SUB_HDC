@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { CircleAlert, FileText, RefreshCw } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
 
 const TYPE_LABELS = ["Type 1", "Type 2", "Type 3", "Type 4", "Type 5"];
@@ -23,6 +23,13 @@ function getNegativeDifferenceBadgeClass(value) {
   const deficit = Math.abs(Number(value || 0));
   if (deficit > 100) return "diffBadgeDanger";
   if (deficit > 20) return "diffBadgeWarning";
+  return "";
+}
+
+function getPositiveDifferenceBadgeClass(value) {
+  const surplus = Number(value || 0);
+  if (surplus > 100) return "diffBadgeInfoStrong";
+  if (surplus > 20) return "diffBadgeInfo";
   return "";
 }
 
@@ -65,6 +72,17 @@ export default function CompareHdcPersonPage() {
             : `ดึงข้อมูลจาก HDC กลางเมื่อ : ${formatDate(data?.hdcFetchedAt)} และประมวลผล PERSON ที่ SUB-HDC เมื่อ : ${formatDate(data?.transformedAt)}`}
         </div>
 
+        <div className="compareHdcTableLabel">
+          <div>
+            <FileText aria-hidden="true" />
+            <span><strong>บวก</strong> หมายถึง ข้อมูลที่อำเภอมีมากกว่าที่ HDC กลาง, <strong>ลบ</strong> หมายถึง ข้อมูลที่ HDC กลางมากกว่าที่อำเภอ</span>
+          </div>
+          <div className="compareHdcFixHint">
+            <CircleAlert aria-hidden="true" />
+            <span>วิธีแก้ไข : นำเข้าแฟ้ม PERSON ข้อมูลประชากรทุกคนในเขตรับผิดชอบ</span>
+          </div>
+        </div>
+
         <div className="tableWrap">
           <table className="fileTable compareHdcTable">
             <thead>
@@ -102,9 +120,13 @@ export default function CompareHdcPersonPage() {
                   </td>
                   {row.types.map((type, index) => {
                     const tone = ALERT_TYPE_INDEXES.has(index) ? " compareTargetCell" : " compareDimCol";
-                    const differenceBadgeClass = ALERT_TYPE_INDEXES.has(index) && type.diff < 0
-                      ? getNegativeDifferenceBadgeClass(type.diff)
-                      : "";
+                    const differenceBadgeClass = !ALERT_TYPE_INDEXES.has(index)
+                      ? ""
+                      : type.diff < 0
+                        ? getNegativeDifferenceBadgeClass(type.diff)
+                        : type.diff > 0
+                          ? getPositiveDifferenceBadgeClass(type.diff)
+                          : "";
                     return [
                       <td key={`${row.hospcode}-${index}-hdc`} className={`numCol compareGroupCol${tone}`}>
                         {formatNumber(type.hdc)}
@@ -119,7 +141,7 @@ export default function CompareHdcPersonPage() {
                         {differenceBadgeClass ? (
                           <span className={differenceBadgeClass}>{formatSignedNumber(type.diff)}</span>
                         ) : (
-                          <span className={ALERT_TYPE_INDEXES.has(index) && type.diff < 0 ? "diffPlain" : undefined}>
+                          <span className={ALERT_TYPE_INDEXES.has(index) && type.diff !== 0 ? "diffPlain" : undefined}>
                             {ALERT_TYPE_INDEXES.has(index) ? formatSignedNumber(type.diff) : formatNumber(type.diff)}
                           </span>
                         )}

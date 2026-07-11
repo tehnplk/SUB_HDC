@@ -3533,6 +3533,37 @@ button:disabled {
   height: 13px;
 }
 
+.compareHdcTableLabel {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 10px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.compareHdcTableLabel > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.compareHdcTableLabel .lucide {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  margin-top: 1px;
+  color: #0f766e;
+}
+
+.compareHdcTableLabel strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.compareHdcTableLabel .compareHdcFixHint .lucide {
+  color: #d97706;
+}
+
 
 .compareHdcTable {
   min-width: 1180px;
@@ -3578,7 +3609,9 @@ button:disabled {
 }
 
 .diffBadgeWarning,
-.diffBadgeDanger {
+.diffBadgeDanger,
+.diffBadgeInfo,
+.diffBadgeInfoStrong {
   display: inline-flex;
   align-items: center;
   min-height: 20px;
@@ -3597,5 +3630,16 @@ button:disabled {
 
 .diffBadgeDanger {
   background: #ef2d2d;
+  color: #ffffff;
+}
+
+/* SUB-HDC มากกว่า HDC ใน type1/type3: เกิน 20 สีฟ้า, เกิน 100 สีฟ้าเข้ม */
+.diffBadgeInfo {
+  background: #38bdf8;
+  color: #082f49;
+}
+
+.diffBadgeInfoStrong {
+  background: #0369a1;
   color: #ffffff;
 }

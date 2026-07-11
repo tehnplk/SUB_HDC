@@ -31,7 +31,7 @@ test("Import Check owns the canonical child routes", () => {
   assert.doesNotMatch(mainTabSource, /dashboard\/hos-list/);
 });
 
-test("compare-hdc-person applies warning thresholds to short type1/3 differences", () => {
+test("compare-hdc-person applies severity thresholds and guidance to type1/3 differences", () => {
   // group ละ 3 คอลัมน์: HDC / SUB-HDC / ส่วนต่าง ครบทั้ง type1-5
   assert.match(compareHdcSource, /"Type 1", "Type 2", "Type 3", "Type 4", "Type 5"/);
   assert.match(compareHdcSource, />HDC<\/th>/);
@@ -42,17 +42,28 @@ test("compare-hdc-person applies warning thresholds to short type1/3 differences
   assert.match(compareHdcSource, /function getNegativeDifferenceBadgeClass/);
   assert.match(compareHdcSource, /deficit > 100.*diffBadgeDanger/);
   assert.match(compareHdcSource, /deficit > 20.*diffBadgeWarning/);
+  assert.match(compareHdcSource, /function getPositiveDifferenceBadgeClass/);
+  assert.match(compareHdcSource, /surplus > 100.*diffBadgeInfoStrong/);
+  assert.match(compareHdcSource, /surplus > 20.*diffBadgeInfo/);
   assert.match(compareHdcSource, /diffBadgeDanger/);
   assert.match(compareHdcSource, /diffBadgeWarning/);
+  assert.match(compareHdcSource, /diffBadgeInfoStrong/);
+  assert.match(compareHdcSource, /diffBadgeInfo/);
   assert.match(compareHdcSource, /diffPlain/);
+  assert.match(compareHdcSource, /FileText/);
+  assert.match(compareHdcSource, /CircleAlert/);
+  assert.match(compareHdcSource, /ข้อมูลที่อำเภอมีมากกว่าที่ HDC กลาง/);
+  assert.match(compareHdcSource, /นำเข้าแฟ้ม PERSON ข้อมูลประชากรทุกคนในเขตรับผิดชอบ/);
   assert.match(compareHdcSource, /function formatSignedNumber/);
   assert.match(compareHdcSource, /number > 0 \? `\+\$\{formatted\}`/);
   assert.match(compareHdcSource, /formatSignedNumber\(type\.diff\)/);
   assert.match(compareHdcSource, /compareTargetDiff/);
   assert.match(globalStyles, /\.compareHdcTable tbody \.numCol\s*\{\s*font-size:\s*11px;/);
-  assert.match(globalStyles, /\.diffBadgeDanger\s*\{[\s\S]*?font-weight:\s*400;/);
+  assert.match(globalStyles, /\.diffBadgeWarning,\s*\.diffBadgeDanger,[\s\S]*?font-weight:\s*400;/);
   assert.doesNotMatch(globalStyles, /\.diffBadgeDanger\s*\{[\s\S]*?font-weight:\s*900;/);
   assert.match(globalStyles, /\.diffBadgeWarning\s*\{[\s\S]*?background:\s*#f59e0b;/);
+  assert.match(globalStyles, /\.diffBadgeInfo\s*\{[\s\S]*?background:\s*#38bdf8;/);
+  assert.match(globalStyles, /\.diffBadgeInfoStrong\s*\{[\s\S]*?background:\s*#0369a1;/);
   assert.match(compareHdcSource, /ModuleHeader/);
   assert.match(compareHdcSource, /hospNameShort/);
   assert.match(compareHdcSource, /\/api\/compare-hdc-person/);
