@@ -31,13 +31,18 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: "/dashboard/quality",
+        destination: "/quality",
+        permanent: true,
+      },
+      {
         source: "/dashbord/quality",
-        destination: "/dashboard/quality",
+        destination: "/quality",
         permanent: true,
       },
       {
         source: "/dasboard/quality",
-        destination: "/dashboard/quality",
+        destination: "/quality",
         permanent: true,
       },
       {

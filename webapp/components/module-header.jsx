@@ -27,7 +27,7 @@ const BREADCRUMB_MODULES = [
       "/standard/dm-ht-count": "จำนวนผู้ป่วย DM/HT",
     },
   },
-  { prefix: "/dashboard/quality", href: "/dashboard/quality", label: "คุณภาพ" },
+  { prefix: "/quality", href: "/quality", label: "คุณภาพ" },
   { prefix: "/report", href: "/report/index", label: "รายงาน" },
   { prefix: "/dashboard/report", href: "/report/index", label: "รายงาน" },
   { prefix: "/ai/chat", href: "/ai/chat", label: "Ask AI" },
