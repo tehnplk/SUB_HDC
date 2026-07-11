@@ -46,6 +46,7 @@ test("compare-hdc-person compares both sources per unit with red badges on short
   assert.match(compareHdcSource, /compareTargetDiff/);
   assert.match(globalStyles, /\.compareHdcTable tbody \.numCol\s*\{\s*font-size:\s*11px;/);
   assert.match(globalStyles, /\.diffBadgeDanger\s*\{[\s\S]*?font-weight:\s*400;/);
+  assert.doesNotMatch(globalStyles, /\.diffBadgeDanger\s*\{[\s\S]*?font-weight:\s*900;/);
   assert.match(compareHdcSource, /ModuleHeader/);
   assert.match(compareHdcSource, /hospNameShort/);
   assert.match(compareHdcSource, /\/api\/compare-hdc-person/);
