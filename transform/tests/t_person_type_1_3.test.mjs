@@ -1,0 +1,74 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import test from "node:test";
+
+const sqlPath = path.resolve(process.cwd(), "transform", "sql", "t_person_type_1_3.sql");
+const dictionaryPath = path.resolve(process.cwd(), "transform", "transform_data_dic.json");
+
+test("t_person_type_1_3 keeps one row per fiscal year and CID", async () => {
+  const sql = await readFile(sqlPath, "utf8");
+
+  assert.match(sql, /DROP TABLE IF EXISTS `t_person_type_1_3`/i);
+  assert.match(sql, /CREATE TABLE `t_person_type_1_3`/i);
+  assert.match(sql, /PRIMARY KEY \(`fiscal_year`, `cid`\)/i);
+  assert.match(sql, /p\.`typearea` AS `type`/i);
+  assert.match(sql, /FROM `person` p/i);
+  assert.match(sql, /p\.`typearea` IN \('1', '3'\)/i);
+  assert.match(sql, /p\.`discharge` = '9'/i);
+  assert.match(sql, /GROUP BY `fiscal_year`, `cid`/i);
+});
+
+test("t_person_type_1_3 calculates age on the first day of fiscal year 2569", async () => {
+  const sql = await readFile(sqlPath, "utf8");
+
+  assert.match(sql, /SET @fiscal_year := 2569/i);
+  assert.match(sql, /SET @fiscal_start := STR_TO_DATE\('20251001', '%Y%m%d'\)/i);
+  assert.match(sql, /TIMESTAMPDIFF\(YEAR,[\s\S]*?@fiscal_start\)/i);
+  assert.match(sql, /TIMESTAMPDIFF\([\s\S]*?MONTH,[\s\S]*?@fiscal_start/i);
+  assert.match(sql, /DATEDIFF\([\s\S]*?@fiscal_start/i);
+});
+
+test("t_person_type_1_3 selects fiscal-start insurance and builds an eight-digit village ID", async () => {
+  const sql = await readFile(sqlPath, "utf8");
+
+  assert.match(sql, /FROM `card` c/i);
+  assert.match(sql, /JOIN `tmp_person_type_1_3` p[\s\S]*?p\.`hos` = c\.`hospcode` AND p\.`pid` = c\.`pid`/i);
+  assert.match(sql, /PARTITION BY c\.`hospcode`, c\.`pid`/i);
+  assert.match(sql, /c\.`startdate` <= '20251001'/i);
+  assert.match(sql, /c\.`expiredate` >= '20251001'/i);
+  assert.match(sql, /ORDER BY c\.`d_update` DESC/i);
+  assert.match(sql, /ADD PRIMARY KEY \(`hospcode`, `pid`\)/i);
+  assert.match(sql, /LEFT JOIN `home` h ON h\.`hospcode` = p\.`hos` AND h\.`hid` = p\.`hid`/i);
+  assert.match(sql, /CONCAT\(h\.`changwat`, h\.`ampur`, h\.`tambon`, h\.`village`\)/i);
+});
+
+test("all non-key fields are position-aligned CSV values", async () => {
+  const sql = await readFile(sqlPath, "utf8");
+
+  for (const field of ["hos", "pid", "type", "sex", "bdate", "age_y", "age_m", "age_d", "inscl", "village_id"]) {
+    assert.match(
+      sql,
+      new RegExp("GROUP_CONCAT\\(IFNULL\\([\\s\\S]*?ORDER BY `hos`, `pid` SEPARATOR ','\\) AS `" + field + "`", "i")
+    );
+  }
+});
+
+test("t_person_type_1_3 fully replaces its rows transactionally", async () => {
+  const sql = await readFile(sqlPath, "utf8");
+
+  assert.match(sql, /START TRANSACTION;/i);
+  assert.match(sql, /DELETE FROM `t_person_type_1_3`;/i);
+  assert.match(sql, /INSERT INTO `t_person_type_1_3`/i);
+  assert.match(sql, /COMMIT;/i);
+});
+
+test("transform dictionary documents t_person_type_1_3", async () => {
+  const dictionary = JSON.parse(await readFile(dictionaryPath, "utf8"));
+  const entry = dictionary.find((item) => item.transform_table === "t_person_type_1_3");
+
+  assert.ok(entry);
+  assert.equal(entry.sql_file, "t_person_type_1_3.sql");
+  assert.deepEqual(entry.f43_tables, ["person", "card", "home"]);
+  assert.equal(entry.schema, "fiscal_year,cid,hos,pid,type,sex,bdate,age_y,age_m,age_d,inscl,village_id");
+});
