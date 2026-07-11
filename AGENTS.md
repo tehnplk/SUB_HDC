@@ -35,3 +35,6 @@ playwright-cli show --annotate
 ## Handoff
  - handoff docs แยกตามระบบ: @handoff/hand-off-sync.md , @handoff/hand-off-migrate.md , @handoff/hand-off-err.md , @handoff/hand-off-transform.md , @handoff/hand-off-webapp-ui-flow.md
  - you must update handoff doc ของระบบที่เกี่ยวข้อง if user request.
+
+ ## When done the task
+ - just say `I have done.`
