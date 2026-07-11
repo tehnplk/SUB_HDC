@@ -11,6 +11,7 @@ CREATE TABLE `t_person_type_1_3` (
   `pid` text DEFAULT NULL,
   `type` text DEFAULT NULL,
   `sex` text DEFAULT NULL,
+  `nation` text DEFAULT NULL,
   `bdate` text DEFAULT NULL,
   `age_y` text DEFAULT NULL,
   `age_m` text DEFAULT NULL,
@@ -38,6 +39,7 @@ SELECT
   p.`pid`,
   p.`typearea` AS `type`,
   NULLIF(p.`sex`, '') AS `sex`,
+  NULLIF(p.`nation`, '') AS `nation`,
   CASE
     WHEN p.`birth` REGEXP '^[0-9]{8}$'
       AND STR_TO_DATE(p.`birth`, '%Y%m%d') IS NOT NULL
@@ -101,6 +103,7 @@ SELECT
   p.`pid`,
   p.`type`,
   p.`sex`,
+  p.`nation`,
   p.`bdate`,
   p.`age_y`,
   CASE
@@ -140,7 +143,7 @@ LEFT JOIN `tmp_person_type_1_3_card` c
 LEFT JOIN `home` h ON h.`hospcode` = p.`hos` AND h.`hid` = p.`hid`;
 
 INSERT INTO `t_person_type_1_3`
-  (`fiscal_year`, `cid`, `hos`, `pid`, `type`, `sex`, `bdate`, `age_y`, `age_m`, `age_d`, `inscl`, `village_id`)
+  (`fiscal_year`, `cid`, `hos`, `pid`, `type`, `sex`, `nation`, `bdate`, `age_y`, `age_m`, `age_d`, `inscl`, `village_id`)
 SELECT
   `fiscal_year`,
   `cid`,
@@ -148,6 +151,7 @@ SELECT
   GROUP_CONCAT(IFNULL(`pid`, '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `pid`,
   GROUP_CONCAT(IFNULL(`type`, '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `type`,
   GROUP_CONCAT(IFNULL(`sex`, '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `sex`,
+  GROUP_CONCAT(IFNULL(`nation`, '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `nation`,
   GROUP_CONCAT(IFNULL(`bdate`, '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `bdate`,
   GROUP_CONCAT(IFNULL(CAST(`age_y` AS CHAR), '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `age_y`,
   GROUP_CONCAT(IFNULL(CAST(`age_m` AS CHAR), '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `age_m`,
