@@ -42,6 +42,44 @@ test("standard navigation stays active across its child routes", () => {
   assert.match(mainTabSource, /pathname\.startsWith\("\/import-check\/"\)/);
 });
 
+test("target-group is a main-tab module with an index menu of its child topics", () => {
+  const targetGroupIndexSource = readFileSync(
+    new URL("../app/target-group/index/page.js", import.meta.url),
+    "utf8"
+  );
+
+  assert.match(mainTabSource, /\/target-group\/index/);
+  assert.match(mainTabSource, /ทะเบียนกลุ่มเป้าหมาย/);
+  assert.match(mainTabSource, /pathname\.startsWith\("\/target-group\/"\)/);
+  assert.match(headerSource, /prefix: "\/target-group"/);
+  assert.match(targetGroupIndexSource, /ModuleHeader/);
+  assert.match(targetGroupIndexSource, /moduleTopicList/);
+  assert.match(targetGroupIndexSource, /กลุ่มเป้าหมายตามตัวชี้วัด/);
+  assert.match(targetGroupIndexSource, /กลุ่มเป้าหมายการจัดเก็บรายได้/);
+});
+
+test("rapid is a right-aligned main-tab module with a title-only topic list", () => {
+  const rapidIndexSource = readFileSync(
+    new URL("../app/rapid/index/page.js", import.meta.url),
+    "utf8"
+  );
+
+  assert.match(mainTabSource, /TABS_END/);
+  assert.match(mainTabSource, /tabButtonEnd/);
+  assert.match(mainTabSource, /\/rapid\/index/);
+  assert.match(mainTabSource, /งานเร่งรัดติดตาม/);
+  assert.match(mainTabSource, /pathname\.startsWith\("\/rapid\/"\)/);
+  assert.match(headerSource, /prefix: "\/rapid"/);
+  assert.match(rapidIndexSource, /ModuleHeader/);
+  assert.match(rapidIndexSource, /moduleTopicList/);
+  assert.match(rapidIndexSource, /DM Control/);
+  assert.match(rapidIndexSource, /MMR2/);
+  assert.match(rapidIndexSource, /โรคความดันโลหิตสูง/);
+  assert.match(rapidIndexSource, /โรคเบาหวาน/);
+  // bullet เป็นข้อความบรรทัดเดียว — ไม่มี description ใต้หัวข้อ
+  assert.doesNotMatch(rapidIndexSource, /<small>/);
+});
+
 test("report is a top-level module rather than a Dashboard main-tab item", () => {
   assert.match(mainTabSource, /\/report\/index/);
   assert.match(mainTabSource, /รายงาน/);

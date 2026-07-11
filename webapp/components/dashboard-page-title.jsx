@@ -3,6 +3,7 @@
 import { Database } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import VisitCounterBadge from "./visit-counter-badge";
 import { getDbStatusOnce } from "../lib/db-status-cache.mjs";
 import { compareVersions, getMaxUpdateVersion, getMaxVersionFromApi } from "../lib/update-log.mjs";
 import updateLog from "../version/update_log.json";
@@ -118,6 +119,7 @@ export default function DashboardPageTitle() {
         <Database aria-hidden="true" />
         <span>{dbLabel}</span>
       </span>
+      <VisitCounterBadge />
     </h4>
   );
 }

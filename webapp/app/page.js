@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function Home() {
-  redirect("/standard/person-typearea");
+  redirect("/import-check/compare-hdc-person");
 }

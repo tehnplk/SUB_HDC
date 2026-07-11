@@ -3,16 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { Bot, ChevronDown, ChevronUp, Database, FileText, LogIn, LogOut, Upload, UserRound, Users } from "lucide-react";
+import { ChevronDown, ChevronUp, Database, LogOut, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 const menuItems = [
-  { href: "/upload", label: "Upload", icon: Upload },
-  { href: "/ai/chat", label: "AI Chat", icon: Bot },
-  { href: "/person", label: "Person", icon: Users },
-  { href: "/standard/index", label: "ข้อมูลมาตรฐาน", icon: Database },
-  { href: "/import-check/index", label: "ปริมาณข้อมูล", icon: FileText },
-  { href: "/report/index", label: "รายงาน", icon: FileText },
+  { href: "/dev/tranforms-data-dict", label: "Transform Dict", icon: Database },
 ];
 
 export default function FloatingUserMenu({ userName, centerName }) {
@@ -47,10 +42,10 @@ export default function FloatingUserMenu({ userName, centerName }) {
     <div ref={menuRef} className={`floatingUser ${open ? "floatingUserOpen" : ""}`}>
       {open ? (
         <div className="floatingUserMenu" role="menu" aria-label="User menu">
-          <div className="floatingUserCard">
+          <div className="floatingUserCard" role="menuitem" aria-label="Profile">
             <span className={`floatingUserMiniAvatar ${userName ? "" : "floatingUserMiniAvatarGuest"}`}>{initials}</span>
             <span>
-              <strong>{displayName}</strong>
+              <strong>Profile</strong>
               <small>{centerName || "SUB HDC"}</small>
             </span>
           </div>
@@ -75,22 +70,15 @@ export default function FloatingUserMenu({ userName, centerName }) {
             })}
           </div>
 
-          {userName ? (
-            <button
-              type="button"
-              className="floatingUserAction"
-              onClick={handleSignOut}
-              role="menuitem"
-            >
-              <LogOut />
-              <span>Logout</span>
-            </button>
-          ) : (
-            <Link href="/login" className="floatingUserAction" role="menuitem" onClick={() => setOpen(false)}>
-              <LogIn />
-              <span>Login</span>
-            </Link>
-          )}
+          <button
+            type="button"
+            className="floatingUserAction"
+            onClick={handleSignOut}
+            role="menuitem"
+          >
+            <LogOut />
+            <span>Logout</span>
+          </button>
         </div>
       ) : null}
 

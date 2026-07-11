@@ -14,7 +14,8 @@ const BREADCRUMB_MODULES = [
     label: "ปริมาณข้อมูล",
     pages: {
       "/import-check/log-import": "ประวัติการนำเข้า",
-      "/import-check/hos-list": "รายหน่วยงาน",
+      "/import-check/files-count": "จำนวนข้อมูลรายแฟ้ม",
+      "/import-check/compare-hdc-person": "เปรียบเทียบประชากรกับ HDC",
     },
   },
   {
@@ -28,6 +29,8 @@ const BREADCRUMB_MODULES = [
     },
   },
   { prefix: "/quality", href: "/quality", label: "คุณภาพ" },
+  { prefix: "/target-group", href: "/target-group/index", label: "ทะเบียนกลุ่มเป้าหมาย" },
+  { prefix: "/rapid", href: "/rapid/index", label: "งานเร่งรัดติดตาม" },
   { prefix: "/report", href: "/report/index", label: "รายงาน" },
   { prefix: "/dashboard/report", href: "/report/index", label: "รายงาน" },
   { prefix: "/ai/chat", href: "/ai/chat", label: "Ask AI" },

@@ -85,8 +85,8 @@ test("update log page renders version date and issue fields from update_log", ()
   const pageSource = readFileSync(updateLogPageUrl, "utf8");
   assert.match(pageSource, /import updateLog from "@\/version\/update_log\.json"/);
   assert.match(pageSource, /title:\s*"Version Update Log"/);
-  assert.match(pageSource, /<h4 className="pageHeaderTitle">Version Update Log<\/h4>/);
-  assert.doesNotMatch(pageSource, />Update Log<\/h4>/);
+  assert.match(pageSource, /import ModuleHeader from "@\/components\/module-header"/);
+  assert.match(pageSource, /<ModuleHeader subtitle="ประวัติการปรับปรุงระบบ" \/>/);
   assert.doesNotMatch(pageSource, /Application version history/);
   assert.match(pageSource, /entry\.version/);
   assert.match(pageSource, /entry\.update_date/);

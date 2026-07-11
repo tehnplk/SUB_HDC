@@ -52,7 +52,7 @@ test("upload auto-enqueues each file for import without a manual button press", 
   assert.match(handleFilesSource, /await uploadZip\(/);
   assert.match(handleFilesSource, /await importZip\(/);
   // and it navigates to the history page when all files are queued
-  assert.match(handleFilesSource, /window\.location\.assign\("\/dashboard\/log-import"\)/);
+  assert.match(handleFilesSource, /window\.location\.assign\("\/import-check\/log-import"\)/);
 });
 
 test("the manual queue button only retries files that failed to enqueue", async () => {

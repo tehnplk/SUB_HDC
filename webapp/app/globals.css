@@ -896,6 +896,11 @@ button:disabled {
   line-height: 1.3;
 }
 
+/* ลิสต์หัวข้อแบบกระชับ — ตัวอักษรเท่า subtitle (.lead 16px) */
+.moduleTopicListCompact .standardMenuText strong {
+  font-size: 16px;
+}
+
 .standardMenuText small {
   color: var(--muted);
   font-size: 13px;
@@ -2231,7 +2236,38 @@ button:disabled {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: rgba(248, 252, 249, 0.7);
-  width: max-content;
+}
+
+/* item แรกของกลุ่มขวา — ดันทั้งกลุ่มไปชิดขอบขวาของ tab bar */
+.tabButton.tabButtonEnd {
+  margin-left: auto;
+}
+
+/* กระพริบแบบ fade ช่วง 5 วิแรกหลัง load (คุมรอบ/หยุดจาก main-tab.jsx) */
+.tabBadgeBlink {
+  animation: tabBadgeFade 1s ease-in-out infinite;
+}
+
+@keyframes tabBadgeFade {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+/* badge ตัวเลขสีแดงท้าย label ของ tab */
+.tabBadgeDanger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  min-height: 18px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: #ef2d2d;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
 .tabButton {
@@ -2359,6 +2395,25 @@ button:disabled {
 .floatingUserMenu,
 .floatingUserButton {
   pointer-events: auto;
+}
+
+/* ขนาด/แนว baseline เดียวกับ .dbStatusLabel (connection badge) */
+.visitCounterBadge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  vertical-align: middle;
+  user-select: none;
+  white-space: nowrap;
 }
 
 .floatingUserButton {
@@ -3192,6 +3247,337 @@ button:disabled {
   color: #a16207;
 }
 
+.transformDictToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.transformDictSearch {
+  width: min(460px, 100%);
+  margin: 0;
+}
+
+.transformDictRefresh {
+  min-height: 42px;
+  padding: 9px 15px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--accent-strong);
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.transformDictRefresh:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.transformDictMeta {
+  justify-content: space-between;
+  margin-bottom: 10px;
+  color: var(--muted-strong);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.transformDictGridWrap {
+  max-height: min(68vh, 680px);
+}
+
+.transformDictGrid {
+  min-width: 1180px;
+}
+
+.transformDictGrid th,
+.transformDictGrid td {
+  vertical-align: top;
+}
+
+.transformDictGrid th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.transformDictIndex {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.transformDictTableName {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #d8e9dc;
+  border-radius: 6px;
+  background: #f5fbf6;
+  color: #166534;
+  font-family: var(--font-space-grotesk), monospace;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+.transformDictTableName {
+  padding: 4px 7px;
+  white-space: nowrap;
+}
+
+.transformDictTableName:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.transformDictSqlFile {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--foreground);
+  font-family: var(--font-space-grotesk), monospace;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.transformDictSqlFile:hover {
+  color: var(--accent-strong);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.transformDictSqlFile .lucide {
+  width: 15px;
+  height: 15px;
+  color: var(--accent);
+}
+
+.transformDictTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 150px;
+}
+
+.transformDictTags span {
+  padding: 3px 7px;
+  border: 1px solid #d9e4ff;
+  border-radius: 999px;
+  background: #f4f7ff;
+  color: #3b5b9a;
+  font-family: var(--font-space-grotesk), monospace;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.transformDictDescription {
+  min-width: 300px;
+  max-width: 420px;
+  color: var(--muted-strong);
+  line-height: 1.55;
+  white-space: normal;
+}
+
+.transformSchemaModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.transformSchemaModal {
+  width: min(700px, 100%);
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.transformSchemaModalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.transformSchemaModalHeader .eyebrow {
+  margin-bottom: 4px;
+  font-size: 10px;
+}
+
+.transformSchemaModalHeader h2 {
+  margin: 0;
+  color: var(--foreground);
+  font-family: var(--font-space-grotesk), monospace;
+  font-size: 20px;
+}
+
+.transformSchemaModalClose {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--muted-strong);
+  cursor: pointer;
+}
+
+.transformSchemaModalActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.transformSqlCopyButton {
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.transformSqlCopyButton:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.transformSqlCopyButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.transformSqlCopyButton .lucide {
+  width: 15px;
+  height: 15px;
+}
+
+.transformSchemaModalClose:hover {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.transformSchemaModalClose .lucide {
+  width: 17px;
+  height: 17px;
+}
+
+.transformSchemaModalContent {
+  display: block;
+  padding: 13px 14px;
+  overflow-wrap: anywhere;
+  border: 1px solid #d8e9dc;
+  border-radius: var(--radius-sm);
+  background: #f5fbf6;
+  color: #166534;
+  font-family: var(--font-space-grotesk), monospace;
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.transformSqlModalContent {
+  max-height: min(60vh, 540px);
+  margin: 0;
+  padding: 14px;
+  overflow: auto;
+  border: 1px solid #d8e9dc;
+  border-radius: var(--radius-sm);
+  background: #102217;
+  color: #d9f99d;
+  font-family: var(--font-space-grotesk), Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre;
+}
+
 @keyframes importingSpin {
   to { transform: rotate(360deg); }
+}
+
+/* หน้าเปรียบเทียบ HDC vs SUB-HDC (/import-check/compare-hdc-person) */
+.compareHdcSyncMeta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  margin: 14px 0 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.compareHdcSyncMeta .lucide {
+  width: 13px;
+  height: 13px;
+}
+
+
+.compareHdcTable {
+  min-width: 1180px;
+}
+
+.compareHdcTable .compareGroupHeader {
+  text-align: center;
+  border-left: 1px solid var(--border-strong);
+}
+
+/* เส้นแบ่งซ้ายของแต่ละกลุ่ม type ให้กวาดตาตามกลุ่มได้ */
+.compareHdcTable .compareGroupCol {
+  border-left: 1px solid var(--border-strong);
+}
+
+/* กลุ่ม type1/3 คือประชากรรับผิดชอบ — เน้นเขียวทั้งหัวและตัวเลข */
+.compareTargetHeader {
+  color: #15803d !important;
+  background: #e5f6ea !important;
+}
+
+.compareTargetCell {
+  color: #166534;
+  background: #f5fbf6;
+  font-weight: 850;
+}
+
+/* กลุ่ม type2/4/5 ไม่ใช่ประชากรรับผิดชอบ — เล็กและจางลงให้ type1/3 เด่น */
+.compareHdcTable .compareDimCol {
+  color: color-mix(in srgb, var(--muted) 65%, transparent);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+/* SUB-HDC น้อยกว่า HDC ใน type1/type3 — ตัวเลขส่วนต่างเป็น badge แดงสว่าง */
+.diffBadgeDanger {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ef2d2d;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
 }

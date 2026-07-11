@@ -1,4 +1,4 @@
-import { AuthError } from "next-auth";
+﻿import { AuthError } from "next-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
@@ -7,7 +7,7 @@ import { LayoutDashboard, LockKeyhole, LogIn } from "lucide-react";
 async function loginAction(formData) {
   "use server";
 
-  const callbackUrl = String(formData.get("callbackUrl") || "/import-check/hos-list");
+  const callbackUrl = String(formData.get("callbackUrl") || "/import-check/files-count");
 
   try {
     await signIn("credentials", {
@@ -25,7 +25,7 @@ async function loginAction(formData) {
 
 export default async function LoginPage({ searchParams }) {
   const params = await searchParams;
-  const callbackUrl = typeof params?.callbackUrl === "string" ? params.callbackUrl : "/import-check/hos-list";
+  const callbackUrl = typeof params?.callbackUrl === "string" ? params.callbackUrl : "/import-check/files-count";
   const hasError = params?.error === "1";
 
   return (

@@ -75,6 +75,12 @@ test("sync jobs include a 15-minute sync SQL refresh", async () => {
         cron: "*/15 * * * *",
         enabled: true,
       },
+      {
+        name: "hdc_api_s_persontype",
+        script: "jobs/hdc/hdc_api_s_persontype.js",
+        cron: "0 3 * * *",
+        enabled: true,
+      },
     ]
   );
 });

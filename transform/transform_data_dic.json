@@ -1,0 +1,30 @@
+[
+  {
+    "transform_table": "s_person_pyramid",
+    "sql_file": "s_person_pyramid.sql",
+    "f43_tables": ["person"],
+    "stored_data": "เก็บจำนวนประชากรที่ยังไม่จำหน่าย (discharge = 9) และมี typearea 1 หรือ 3 แยกตามหน่วยบริการ ช่วงอายุ 5 ปี และเพศชาย/หญิง",
+    "schema": "hospcode,age_range,male,female"
+  },
+  {
+    "transform_table": "s_person_type_count",
+    "sql_file": "s_person_type_count.sql",
+    "f43_tables": ["person"],
+    "stored_data": "เก็บจำนวนประชากรที่ยังไม่จำหน่าย (discharge = 9) แยกตามหน่วยบริการและประเภทพื้นที่ typearea 1 ถึง 5",
+    "schema": "hospcode,type_1,type_2,type_3,type_4,type_5"
+  },
+  {
+    "transform_table": "s_visit_montly",
+    "sql_file": "s_visit_montly.sql",
+    "f43_tables": ["service"],
+    "stored_data": "เก็บจำนวนการรับบริการจากแฟ้ม service แยกตามหน่วยบริการและเดือนของวันที่รับบริการ",
+    "schema": "hospcode,year_month,visit_count"
+  },
+  {
+    "transform_table": "t_person_dm_ht",
+    "sql_file": "t_person_dm_ht.sql",
+    "f43_tables": ["person", "diagnosis_opd", "diagnosis_ipd", "chronic"],
+    "stored_data": "เก็บทะเบียนผู้ป่วยเบาหวาน (E10-E14) และความดันโลหิตสูง (I10-I15) ที่เป็นประชากร typearea 1 หรือ 3 โดยเก็บ CID, หน่วยบริการและ PID ที่ขึ้นทะเบียน, รหัสโรค, หน่วยบริการที่วินิจฉัย และวันที่วินิจฉัยครั้งแรก",
+    "schema": "cid,hos_person_type_1_3,pid_at_hos_type_1_3,dm_code,hos_dx_dm,date_dx_dm,ht_code,hos_dx_ht,date_dx_ht"
+  }
+]

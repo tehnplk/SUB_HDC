@@ -94,6 +94,8 @@ services:
       TZ: Asia/Bangkok
     volumes:
       - ./webapp/tmp:/app/tmp
+      - ./transform/transform_data_dic.json:/app/transform_data_dic.json:ro
+      - ./transform/sql:/app/transform-sql:ro
 
   importer:
     image: sub-hdc-webapp

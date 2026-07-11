@@ -9,9 +9,14 @@ const menuItems = [
     description: "ติดตามสถานะคิว รายการนำเข้า และรายละเอียดข้อผิดพลาดของไฟล์ข้อมูล",
   },
   {
-    href: "/import-check/hos-list",
-    title: "รายหน่วยงาน",
+    href: "/import-check/files-count",
+    title: "จำนวนข้อมูลรายแฟ้ม",
     description: "ตรวจจำนวนข้อมูลแต่ละแฟ้ม แยกตามหน่วยบริการและปีงบประมาณ",
+  },
+  {
+    href: "/import-check/compare-hdc-person",
+    title: "เปรียบเทียบประชากรกับ HDC",
+    description: "เทียบจำนวนประชากรแยก TYPEAREA ระหว่าง HDC กับ SUB-HDC รายหน่วยบริการ",
   },
 ];
 

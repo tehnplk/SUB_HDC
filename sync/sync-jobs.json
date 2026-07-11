@@ -16,5 +16,11 @@
     "script": "jobs/pull_sql_for_sync_data.js",
     "cron": "*/15 * * * *",
     "enabled": true
+  },
+  {
+    "name": "hdc_api_s_persontype",
+    "script": "jobs/hdc/hdc_api_s_persontype.js",
+    "cron": "0 3 * * *",
+    "enabled": true
   }
 ]

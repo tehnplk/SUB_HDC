@@ -12,7 +12,12 @@ const nextConfig = {
       },
       {
         source: "/dashboard/hos-list",
-        destination: "/import-check/hos-list",
+        destination: "/import-check/files-count",
+        permanent: true,
+      },
+      {
+        source: "/import-check/hos-list",
+        destination: "/import-check/files-count",
         permanent: true,
       },
       {
@@ -22,12 +27,12 @@ const nextConfig = {
       },
       {
         source: "/dashbord/hos-list",
-        destination: "/import-check/hos-list",
+        destination: "/import-check/files-count",
         permanent: true,
       },
       {
         source: "/dasboard/hos-list",
-        destination: "/import-check/hos-list",
+        destination: "/import-check/files-count",
         permanent: true,
       },
       {
@@ -47,17 +52,17 @@ const nextConfig = {
       },
       {
         source: "/dashboard",
-        destination: "/import-check/hos-list",
+        destination: "/import-check/files-count",
         permanent: true,
       },
       {
         source: "/dashbord",
-        destination: "/import-check/hos-list",
+        destination: "/import-check/files-count",
         permanent: true,
       },
       {
         source: "/dasboard",
-        destination: "/import-check/hos-list",
+        destination: "/import-check/files-count",
         permanent: true,
       },
     ];
