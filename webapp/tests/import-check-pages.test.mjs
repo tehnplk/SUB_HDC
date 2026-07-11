@@ -54,6 +54,11 @@ test("compare-hdc-person applies severity thresholds and guidance to type1/3 dif
   assert.match(compareHdcSource, /CircleAlert/);
   assert.match(compareHdcSource, /ข้อมูลที่อำเภอมีมากกว่าที่ HDC กลาง/);
   assert.match(compareHdcSource, /นำเข้าแฟ้ม PERSON ข้อมูลประชากรทุกคนในเขตรับผิดชอบ/);
+  assert.match(compareHdcSource, /className="tableWrap compareHdcTableWrap"/);
+  assert.ok(
+    compareHdcSource.indexOf('className="compareHdcSyncMeta"')
+      > compareHdcSource.indexOf('className="tableWrap compareHdcTableWrap"')
+  );
   assert.match(compareHdcSource, /function formatSignedNumber/);
   assert.match(compareHdcSource, /number > 0 \? `\+\$\{formatted\}`/);
   assert.match(compareHdcSource, /formatSignedNumber\(type\.diff\)/);
@@ -64,6 +69,7 @@ test("compare-hdc-person applies severity thresholds and guidance to type1/3 dif
   assert.match(globalStyles, /\.diffBadgeWarning\s*\{[\s\S]*?background:\s*#f59e0b;/);
   assert.match(globalStyles, /\.diffBadgeInfo\s*\{[\s\S]*?background:\s*#38bdf8;/);
   assert.match(globalStyles, /\.diffBadgeInfoStrong\s*\{[\s\S]*?background:\s*#0369a1;/);
+  assert.match(globalStyles, /\.compareHdcTableWrap\s*\{[\s\S]*?max-height:\s*none;[\s\S]*?overflow-y:\s*hidden;/);
   assert.match(compareHdcSource, /ModuleHeader/);
   assert.match(compareHdcSource, /hospNameShort/);
   assert.match(compareHdcSource, /\/api\/compare-hdc-person/);

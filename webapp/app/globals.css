@@ -3569,6 +3569,12 @@ button:disabled {
   min-width: 1180px;
 }
 
+.compareHdcTableWrap {
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
 /* ตัวเลขทุก cell ใช้ขนาดเดียวกันทุก Type */
 .compareHdcTable tbody .numCol {
   font-size: 11px;

@@ -65,13 +65,6 @@ export default function CompareHdcPersonPage() {
 
         {error ? <div className="error">{error}</div> : null}
 
-        <div className="compareHdcSyncMeta">
-          <RefreshCw aria-hidden="true" />
-          {loading
-            ? "…"
-            : `ดึงข้อมูลจาก HDC กลางเมื่อ : ${formatDate(data?.hdcFetchedAt)} และประมวลผล PERSON ที่ SUB-HDC เมื่อ : ${formatDate(data?.transformedAt)}`}
-        </div>
-
         <div className="compareHdcTableLabel">
           <div>
             <FileText aria-hidden="true" />
@@ -83,7 +76,7 @@ export default function CompareHdcPersonPage() {
           </div>
         </div>
 
-        <div className="tableWrap">
+        <div className="tableWrap compareHdcTableWrap">
           <table className="fileTable compareHdcTable">
             <thead>
               <tr>
@@ -158,6 +151,13 @@ export default function CompareHdcPersonPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        <div className="compareHdcSyncMeta">
+          <RefreshCw aria-hidden="true" />
+          {loading
+            ? "…"
+            : `ดึงข้อมูลจาก HDC กลางเมื่อ : ${formatDate(data?.hdcFetchedAt)} และประมวลผล PERSON ที่ SUB-HDC เมื่อ : ${formatDate(data?.transformedAt)}`}
         </div>
       </section>
     </div>
