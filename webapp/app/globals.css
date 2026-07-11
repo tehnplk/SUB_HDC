@@ -3538,6 +3538,11 @@ button:disabled {
   min-width: 1180px;
 }
 
+/* ตัวเลขทุก cell ใช้ขนาดเดียวกันทุก Type */
+.compareHdcTable tbody .numCol {
+  font-size: 11px;
+}
+
 .compareHdcTable .compareGroupHeader {
   text-align: center;
   border-left: 1px solid var(--border-strong);
@@ -3576,7 +3581,8 @@ button:disabled {
   border-radius: 999px;
   background: #ef2d2d;
   color: #ffffff;
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 400;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
   line-height: 1.3;

@@ -12,6 +12,13 @@ function formatNumber(value) {
   return Number(value || 0).toLocaleString("th-TH");
 }
 
+function formatSignedNumber(value) {
+  const number = Number(value || 0);
+  const formatted = Math.abs(number).toLocaleString("th-TH");
+  if (number === 0) return "0";
+  return number > 0 ? `+${formatted}` : `-${formatted}`;
+}
+
 function formatDate(value) {
   if (!value) return "ยังไม่มีข้อมูล";
   const date = new Date(value);
@@ -95,11 +102,14 @@ export default function CompareHdcPersonPage() {
                       <td key={`${row.hospcode}-${index}-sub`} className={`numCol${tone}`}>
                         {formatNumber(type.sub)}
                       </td>,
-                      <td key={`${row.hospcode}-${index}-diff`} className={`numCol compareDiffCell${tone}`}>
+                      <td
+                        key={`${row.hospcode}-${index}-diff`}
+                        className={`numCol compareDiffCell${tone}${ALERT_TYPE_INDEXES.has(index) ? " compareTargetDiff" : ""}`}
+                      >
                         {ALERT_TYPE_INDEXES.has(index) && type.diff < 0 ? (
-                          <span className="diffBadgeDanger">{formatNumber(Math.abs(type.diff))}</span>
+                          <span className="diffBadgeDanger">{formatSignedNumber(type.diff)}</span>
                         ) : (
-                          formatNumber(type.diff)
+                          ALERT_TYPE_INDEXES.has(index) ? formatSignedNumber(type.diff) : formatNumber(type.diff)
                         )}
                       </td>,
                     ];

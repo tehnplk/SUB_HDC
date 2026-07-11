@@ -7,6 +7,7 @@ const logImportSource = readFileSync(new URL("../app/import-check/log-import/pag
 const filesCountSource = readFileSync(new URL("../app/import-check/files-count/page.js", import.meta.url), "utf8");
 const compareHdcSource = readFileSync(new URL("../app/import-check/compare-hdc-person/page.js", import.meta.url), "utf8");
 const compareHdcApiSource = readFileSync(new URL("../app/api/compare-hdc-person/route.js", import.meta.url), "utf8");
+const globalStyles = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
 const mainTabSource = readFileSync(new URL("../components/main-tab.jsx", import.meta.url), "utf8");
 const nextConfig = readFileSync(new URL("../next.config.mjs", import.meta.url), "utf8");
 
@@ -39,6 +40,12 @@ test("compare-hdc-person compares both sources per unit with red badges on short
   // badge แดงเฉพาะ type1/type3 (index 0, 2) เมื่อ SUB-HDC น้อยกว่า
   assert.match(compareHdcSource, /ALERT_TYPE_INDEXES = new Set\(\[0, 2\]\)/);
   assert.match(compareHdcSource, /diffBadgeDanger/);
+  assert.match(compareHdcSource, /function formatSignedNumber/);
+  assert.match(compareHdcSource, /number > 0 \? `\+\$\{formatted\}`/);
+  assert.match(compareHdcSource, /formatSignedNumber\(type\.diff\)/);
+  assert.match(compareHdcSource, /compareTargetDiff/);
+  assert.match(globalStyles, /\.compareHdcTable tbody \.numCol\s*\{\s*font-size:\s*11px;/);
+  assert.match(globalStyles, /\.diffBadgeDanger\s*\{[\s\S]*?font-weight:\s*400;/);
   assert.match(compareHdcSource, /ModuleHeader/);
   assert.match(compareHdcSource, /hospNameShort/);
   assert.match(compareHdcSource, /\/api\/compare-hdc-person/);
