@@ -34,7 +34,7 @@ const BREADCRUMB_MODULES = [
     label: "ทะเบียนกลุ่มเป้าหมาย",
     pages: {
       "/target-group/kpi": "กลุ่มเป้าหมายตามตัวชี้วัด",
-      "/target-group/kpi/dm-ht-count": "จำนวนผู้ป่วย DM/HT",
+      "/target-group/kpi/dm-ht": "จำนวนผู้ป่วย DM/HT",
     },
   },
   { prefix: "/rapid", href: "/rapid/index", label: "งานเร่งรัดติดตาม" },
@@ -46,7 +46,7 @@ const BREADCRUMB_MODULES = [
   { prefix: "/update-log", href: "/update-log", label: "ประวัติการปรับปรุง" },
 ];
 
-export default function ModuleHeader({ subtitle }) {
+export default function ModuleHeader() {
   const pathname = usePathname();
   const currentModule = BREADCRUMB_MODULES.find((item) => pathname.startsWith(item.prefix));
   const currentPage = currentModule?.pages?.[pathname];
@@ -56,11 +56,10 @@ export default function ModuleHeader({ subtitle }) {
       <div className="moduleHeaderCore">
         <div className="headerRow">
           <div className="titleRow">
-            <DashboardHeaderImage />
-            <div className="titleText">
-              <DashboardPageTitle />
-              {subtitle ? <p className="lead">{subtitle}</p> : null}
-            </div>
+              <DashboardHeaderImage />
+              <div className="titleText">
+                <DashboardPageTitle />
+              </div>
           </div>
           <Link href="/upload" className="navLink">
             <UploadCloud aria-hidden="true" />

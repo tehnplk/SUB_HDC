@@ -118,7 +118,7 @@ export default function TargetGroupKpiIndexPage() {
 
         <ul className="moduleTopicList moduleTopicListSmall">
           <li>
-            <Link href="/target-group/kpi/dm-ht-count" className="moduleTopicLink">
+            <Link href="/target-group/kpi/dm-ht" className="moduleTopicLink">
               <span className="moduleTopicBullet" aria-hidden="true" />
               <span className="standardMenuText">
                 <strong>จำนวนผู้ป่วย DM/HT</strong>

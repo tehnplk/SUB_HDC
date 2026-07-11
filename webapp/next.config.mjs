@@ -27,7 +27,12 @@ const nextConfig = {
       },
       {
         source: "/standard/dm-ht-count",
-        destination: "/target-group/kpi/dm-ht-count",
+        destination: "/target-group/kpi/dm-ht",
+        permanent: true,
+      },
+      {
+        source: "/target-group/kpi/dm-ht-count",
+        destination: "/target-group/kpi/dm-ht",
         permanent: true,
       },
       {

@@ -25,7 +25,7 @@
   --radius: 10px;
   --radius-lg: 14px;
   --app-content-width: 1440px;
-  --app-gutter: clamp(16px, 2vw, 32px);
+  --app-gutter: 15px;
 }
 
 * {
@@ -52,7 +52,7 @@ body {
   display: grid;
   min-height: 100vh;
   place-items: center;
-  padding: 32px var(--app-gutter);
+  padding: 15px var(--app-gutter);
 }
 
 .panel {
@@ -2235,7 +2235,7 @@ button:disabled {
 .tabsContainer {
   display: flex;
   gap: 8px;
-  margin: 8px 0 12px;
+  margin: 0 0 12px;
   padding: 4px;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -2302,11 +2302,30 @@ button:disabled {
 }
 
 .pageHeaderTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   margin: 0 0 10px;
   color: var(--accent-strong);
   font-size: 24px;
   font-weight: 800;
   line-height: 1.2;
+}
+
+.pageHeaderTitle .headerSubline {
+  flex-basis: 100%;
+  order: 2;
+  margin-top: 2px;
+}
+
+.pageHeaderTitle > .pageHeaderName,
+.pageHeaderTitle > .dbStatusLabel,
+.pageHeaderTitle > .visitCounterBadge {
+  order: 1;
+}
+
+.pageHeaderTitle .headerSubline .versionLabel {
+  margin-left: 0;
 }
 
 .versionLabel {

@@ -8,6 +8,8 @@ const personPage = readFileSync(new URL("../app/person/page.js", import.meta.url
 
 test("application modules share one bounded content shell", () => {
   assert.match(css, /--app-content-width: 1440px/);
+  assert.match(css, /--app-gutter: 15px/);
+  assert.match(css, /\.main \{[\s\S]*?padding: 15px var\(--app-gutter\)/);
   assert.match(css, /\.panelWide \{[\s\S]*?width: min\(var\(--app-content-width\), 100%\)/);
   assert.match(css, /\.uploadPanel \{[\s\S]*?width: min\(var\(--app-content-width\), 100%\)/);
   assert.doesNotMatch(css, /\.standardPanel \{\s*max-width: 1180px/);

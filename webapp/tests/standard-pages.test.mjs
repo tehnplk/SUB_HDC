@@ -7,7 +7,7 @@ const typeareaSource = readFileSync(new URL("../app/standard/person-typearea/pag
 const pyramidPageSource = readFileSync(new URL("../app/standard/person-pyramid/page.js", import.meta.url), "utf8");
 const pyramidApiSource = readFileSync(new URL("../app/api/person-pyramid/route.js", import.meta.url), "utf8");
 const dmHtPageSource = readFileSync(new URL("../app/target-group/kpi/page.js", import.meta.url), "utf8");
-const dmHtChildPageSource = readFileSync(new URL("../app/target-group/kpi/dm-ht-count/page.js", import.meta.url), "utf8");
+const dmHtChildPageSource = readFileSync(new URL("../app/target-group/kpi/dm-ht/page.js", import.meta.url), "utf8");
 const dmHtApiSource = readFileSync(new URL("../app/api/dm-ht-count/route.js", import.meta.url), "utf8");
 const nextConfigSource = readFileSync(new URL("../next.config.mjs", import.meta.url), "utf8");
 
@@ -17,7 +17,8 @@ test("standard index offers the requested population menus", () => {
   assert.match(indexSource, /href: "\/standard\/person-typearea"/);
   assert.match(indexSource, /href: "\/standard\/person-pyramid"/);
   assert.doesNotMatch(indexSource, /dm-ht-count/);
-  assert.match(nextConfigSource, /source: "\/standard\/dm-ht-count"[\s\S]*?destination: "\/target-group\/kpi\/dm-ht-count"/);
+  assert.match(nextConfigSource, /source: "\/standard\/dm-ht-count"[\s\S]*?destination: "\/target-group\/kpi\/dm-ht"/);
+  assert.match(nextConfigSource, /source: "\/target-group\/kpi\/dm-ht-count"[\s\S]*?destination: "\/target-group\/kpi\/dm-ht"/);
   assert.match(indexSource, /moduleTopicList/);
   assert.match(indexSource, /moduleTopicBullet/);
   assert.doesNotMatch(indexSource, /standardIntro|standardMenuCard/);

@@ -106,7 +106,8 @@ export default function DashboardPageTitle() {
 
   return (
     <h4 className="pageHeaderTitle">
-      SUB-HDC{centerSuffix}
+      <span className="pageHeaderName">SUB-HDC{centerSuffix}</span>
+      <span className="headerSubline">
       <Link
         href="/update-log"
         className={`versionLabel${newerVersion ? " versionLabelUpdate" : ""}`}
@@ -115,6 +116,7 @@ export default function DashboardPageTitle() {
       >
         {newerVersion && showNewer ? `ตรวจพบเวอร์ชั่นใหม่กว่า ${newerVersion}` : `Version ${currentVersion}`}
       </Link>
+      </span>
       <span className={`dbStatusLabel dbStatusLabel-${dbStatus}`} title={`Database ${dbLabel}`}>
         <Database aria-hidden="true" />
         <span>{dbLabel}</span>

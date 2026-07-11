@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const headerSource = readFileSync(new URL("../components/module-header.jsx", import.meta.url), "utf8");
+const pageTitleSource = readFileSync(new URL("../components/dashboard-page-title.jsx", import.meta.url), "utf8");
 const mainTabSource = readFileSync(new URL("../components/main-tab.jsx", import.meta.url), "utf8");
 const typeareaSource = readFileSync(new URL("../app/dashboard/person-target/page.js", import.meta.url), "utf8");
 const pyramidSource = readFileSync(new URL("../app/standard/person-pyramid/page.js", import.meta.url), "utf8");
@@ -15,16 +16,22 @@ test("ModuleHeader owns the shared title and main navigation without a redundant
   assert.match(headerSource, /DashboardHeaderImage/);
   assert.match(headerSource, /DashboardPageTitle/);
   assert.match(headerSource, /MainTab/);
+  assert.doesNotMatch(headerSource, /subtitle \? <p className="lead">/);
   assert.doesNotMatch(headerSource, /moduleTopic|topic/);
   assert.match(headerSource, /href="\/upload"/);
   assert.match(headerSource, /UploadCloud/);
   assert.doesNotMatch(headerSource, /ACTIONS|selectedAction|action =/);
   assert.match(headerSource, /moduleBreadcrumb/);
   assert.match(headerSource, /aria-label="Breadcrumb"/);
+  assert.match(pageTitleSource, /className="headerSubline"/);
+  assert.match(globalCss, /\.pageHeaderTitle \{[\s\S]*?flex-wrap: wrap/);
+  assert.match(globalCss, /\.pageHeaderTitle \.headerSubline \{[\s\S]*?order: 2/);
+  assert.match(globalCss, /\.pageHeaderTitle \.headerSubline \{[\s\S]*?margin-top: 2px/);
 });
 
 test("shared module header separates main navigation from breadcrumbs with a dashed rule", () => {
   assert.match(globalCss, /\.moduleHeaderCore\s*\{[\s\S]*?border-bottom:\s*1px dashed var\(--border\)/);
+  assert.match(globalCss, /\.tabsContainer \{[\s\S]*?margin: 0 0 12px/);
   assert.match(globalCss, /\.moduleBreadcrumb/);
 });
 
@@ -58,13 +65,13 @@ test("target-group is a main-tab module with an index menu of its child topics",
     new URL("../app/target-group/kpi/page.js", import.meta.url),
     "utf8"
   );
-  assert.match(targetGroupKpiSource, /href="\/target-group\/kpi\/dm-ht-count"/);
+  assert.match(targetGroupKpiSource, /href="\/target-group\/kpi\/dm-ht"/);
   assert.match(targetGroupKpiSource, /จำนวนผู้ป่วย DM\/HT/);
   assert.doesNotMatch(targetGroupKpiSource, /<small>/);
   assert.match(targetGroupKpiSource, /moduleTopicListSmall/);
   assert.match(globalCss, /\.moduleTopicListSmall \.standardMenuText strong\s*\{\s*font-size:\s*14px;/);
   assert.match(targetGroupIndexSource, /กลุ่มเป้าหมายการจัดเก็บรายได้/);
-  assert.match(headerSource, /"\/target-group\/kpi\/dm-ht-count": "จำนวนผู้ป่วย DM\/HT"/);
+  assert.match(headerSource, /"\/target-group\/kpi\/dm-ht": "จำนวนผู้ป่วย DM\/HT"/);
 });
 
 test("rapid is a right-aligned main-tab module with a title-only topic list", () => {
