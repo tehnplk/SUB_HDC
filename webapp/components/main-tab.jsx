@@ -26,6 +26,7 @@ const BADGE_BLINK_MS = 10000;
 function renderTab(tab, pathname, badgeBlink, extraClass = "") {
   const Icon = tab.Icon;
   const isActive = pathname === tab.href
+    || (tab.href === "/quality" && pathname.startsWith("/quality/"))
     || (tab.href === "/standard/index" && pathname.startsWith("/standard/"))
     || (tab.href === "/import-check/index" && pathname.startsWith("/import-check/"))
     || (tab.href === "/target-group/index" && pathname.startsWith("/target-group/"))

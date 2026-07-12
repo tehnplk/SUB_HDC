@@ -27,7 +27,14 @@ const BREADCRUMB_MODULES = [
       "/standard/person-pyramid": "ประชากรแยกช่วงอายุ 5 ปี",
     },
   },
-  { prefix: "/quality", href: "/quality", label: "คุณภาพ" },
+  {
+    prefix: "/quality",
+    href: "/quality",
+    label: "คุณภาพ",
+    pages: {
+      "/quality/person-dup": "ประชากร TYPE 1 และ 3 ซ้ำกัน",
+    },
+  },
   {
     prefix: "/target-group",
     href: "/target-group/index",

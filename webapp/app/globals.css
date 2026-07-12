@@ -643,6 +643,58 @@ button:disabled {
   text-transform: uppercase;
 }
 
+.qualityCheckList {
+  margin: 16px 0 20px;
+  padding-left: 28px;
+  list-style: decimal;
+}
+
+.qualityCheckList li {
+  display: list-item;
+  padding: 4px 0;
+}
+
+.qualityCheckList li::marker {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.qualityCheckList a {
+  color: var(--accent-strong);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.qualityCheckList a:hover {
+  text-decoration: underline;
+}
+
+.personDupTable tbody tr + tr td {
+  border-top: 2px solid var(--border-strong);
+}
+
+.personDupTable tbody td {
+  vertical-align: top;
+  font-size: 12px;
+}
+
+.dupLine {
+  display: block;
+}
+
+.dupLatest {
+  text-decoration: underline;
+  text-decoration-color: #dc2626;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.dupLine + .dupLine {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--border);
+}
+
 .personTargetStatGrid {
   grid-template-columns: repeat(5, minmax(0, 1fr));
   margin: 16px 0 20px;
