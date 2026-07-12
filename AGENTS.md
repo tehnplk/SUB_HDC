@@ -13,7 +13,8 @@
 - use `db-cli` skill for manipulate database.
 - read @.env  for database credentials.
 - Never delete any data in tabel `c_file`
-- table name in c_file table  is  main data table
+- table name in c_file table  is  main raw data table
+- if user request to query data look at transform  tables first (prefix t_ , s_)
 
 ## testing/investigate by browser
 - use `playwright-cli` skill for testing or investigate
