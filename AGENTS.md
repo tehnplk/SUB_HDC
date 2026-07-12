@@ -42,4 +42,6 @@ playwright-cli show --annotate
  - you must update handoff doc ของระบบที่เกี่ยวข้อง if user request.
 
  ## When done the task
- - just say `I have done.`
+ - just say `I have done.`  
+ - Don't explain too much.
+ - Summarize it as briefly as possible.
