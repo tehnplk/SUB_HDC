@@ -22,5 +22,11 @@
     "script": "jobs/hdc/hdc_api_s_persontype.js",
     "cron": "0 3 * * *",
     "enabled": true
+  },
+  {
+    "name": "hdc_api_report",
+    "script": "jobs/hdc/hdc_api_report.js",
+    "cron": "30 3 * * *",
+    "enabled": true
   }
 ]

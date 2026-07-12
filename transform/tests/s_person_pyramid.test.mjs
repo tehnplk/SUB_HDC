@@ -5,7 +5,7 @@ import test from "node:test";
 
 const sqlPath = path.resolve(process.cwd(), "transform", "sql", "s_person_pyramid.sql");
 
-test("s_person_pyramid summarizes Typearea 1/3 active people in five-year bands", async () => {
+test("s_person_pyramid summarizes t_person_type_1_3 in five-year bands", async () => {
   const sql = await readFile(sqlPath, "utf8");
 
   assert.match(sql, /CREATE TABLE IF NOT EXISTS `s_person_pyramid`/i);
@@ -14,11 +14,12 @@ test("s_person_pyramid summarizes Typearea 1/3 active people in five-year bands"
   assert.match(sql, /`male` int UNSIGNED NOT NULL DEFAULT 0/i);
   assert.match(sql, /`female` int UNSIGNED NOT NULL DEFAULT 0/i);
   assert.match(sql, /PRIMARY KEY \(`hospcode`, `age_range`\)/i);
-  assert.match(sql, /FROM `person`/i);
-  assert.match(sql, /`discharge` = '9'/i);
-  assert.match(sql, /`typearea` IN \('1', '3'\)/i);
-  assert.match(sql, /`sex` IN \('1', '2'\)/i);
-  assert.match(sql, /TIMESTAMPDIFF\(YEAR, STR_TO_DATE\(`birth`, '%Y%m%d'\), CURDATE\(\)\)/i);
+  assert.match(sql, /FROM `t_person_type_1_3`/i);
+  assert.match(sql, /p\.`fiscal_year` = 2569/i);
+  assert.match(sql, /JOIN JSON_TABLE/i);
+  assert.match(sql, /sex_values\.`row_no` = hos_values\.`row_no`/i);
+  assert.match(sql, /age_values\.`row_no` = hos_values\.`row_no`/i);
+  assert.match(sql, /sex_values\.`sex` IN \('1', '2'\)/i);
   assert.match(sql, /FLOOR\(`age_years` \/ 5\) \* 5/i);
   assert.match(sql, /WHEN `age_years` >= 85 THEN '85\+'/i);
   assert.match(sql, /ELSE FLOOR\(`age_years` \/ 5\) \* 5 END/i);

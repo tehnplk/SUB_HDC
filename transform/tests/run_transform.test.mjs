@@ -45,6 +45,12 @@ test("RUN_ORDER lists t_person_type_1_3 before t_person_dm_ht", () => {
   );
 });
 
+test("RUN_ORDER lists t_person_type_1_3 before s_person_pyramid", () => {
+  assert.ok(
+    RUN_ORDER.indexOf("t_person_type_1_3.sql") < RUN_ORDER.indexOf("s_person_pyramid.sql")
+  );
+});
+
 test("msUntilNextHour schedules the next top-of-hour run", () => {
   const now = new Date(2026, 6, 10, 10, 35, 12, 500);
   assert.equal(msUntilNextHour(now), 24 * 60 * 1000 + 47 * 1000 + 500);

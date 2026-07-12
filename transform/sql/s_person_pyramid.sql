@@ -1,5 +1,5 @@
 -- Population pyramid by service unit and five-year age band.
--- Includes only active residents in Typearea 1 or 3; sex 1 = male, 2 = female.
+-- Summarizes the fiscal-year Typearea 1/3 snapshot in t_person_type_1_3.
 CREATE TABLE IF NOT EXISTS `s_person_pyramid` (
   `hospcode` varchar(10) NOT NULL,
   `age_range` varchar(20) NOT NULL,
@@ -15,7 +15,7 @@ DELETE FROM `s_person_pyramid`;
 
 INSERT INTO `s_person_pyramid` (`hospcode`, `age_range`, `male`, `female`)
 SELECT
-  `hospcode`,
+  `hos` AS `hospcode`,
   CASE
     WHEN `age_years` >= 85 THEN '85+'
     ELSE CONCAT(FLOOR(`age_years` / 5) * 5, '-', FLOOR(`age_years` / 5) * 5 + 4)
@@ -24,17 +24,27 @@ SELECT
   SUM(`sex` = '2') AS `female`
 FROM (
   SELECT
-    `hospcode`,
-    `sex`,
-    TIMESTAMPDIFF(YEAR, STR_TO_DATE(`birth`, '%Y%m%d'), CURDATE()) AS `age_years`
-  FROM `person`
-  WHERE `discharge` = '9'
-    AND `typearea` IN ('1', '3')
-    AND `sex` IN ('1', '2')
-    AND `birth` REGEXP '^[0-9]{8}$'
-    AND STR_TO_DATE(`birth`, '%Y%m%d') IS NOT NULL
+    hos_values.`hos`,
+    sex_values.`sex`,
+    CAST(age_values.`age_years` AS UNSIGNED) AS `age_years`
+  FROM `t_person_type_1_3` p
+  CROSS JOIN JSON_TABLE(
+    CONCAT('["', REPLACE(p.`hos`, ',', '","'), '"]'),
+    '$[*]' COLUMNS (`row_no` FOR ORDINALITY, `hos` varchar(10) PATH '$')
+  ) AS hos_values
+  JOIN JSON_TABLE(
+    CONCAT('["', REPLACE(p.`sex`, ',', '","'), '"]'),
+    '$[*]' COLUMNS (`row_no` FOR ORDINALITY, `sex` varchar(1) PATH '$')
+  ) AS sex_values ON sex_values.`row_no` = hos_values.`row_no`
+  JOIN JSON_TABLE(
+    CONCAT('["', REPLACE(p.`age_y`, ',', '","'), '"]'),
+    '$[*]' COLUMNS (`row_no` FOR ORDINALITY, `age_years` varchar(3) PATH '$')
+  ) AS age_values ON age_values.`row_no` = hos_values.`row_no`
+  WHERE p.`fiscal_year` = 2569
+    AND sex_values.`sex` IN ('1', '2')
+    AND age_values.`age_years` REGEXP '^[0-9]+$'
 ) AS `person_age`
 WHERE `age_years` >= 0
-GROUP BY `hospcode`, CASE WHEN `age_years` >= 85 THEN 85 ELSE FLOOR(`age_years` / 5) * 5 END;
+GROUP BY `hos`, CASE WHEN `age_years` >= 85 THEN 85 ELSE FLOOR(`age_years` / 5) * 5 END;
 
 COMMIT;

@@ -97,3 +97,14 @@ node --test tests\*.test.mjs
 
 compose-level assertions อยู่ที่ `webapp/tests/docker-compose-migrations.test.mjs`
 (รายการ jobs + env ของ service sync)
+
+## HDC report metadata sync
+
+- Job: `hdc_api_report` (`jobs/hdc/hdc_api_report.js`)
+- Schedule: daily at `03:30` via `sync-jobs.json`
+- Source: GET `/category`, followed by GET `/report/{cat_id}` for every category
+- Destination: `hdc_api_report`, created by migration
+  `20260712_create_hdc_api_report.sql`
+- Write behavior: transactional upsert by `id`; empty API payloads are rejected so
+  existing rows remain intact
+- Optional env: `HDC_API_BASE_URL` (default `https://opendata.moph.go.th/api`)
