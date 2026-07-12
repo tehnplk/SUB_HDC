@@ -18,8 +18,33 @@ CREATE TABLE IF NOT EXISTS `t_person_type_1_3` (
   `age_d` text DEFAULT NULL,
   `inscl` text DEFAULT NULL,
   `village_id` text DEFAULT NULL,
+  `d_update` text DEFAULT NULL,
   PRIMARY KEY (`fiscal_year`, `cid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+
+-- Existing installations predate d_update. Keep this one-time schema alignment
+-- inside the transform system rather than a migration.
+SET @d_update_column_state := (
+  SELECT CASE
+    WHEN COUNT(*) = 0 THEN 'missing'
+    WHEN MAX(ordinal_position) = (SELECT MAX(ordinal_position)
+      FROM information_schema.columns
+      WHERE table_schema = DATABASE() AND table_name = 't_person_type_1_3') THEN 'last'
+    ELSE 'not_last'
+  END
+  FROM information_schema.columns
+  WHERE table_schema = DATABASE()
+    AND table_name = 't_person_type_1_3'
+    AND column_name = 'd_update'
+);
+SET @align_d_update_sql := CASE @d_update_column_state
+  WHEN 'missing' THEN 'ALTER TABLE `t_person_type_1_3` ADD COLUMN `d_update` text DEFAULT NULL AFTER `village_id`'
+  WHEN 'not_last' THEN 'ALTER TABLE `t_person_type_1_3` MODIFY COLUMN `d_update` text DEFAULT NULL AFTER `village_id`'
+  ELSE 'SELECT 1'
+END;
+PREPARE align_d_update_statement FROM @align_d_update_sql;
+EXECUTE align_d_update_statement;
+DEALLOCATE PREPARE align_d_update_statement;
 
 SET @fiscal_year := 2569;
 SET @fiscal_start := STR_TO_DATE('20251001', '%Y%m%d');
@@ -55,7 +80,8 @@ SELECT
     THEN TIMESTAMPDIFF(YEAR, STR_TO_DATE(p.`birth`, '%Y%m%d'), @fiscal_start)
     ELSE NULL
   END AS `age_y`,
-  p.`hid`
+  p.`hid`,
+  NULLIF(p.`d_update`, '') AS `d_update`
 FROM `person` p
 WHERE p.`typearea` IN ('1', '3')
   AND p.`discharge` = '9'
@@ -141,14 +167,15 @@ SELECT
       AND h.`village` REGEXP '^[0-9]{2}$'
     THEN CONCAT(h.`changwat`, h.`ampur`, h.`tambon`, h.`village`)
     ELSE NULL
-  END AS `village_id`
+  END AS `village_id`,
+  p.`d_update`
 FROM `tmp_person_type_1_3` p
 LEFT JOIN `tmp_person_type_1_3_card` c
   ON c.`hospcode` = p.`hos` AND c.`pid` = p.`pid`
 LEFT JOIN `home` h ON h.`hospcode` = p.`hos` AND h.`hid` = p.`hid`;
 
 INSERT INTO `t_person_type_1_3`
-  (`fiscal_year`, `cid`, `name`, `hn`, `hos`, `pid`, `type`, `sex`, `nation`, `bdate`, `age_y`, `age_m`, `age_d`, `inscl`, `village_id`)
+  (`fiscal_year`, `cid`, `name`, `hn`, `hos`, `pid`, `type`, `sex`, `nation`, `bdate`, `age_y`, `age_m`, `age_d`, `inscl`, `village_id`, `d_update`)
 SELECT
   `fiscal_year`,
   `cid`,
@@ -164,7 +191,8 @@ SELECT
   GROUP_CONCAT(IFNULL(CAST(`age_m` AS CHAR), '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `age_m`,
   GROUP_CONCAT(IFNULL(CAST(`age_d` AS CHAR), '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `age_d`,
   GROUP_CONCAT(IFNULL(`inscl`, '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `inscl`,
-  GROUP_CONCAT(IFNULL(`village_id`, '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `village_id`
+  GROUP_CONCAT(IFNULL(`village_id`, '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `village_id`,
+  GROUP_CONCAT(IFNULL(`d_update`, '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `d_update`
 FROM `tmp_person_type_1_3_detail`
 GROUP BY `fiscal_year`, `cid`;
 

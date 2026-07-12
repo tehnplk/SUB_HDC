@@ -70,7 +70,8 @@ docker exec sub_hdc_transform node -e "require('/transform/run_transform.js').ru
   ในตารางสรุป และห้าม `TRUNCATE` (DDL implicit commit, rollback ไม่ได้)
 - recurring transform ห้าม `DROP TABLE` ผลลัพธ์ก่อนคำนวณ เพราะถ้ารอบ fail
   ตารางจริงจะว่าง/หาย; ใช้ `CREATE TABLE IF NOT EXISTS` สำหรับ first run และแก้
-  schema ผ่าน migration แบบ one-time
+  schema ผ่าน transform SQL แบบ one-time (ตรวจ `information_schema` แล้ว `ALTER`
+  เฉพาะเมื่อยังไม่มีคอลัมน์)
 - temp table ใช้ได้ (`CREATE/DROP TEMPORARY` ไม่ implicit commit
   อยู่ใน transaction ได้)
 - 1 คอลัมน์ = 1 ความหมาย ค่าหลายตัวคั่นด้วย `,` ไม่ครอบ `[ ]`;

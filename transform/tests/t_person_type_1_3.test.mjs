@@ -17,6 +17,9 @@ test("t_person_type_1_3 keeps one row per fiscal year and CID", async () => {
   assert.doesNotMatch(sql, /CONCAT_WS\(/i);
   assert.match(sql, /p\.`typearea` AS `type`/i);
   assert.match(sql, /NULLIF\(p\.`nation`, ''\) AS `nation`/i);
+  assert.match(sql, /NULLIF\(p\.`d_update`, ''\) AS `d_update`/i);
+  assert.match(sql, /ADD COLUMN `d_update` text DEFAULT NULL AFTER `village_id`/i);
+  assert.match(sql, /MODIFY COLUMN `d_update` text DEFAULT NULL AFTER `village_id`/i);
   assert.match(sql, /FROM `person` p/i);
   assert.match(sql, /p\.`typearea` IN \('1', '3'\)/i);
   assert.match(sql, /p\.`discharge` = '9'/i);
@@ -51,7 +54,7 @@ test("t_person_type_1_3 selects fiscal-start insurance and builds an eight-digit
 test("all non-key fields are position-aligned CSV values", async () => {
   const sql = await readFile(sqlPath, "utf8");
 
-  for (const field of ["name", "hn", "hos", "pid", "type", "sex", "nation", "bdate", "age_y", "age_m", "age_d", "inscl", "village_id"]) {
+  for (const field of ["name", "hn", "hos", "pid", "type", "sex", "nation", "d_update", "bdate", "age_y", "age_m", "age_d", "inscl", "village_id"]) {
     assert.match(
       sql,
       new RegExp("GROUP_CONCAT\\(IFNULL\\([\\s\\S]*?ORDER BY `hos`, `pid` SEPARATOR ','\\) AS `" + field + "`", "i")
@@ -75,5 +78,5 @@ test("transform dictionary documents t_person_type_1_3", async () => {
   assert.ok(entry);
   assert.equal(entry.sql_file, "t_person_type_1_3.sql");
   assert.deepEqual(entry.source_tables, ["person", "card", "home"]);
-  assert.equal(entry.schema, "fiscal_year,cid,name,hn,hos,pid,type,sex,nation,bdate,age_y,age_m,age_d,inscl,village_id");
+  assert.equal(entry.schema, "fiscal_year,cid,name,hn,hos,pid,type,sex,nation,bdate,age_y,age_m,age_d,inscl,village_id,d_update");
 });
