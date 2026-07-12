@@ -1,21 +1,13 @@
 # transform/sql — คิวรี่สร้างตารางสรุป `s_*`
 
 วางไฟล์ `.sql` ที่นี่ container `sub_hdc_transform` รันให้ทุกไฟล์
-**วันละครั้งเวลา 00:00** (+ รอบแรกตอน container start) เรียงตามชื่อไฟล์ —
+**วันละครั้งเวลา 00:00** และรันไฟล์ใน `TRANSFORM_HOURLY_SQL_FILES`
+เพิ่มทุกต้นชั่วโมง (ค่าเริ่มต้น `s_visit_montly.sql`) — ไม่รันรอบแรกตอน
+container start เว้นแต่ตั้ง `TRANSFORM_RUN_ON_START=true` —
 โฟลเดอร์ mount สด แก้ไฟล์แล้วมีผลรอบถัดไปไม่ต้อง rebuild
 ถ้าถึงรอบแล้วกำลัง import จะเลื่อนไป retry ทุก 5 นาทีจน import จบ
 
-ไฟล์ต้อง self-contained รันซ้ำได้ — แบบ upsert:
-
-```sql
-CREATE TABLE IF NOT EXISTS `s_x` (...);
-
-INSERT INTO `s_x` (...)
-SELECT ...
-ON DUPLICATE KEY UPDATE ...;
-```
-
-หรือแบบ full replace (เคลียร์แถวที่หายจากต้นทางด้วย):
+ไฟล์ต้อง self-contained รันซ้ำได้และใช้ full replace เพื่อเคลียร์แถวที่หายจากต้นทาง:
 
 ```sql
 CREATE TABLE IF NOT EXISTS `s_x` (...);
@@ -26,6 +18,10 @@ INSERT INTO `s_x` SELECT ...;
 COMMIT;
 ```
 
+ห้าม `DROP TABLE` ใน recurring transform; ถ้าต้องแก้ schema ให้ทำ migration
+แบบ one-time เพื่อให้ข้อมูลรอบเดิมยังอยู่เมื่อ transform fail
+
 ปรับรอบ: env `TRANSFORM_RUN_AT` (HH:MM, default 00:00) /
-`TRANSFORM_RUN_ON_START` (default true) / `TRANSFORM_POLL_MS`
+`TRANSFORM_HOURLY_SQL_FILES` (default `s_visit_montly.sql`) /
+`TRANSFORM_RUN_ON_START` (default false) / `TRANSFORM_POLL_MS`
 ดู log: `docker logs sub_hdc_transform`

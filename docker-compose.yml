@@ -146,8 +146,8 @@ services:
     image: sub-hdc-transform
     container_name: sub_hdc_transform
     restart: unless-stopped
-    # รัน transform/sql/*.sql สร้างตารางสรุป s_* วันละครั้งเวลา 00:00
-    # (+ ตอน start) ให้หน้า dashboard/report ใช้. เลื่อนรอบเองถ้ากำลัง import
+    # รัน transform/sql/*.sql ทุกไฟล์วันละครั้งเวลา 00:00 และไฟล์ที่กำหนดเพิ่มทุกชั่วโมง
+    # (ไม่รันตอน start โดย default) ให้หน้า dashboard/report ใช้. เลื่อนรอบเองถ้ากำลัง import
     depends_on:
       migrate:
         condition: service_completed_successfully

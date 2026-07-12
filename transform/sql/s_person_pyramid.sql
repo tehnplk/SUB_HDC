@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS `s_person_pyramid` (
   `female` int UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`hospcode`, `age_range`),
   KEY `idx_s_person_pyramid_age_range` (`age_range`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 START TRANSACTION;
 

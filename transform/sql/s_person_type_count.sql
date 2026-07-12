@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS `s_person_type_count` (
   `type_4` int NOT NULL DEFAULT 0,
   `type_5` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`hospcode`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 START TRANSACTION;
 

@@ -9,8 +9,8 @@ const dictionaryPath = path.resolve(process.cwd(), "transform", "transform_data_
 test("t_person_type_1_3 keeps one row per fiscal year and CID", async () => {
   const sql = await readFile(sqlPath, "utf8");
 
-  assert.match(sql, /DROP TABLE IF EXISTS `t_person_type_1_3`/i);
-  assert.match(sql, /CREATE TABLE `t_person_type_1_3`/i);
+  assert.doesNotMatch(sql, /DROP TABLE IF EXISTS `t_person_type_1_3`/i);
+  assert.match(sql, /CREATE TABLE IF NOT EXISTS `t_person_type_1_3`/i);
   assert.match(sql, /PRIMARY KEY \(`fiscal_year`, `cid`\)/i);
   assert.match(sql, /NULLIF\(p\.`name`, ''\) AS `name`/i);
   assert.match(sql, /NULLIF\(p\.`hn`, ''\) AS `hn`/i);
@@ -20,6 +20,7 @@ test("t_person_type_1_3 keeps one row per fiscal year and CID", async () => {
   assert.match(sql, /FROM `person` p/i);
   assert.match(sql, /p\.`typearea` IN \('1', '3'\)/i);
   assert.match(sql, /p\.`discharge` = '9'/i);
+  assert.match(sql, /p\.`cid` <> ''/i);
   assert.match(sql, /GROUP BY `fiscal_year`, `cid`/i);
 });
 

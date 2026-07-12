@@ -16,14 +16,17 @@
 
 | env | default | ความหมาย |
 |---|---|---|
-| `TRANSFORM_RUN_AT` | `23:00` | รอบเต็มวันละครั้ง (TZ Asia/Bangkok) |
+| `TRANSFORM_RUN_AT` | `00:00` | รอบเต็มวันละครั้ง (TZ Asia/Bangkok) |
 | `TRANSFORM_RUN_ON_START` | `false` | ไม่รันตอน container start |
 | `TRANSFORM_HOURLY_SQL_FILES` | `s_visit_montly.sql` | ไฟล์ที่รันเพิ่มทุกต้นชั่วโมง |
 | `TRANSFORM_POLL_MS` | 300000 | จังหวะ retry เมื่อรอบถูกเลื่อน |
 
 - ถ้ากำลัง import (`log_import_file` มี pending/processing) รอบถูกเลื่อน
   แล้ว retry จนสำเร็จ — เช็คซ้ำก่อนทุกไฟล์
+- ทุก process ใช้ MariaDB advisory lock ชื่อ `sub_hdc_transform_cycle` ป้องกัน
+  daemon/manual run ซ้อนกัน; ถ้ามีรอบอื่นทำงานอยู่จะรอ retry
 - ไฟล์ไหน error ข้ามไปไฟล์ถัดไป ไม่ล้มทั้งรอบ
+  แต่รอบนั้นคืนสถานะไม่สำเร็จเพื่อให้ scheduler retry
 - ทุก task log ลง `log_transform` — แถวที่ `finish_at` เป็น NULL คือรอบ fail;
   หน้าเว็บใช้ `finish_at` ล่าสุดแสดง "Transform ล่าสุด"
 
@@ -59,11 +62,15 @@ docker exec sub_hdc_transform node -e "require('/transform/run_transform.js').ru
 
 ## กติกาการเขียนไฟล์ SQL
 
+- ตารางผลลัพธ์และ temporary table ใช้ `utf8mb3_general_ci` ให้ตรงกับ raw F43
+  เพื่อให้ join/compare string ไม่ต้องแปลง collation; ก่อนรันแต่ละไฟล์
+  `run_transform.js` ตรวจ output table และแปลงเฉพาะตารางเดิมที่ยังไม่ตรง
 - **full replace เสมอ**: `START TRANSACTION; DELETE FROM ...; INSERT ...; COMMIT;`
   — ห้าม upsert (`ON DUPLICATE KEY UPDATE`) เพราะแถวของต้นทางที่ถูกลบจะค้าง
   ในตารางสรุป และห้าม `TRUNCATE` (DDL implicit commit, rollback ไม่ได้)
-- **แก้ schema ต้อง `DROP TABLE IF EXISTS` ก่อน CREATE** — ไซต์เก่ามีตารางเดิม
-  อยู่ `CREATE TABLE IF NOT EXISTS` เฉย ๆ จะไม่ได้โครงสร้างใหม่
+- recurring transform ห้าม `DROP TABLE` ผลลัพธ์ก่อนคำนวณ เพราะถ้ารอบ fail
+  ตารางจริงจะว่าง/หาย; ใช้ `CREATE TABLE IF NOT EXISTS` สำหรับ first run และแก้
+  schema ผ่าน migration แบบ one-time
 - temp table ใช้ได้ (`CREATE/DROP TEMPORARY` ไม่ implicit commit
   อยู่ใน transaction ได้)
 - 1 คอลัมน์ = 1 ความหมาย ค่าหลายตัวคั่นด้วย `,` ไม่ครอบ `[ ]`;
@@ -71,10 +78,19 @@ docker exec sub_hdc_transform node -e "require('/transform/run_transform.js').ru
   `GROUP_CONCAT ... ORDER BY` ตัวเดียวกัน และเก็บค่าว่างเป็นช่องว่าง ไม่ข้าม
 - ตารางทะเบียนรายคน: 1 cid = 1 แถว
 
+### Performance ของทะเบียน DM/HT
+
+- `t_person_dm_ht.sql` ใช้ range บนรหัสโรค (`E10 <= code < E15`,
+  `I10 <= code < I16`) แทน `REGEXP` เพื่อใช้ index ของ diagnosis/chronic
+- ทุก branch join `t_person_type_1_3` ด้วย `fiscal_year + cid` ให้ใช้ primary key
+  และกรองเฉพาะประชากรเป้าหมายก่อน `GROUP BY`
+- chronic บังคับ `idx_chronic_chronic_cid` เพราะ production optimizer เคยเลือก
+  index `cid` แล้ว scan ทั้งตาราง
+
 ## Deploy
 
 - แก้เฉพาะ `sql/*.sql` → บน host แค่ `git pull` แล้วสั่ง `runOnce`
-  ถ้าไม่อยากรอรอบ 23:00
+  ถ้าไม่อยากรอรอบ 00:00
 - แก้ `run_transform.js` → `git pull && docker compose up -d --build transform`
 
 ## การทดสอบ

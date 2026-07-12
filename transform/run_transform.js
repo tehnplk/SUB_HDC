@@ -1,7 +1,8 @@
 // Transform daemon: รันไฟล์ transform/sql/*.sql ทุกไฟล์ วันละครั้งเวลา RUN_AT
-// (default 23:00) — สร้าง/เติมตารางสรุป s_* ให้หน้า dashboard/report ใช้.
+// (default 00:00) และรันไฟล์ที่กำหนดใน HOURLY_SQL_FILES เพิ่มทุกต้นชั่วโมง
+// — สร้าง/เติมตารางสรุป s_* ให้หน้า dashboard/report ใช้.
 // เลื่อนรอบถ้ากำลัง import (retry ทุก POLL_MS จนสำเร็จ)
-// default ไม่รันตอน start (RUN_ON_START=false) — รอถึงรอบ 23:00 เท่านั้น
+// default ไม่รันตอน start (RUN_ON_START=false) — รอถึงรอบตามตารางเท่านั้น
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -16,12 +17,21 @@ try {
 
 const SQL_DIR = process.env.TRANSFORM_SQL_DIR || path.join(__dirname, "sql");
 // รันทุกวันเวลานี้ (HH:MM ตาม TZ ของ container = Asia/Bangkok)
-const RUN_AT = process.env.TRANSFORM_RUN_AT || "23:00";
+const RUN_AT = process.env.TRANSFORM_RUN_AT || "00:00";
 // default ไม่รันรอบแรกตอน container start — รอถึงเวลา RUN_AT เท่านั้น
 // (ตั้ง TRANSFORM_RUN_ON_START="true" ถ้าต้องการให้รันทันทีตอน start)
 const RUN_ON_START = (process.env.TRANSFORM_RUN_ON_START || "false") === "true";
 // จังหวะ retry เมื่อรอบโดนเลื่อนเพราะกำลัง import
 const POLL_MS = Number(process.env.TRANSFORM_POLL_MS || 5 * 60 * 1000);
+const TRANSFORM_LOCK_NAME = process.env.TRANSFORM_LOCK_NAME || "sub_hdc_transform_cycle";
+const TRANSFORM_COLLATION = "utf8mb3_general_ci";
+const TRANSFORM_TABLE_BY_FILE = {
+  "s_person_pyramid.sql": "s_person_pyramid",
+  "s_person_type_count.sql": "s_person_type_count",
+  "s_visit_montly.sql": "s_visit_montly",
+  "t_person_type_1_3.sql": "t_person_type_1_3",
+  "t_person_dm_ht.sql": "t_person_dm_ht",
+};
 const HOURLY_SQL_FILES = (process.env.TRANSFORM_HOURLY_SQL_FILES || "s_visit_montly.sql")
   .split(",")
   .map((name) => name.trim().toLowerCase())
@@ -81,6 +91,35 @@ async function ensureLogTable(conn) {
   `);
 }
 
+async function acquireTransformLock(conn) {
+  const [[row]] = await conn.query("SELECT GET_LOCK(?, 0) AS acquired", [TRANSFORM_LOCK_NAME]);
+  return Number(row.acquired) === 1;
+}
+
+async function releaseTransformLock(conn) {
+  await conn.query("SELECT RELEASE_LOCK(?)", [TRANSFORM_LOCK_NAME]);
+}
+
+async function alignTransformCollation(conn, filename) {
+  const table = TRANSFORM_TABLE_BY_FILE[String(filename).toLowerCase()];
+  if (!table) return false;
+  const [rows] = await conn.query(
+    `SELECT table_collation
+       FROM information_schema.tables
+      WHERE table_schema = DATABASE() AND table_name = ?
+      LIMIT 1`,
+    [table]
+  );
+  if (!rows.length || String(rows[0].table_collation).toLowerCase() === TRANSFORM_COLLATION) {
+    return false;
+  }
+  await conn.query(
+    `ALTER TABLE \`${table}\` CONVERT TO CHARACTER SET utf8mb3 COLLATE ${TRANSFORM_COLLATION}`
+  );
+  console.log(`[transform] ${table} collation aligned to ${TRANSFORM_COLLATION}`);
+  return true;
+}
+
 // log พังต้องไม่ล้ม transform — คืน null แล้วรันงานต่อ
 async function logStart(conn, task) {
   try {
@@ -105,15 +144,21 @@ async function logFinish(conn, logId) {
 }
 
 // รันหนึ่งรอบ: ข้ามทั้งรอบถ้ากำลัง import (เช็คซ้ำก่อนทุกไฟล์ — import แทรก
-// กลางรอบต้องหยุดทันที) ไฟล์ไหน error ข้ามไปไฟล์ถัดไป. คืน true ถ้ารันจบรอบ
+// กลางรอบต้องหยุดทันที) ไฟล์ไหน error ข้ามไปไฟล์ถัดไป แต่คืน false เพื่อ retry รอบ
 async function runOnce(files = listSqlFiles()) {
   if (!files.length) {
     console.log(`[transform] no sql files in ${SQL_DIR}`);
     return true;
   }
   const conn = await mysql.createConnection(getDbConfig());
+  let lockAcquired = false;
   try {
     await ensureLogTable(conn);
+    lockAcquired = await acquireTransformLock(conn);
+    if (!lockAcquired) {
+      console.log("[transform] another transform cycle is running; retry later");
+      return false;
+    }
     let ok = 0;
     let errors = 0;
     for (const file of files) {
@@ -127,6 +172,7 @@ async function runOnce(files = listSqlFiles()) {
       const started = Date.now();
       const logId = await logStart(conn, name);
       try {
+        await alignTransformCollation(conn, name);
         await conn.query(sql);
         await logFinish(conn, logId);
         ok += 1;
@@ -139,8 +185,9 @@ async function runOnce(files = listSqlFiles()) {
       }
     }
     console.log(`[transform] cycle done: files=${files.length} ok=${ok} errors=${errors}`);
-    return true;
+    return errors === 0;
   } finally {
+    if (lockAcquired) await releaseTransformLock(conn).catch(() => {});
     await conn.end().catch(() => {});
   }
 }
@@ -205,6 +252,9 @@ if (require.main === module) {
 
 module.exports = {
   isImporting,
+  acquireTransformLock,
+  alignTransformCollation,
+  releaseTransformLock,
   listHourlySqlFiles,
   listSqlFiles,
   RUN_ORDER,

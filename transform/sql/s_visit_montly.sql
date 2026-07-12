@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS `s_visit_montly` (
   `visit_count` int UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`hospcode`, `year_month`),
   KEY `idx_s_visit_montly_year_month` (`year_month`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 START TRANSACTION;
 

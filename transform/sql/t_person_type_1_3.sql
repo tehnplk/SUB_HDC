@@ -2,9 +2,7 @@
 -- Grain: one row per fiscal_year + cid.
 -- All other fields are position-aligned CSV values ordered by hos + pid.
 
-DROP TABLE IF EXISTS `t_person_type_1_3`;
-
-CREATE TABLE `t_person_type_1_3` (
+CREATE TABLE IF NOT EXISTS `t_person_type_1_3` (
   `fiscal_year` smallint UNSIGNED NOT NULL,
   `cid` varchar(255) NOT NULL,
   `name` text DEFAULT NULL,
@@ -21,7 +19,7 @@ CREATE TABLE `t_person_type_1_3` (
   `inscl` text DEFAULT NULL,
   `village_id` text DEFAULT NULL,
   PRIMARY KEY (`fiscal_year`, `cid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 SET @fiscal_year := 2569;
 SET @fiscal_start := STR_TO_DATE('20251001', '%Y%m%d');
@@ -60,7 +58,8 @@ SELECT
   p.`hid`
 FROM `person` p
 WHERE p.`typearea` IN ('1', '3')
-  AND p.`discharge` = '9';
+  AND p.`discharge` = '9'
+  AND p.`cid` <> '';
 
 ALTER TABLE `tmp_person_type_1_3`
   ADD KEY `idx_tmp_person_type_1_3_hos_pid` (`hos`, `pid`),
