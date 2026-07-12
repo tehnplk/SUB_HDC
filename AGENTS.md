@@ -4,6 +4,7 @@
 - Get 3rd party data  from `https://opendata.moph.go.th/api/document/` by province = 65
 
 ## RULE
+- Spawn Sub-agent who set for topic user request first.
 - Do not commit , build , deploy if user not request.
 
 ## Research Tool
