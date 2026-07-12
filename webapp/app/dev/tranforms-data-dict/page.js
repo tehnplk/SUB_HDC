@@ -113,7 +113,7 @@ export default function TransformDataDictionaryPage() {
 
         <div className="tableMeta transformDictMeta">
           <span><TableProperties aria-hidden="true" /> {loading ? "กำลังโหลด Data Dictionary..." : `แสดง ${filteredRows.length} จาก ${rows.length} transform`}</span>
-          <span><Database aria-hidden="true" /> Source: transform/transform_data_dic.json</span>
+          <span><Database aria-hidden="true" /> Source: transform/transform_data_dict.json</span>
         </div>
 
         {error ? <div className="error">{error}</div> : null}

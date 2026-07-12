@@ -7,8 +7,8 @@ export const dynamic = "force-dynamic";
 function dictionaryPaths() {
   return [
     process.env.TRANSFORM_DATA_DICTIONARY_PATH,
-    path.join(process.cwd(), "transform_data_dic.json"),
-    path.resolve(process.cwd(), "..", "transform", "transform_data_dic.json"),
+    path.join(process.cwd(), "transform_data_dict.json"),
+    path.resolve(process.cwd(), "..", "transform", "transform_data_dict.json"),
   ].filter(Boolean);
 }
 

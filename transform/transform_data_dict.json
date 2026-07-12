@@ -2,8 +2,8 @@
   {
     "transform_table": "s_person_pyramid",
     "sql_file": "s_person_pyramid.sql",
-    "f43_tables": ["person"],
-    "stored_data": "เก็บจำนวนประชากรที่ยังไม่จำหน่าย (discharge = 9) และมี typearea 1 หรือ 3 แยกตามหน่วยบริการ ช่วงอายุ 5 ปี และเพศชาย/หญิง",
+    "f43_tables": ["t_person_type_1_3"],
+    "stored_data": "สรุปประชากร Typearea 1 หรือ 3 จาก t_person_type_1_3 ของปีงบประมาณ 2569 แยกตามหน่วยบริการ ช่วงอายุ 5 ปี และเพศชาย/หญิง โดยใช้ค่า hos, sex และ age_y ที่เรียงตำแหน่งตรงกัน",
     "schema": "hospcode,age_range,male,female"
   },
   {

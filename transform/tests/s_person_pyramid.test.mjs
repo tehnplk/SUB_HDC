@@ -4,6 +4,7 @@ import path from "node:path";
 import test from "node:test";
 
 const sqlPath = path.resolve(process.cwd(), "transform", "sql", "s_person_pyramid.sql");
+const dictionaryPath = path.resolve(process.cwd(), "transform", "transform_data_dict.json");
 
 test("s_person_pyramid summarizes t_person_type_1_3 in five-year bands", async () => {
   const sql = await readFile(sqlPath, "utf8");
@@ -35,4 +36,13 @@ test("s_person_pyramid replaces the complete summary in one transaction", async 
   assert.match(sql, /DELETE FROM `s_person_pyramid`;/i);
   assert.match(sql, /INSERT INTO `s_person_pyramid`/i);
   assert.match(sql, /COMMIT;/i);
+});
+
+test("transform dictionary records the pyramid transform dependency", async () => {
+  const dictionary = JSON.parse(await readFile(dictionaryPath, "utf8"));
+  const entry = dictionary.find((item) => item.transform_table === "s_person_pyramid");
+
+  assert.deepEqual(entry.f43_tables, ["t_person_type_1_3"]);
+  assert.match(entry.stored_data, /ปีงบประมาณ 2569/);
+  assert.match(entry.stored_data, /hos, sex และ age_y/);
 });

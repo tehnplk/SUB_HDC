@@ -103,7 +103,7 @@ node --test tests\*.test.mjs
 
 ## เพิ่ม transform ใหม่ (ทำตามลำดับ)
 
-1. **research transform table ที่มีอยู่ก่อน** — อ่าน `transform/transform_data_dic.json`
+1. **research transform table ที่มีอยู่ก่อน** — อ่าน `transform/transform_data_dict.json`
    (+ `transform/sql/*.sql`) ว่ามีตารางสรุปที่เก็บ population/คอลัมน์ที่ต้องการ
    อยู่แล้วหรือไม่ ถ้ามีให้ **ต่อยอดจากตารางสรุปนั้น ไม่ query raw ซ้ำ** (เช่น
    `t_person_dm_ht` ดึงทะเบียน/pid/hn/nation จาก `t_person_type_1_3` แทน raw
@@ -111,12 +111,12 @@ node --test tests\*.test.mjs
 2. ถ้าไปอ่านตารางสรุปของ transform อื่น → **ลงทะเบียนลำดับใน `run_order.js`**
    (ดูหัวข้อ "ลำดับการรัน" ด้านบน) ให้ตัวต้นทางรันก่อน
 3. เขียนไฟล์ SQL ตาม "กติกาการเขียนไฟล์ SQL" (full replace, DROP ก่อน CREATE ฯลฯ)
-4. เพิ่ม entry ใน `transform_data_dic.json` (ดูด้านล่าง)
+4. เพิ่ม entry ใน `transform_data_dict.json` (ดูด้านล่าง)
 5. เพิ่ม test ใน `tests/` — read-source assertion ของ SQL + ลำดับใน run_order ถ้ามี
 
 ## Transform data dictionary
 
-เมื่อสร้าง transform ใหม่ ต้องเพิ่มข้อมูลใน `transform/transform_data_dic.json` ทุกครั้ง
+เมื่อสร้าง transform ใหม่ ต้องเพิ่มข้อมูลใน `transform/transform_data_dict.json` ทุกครั้ง
 โดย 1 transform = 1 object และต้องมี key ดังนี้:
 
 - `transform_table`: ชื่อตารางผลลัพธ์ของ transform
@@ -126,6 +126,6 @@ node --test tests\*.test.mjs
 - `schema`: รายชื่อคอลัมน์ของตารางผลลัพธ์ เป็น text คั่นด้วย comma เช่น `hospcode,pid,...`
 
 ดูข้อมูลผ่าน DataGrid ได้ที่ `/dev/tranforms-data-dict` ซึ่งอ่านจาก
-`/api/dev/transform-data-dict` และไฟล์ `transform/transform_data_dic.json`.
+`/api/dev/transform-data-dict` และไฟล์ `transform/transform_data_dict.json`.
 คลิก `sql_file` เพื่อดู SQL code และ Copy ได้จาก modal.
 Floating user menu มีรายการ `Profile`, `Transform Dict`, และ `Logout` เท่านั้น.

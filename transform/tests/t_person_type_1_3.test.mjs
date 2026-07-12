@@ -4,7 +4,7 @@ import path from "node:path";
 import test from "node:test";
 
 const sqlPath = path.resolve(process.cwd(), "transform", "sql", "t_person_type_1_3.sql");
-const dictionaryPath = path.resolve(process.cwd(), "transform", "transform_data_dic.json");
+const dictionaryPath = path.resolve(process.cwd(), "transform", "transform_data_dict.json");
 
 test("t_person_type_1_3 keeps one row per fiscal year and CID", async () => {
   const sql = await readFile(sqlPath, "utf8");
