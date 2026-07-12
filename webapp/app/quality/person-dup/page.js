@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { FileSpreadsheet, RefreshCw } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
 
 function formatBirth(value) {
@@ -89,9 +89,22 @@ export default function QualityPersonDupPage() {
           </label>
         </div>
 
-        <div className="tableMeta metaLine">
-          <RefreshCw aria-hidden="true" />
-          {loading ? "…" : `ประมวลผลจากตารางสรุป t_person_type_1_3 เมื่อ : ${formatTransformedAt(data?.transformedAt)}`}
+        <div className="tableMeta metaLine dupMetaRow">
+          <span className="dupMetaSource">
+            <RefreshCw aria-hidden="true" />
+            {loading ? "…" : `ประมวลผลจากตารางสรุป t_person_type_1_3 เมื่อ : ${formatTransformedAt(data?.transformedAt)}`}
+          </span>
+          <span className="dupCountLabel">
+            ทั้งหมด {filteredPersons.length.toLocaleString("th-TH")} คน
+            <a
+              className="exportXlsxLink"
+              href={`/api/quality/person-dup/export${selectedHospcode ? `?hospcode=${encodeURIComponent(selectedHospcode)}` : ""}`}
+              title="ส่งออกรายชื่อแบบปกปิดเป็น Excel"
+            >
+              <FileSpreadsheet aria-hidden="true" />
+              <span className="srOnly">ส่งออก Excel</span>
+            </a>
+          </span>
         </div>
 
         <div className="tableWrap">

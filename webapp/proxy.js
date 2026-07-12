@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { auth } from "./auth";
 
 const PROTECTED_PAGE_PREFIXES = ["/person", "/ai", "/dashboard/report", "/report", "/quality"];
+// /api/quality/* ป้องกันตัวเองใน route (requireApiJwt) — export เปิดตรงจาก browser
+// จึง redirect ไป /error/msg ไม่ได้ถ้าถูก proxy ตอบ 401 ตัดหน้า
 const PROTECTED_API_PREFIXES = [
   "/api/ai",
   "/api/person",
   "/api/raw-records",
   "/api/report",
-  "/api/quality",
 ];
 
 function matchesPrefix(pathname, prefixes) {

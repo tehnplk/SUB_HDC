@@ -1,3 +1,4 @@
+import { requireApiJwt } from "@/lib/api-auth.mjs";
 import { createDbConnection } from "@/lib/db";
 import { getHospNameMap } from "@/lib/hos-list-query.mjs";
 
@@ -12,7 +13,11 @@ function splitCsv(value) {
   return value === null || value === undefined ? [] : String(value).split(",");
 }
 
-export async function GET() {
+export async function GET(request) {
+  // ทะเบียนรายคน (มี pid/hn) — เรียกผ่าน fetch ในหน้า ตอบ 401 JSON เมื่อไม่ login
+  const unauthorized = await requireApiJwt(request);
+  if (unauthorized) return unauthorized;
+
   let conn;
 
   try {

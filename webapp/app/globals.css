@@ -669,6 +669,30 @@ button:disabled {
   text-decoration: underline;
 }
 
+.dupMetaRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dupMetaSource {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dupCountLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  color: var(--muted);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .personDupTable tbody tr + tr td {
   border-top: 2px solid var(--border-strong);
 }
