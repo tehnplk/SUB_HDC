@@ -1,14 +1,10 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
+import { RAPID_MENU } from "../_lib/rapid-reports.mjs";
 
-// ยังไม่มีหน้าปลายทาง — href "#" ไว้ก่อน เปิดใช้จริงค่อยเปลี่ยนเป็น route
-const menuItems = [
-  "ผู้ป่วยโรคเบาหวานควบคุมระดับน้ำตาลได้ดี (DM Control)",
-  "ความครอบคลุมวัคซีนป้องกันหัด-คางทูม-หัดเยอรมัน เข็มที่ 2 (MMR2)",
-  "ประชาชนอายุ 35 ปี ขึ้นไปได้รับการคัดกรอง และเสี่ยงต่อโรคความดันโลหิตสูง",
-  "ประชาชนอายุ 35 ปี ขึ้นไปได้รับการคัดกรอง และเสี่ยงต่อโรคเบาหวาน",
-];
+// แต่ละหัวข้อลิงก์ไป /rapid/{report_id} — ชื่อใช้เดียวกับ report.name (RAPID_REPORTS[id].title)
+const menuItems = RAPID_MENU;
 
 export default function RapidIndexPage() {
   return (
@@ -17,9 +13,9 @@ export default function RapidIndexPage() {
         <ModuleHeader subtitle="งานเร่งรัดติดตามรายตัวชี้วัด" />
 
         <ul className="moduleTopicList moduleTopicListCompact">
-          {menuItems.map((title) => (
-            <li key={title}>
-              <Link href="#" className="moduleTopicLink">
+          {menuItems.map(({ id, title }) => (
+            <li key={id}>
+              <Link href={`/rapid/${id}`} className="moduleTopicLink">
                 <span className="moduleTopicBullet" aria-hidden="true" />
                 <span className="standardMenuText">
                   <strong>{title}</strong>

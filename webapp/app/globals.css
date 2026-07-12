@@ -1006,6 +1006,103 @@ button:disabled {
   width: min(100%, 480px);
 }
 
+.rapidSummaryLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 4px;
+  font-size: 13px;
+}
+
+.rapidSummaryLine span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface, #f8faf8);
+  color: var(--muted);
+}
+
+.rapidSummaryLine .lucide {
+  width: 15px;
+  height: 15px;
+  color: var(--muted);
+}
+
+.rapidSummaryLine strong {
+  color: var(--text);
+  font-size: 15px;
+}
+
+.rapidToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 4px 0 14px;
+}
+
+.rapidSelect {
+  width: min(100%, 320px);
+}
+
+/* หัวคอลัมน์ sort ได้ (query string) */
+.sortHeader {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.numCol .sortHeader {
+  flex-direction: row-reverse;
+}
+
+.sortHeader .lucide {
+  width: 13px;
+  height: 13px;
+}
+
+.sortHeaderIdle {
+  opacity: 0.25;
+}
+
+.sortHeaderActive {
+  color: var(--accent-strong, #166534);
+}
+
+/* ตัวเลขส่วนขาด คลิกได้ + icon download เล็กท้ายตัวเลข */
+.deficitDownload {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: #166534;
+  cursor: pointer;
+}
+
+.deficitDownload:hover {
+  text-decoration: underline;
+}
+
+.deficitDownload .lucide {
+  width: 13px;
+  height: 13px;
+  opacity: 0.7;
+}
+
 .pyramidStatGrid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin: 16px 0 20px;

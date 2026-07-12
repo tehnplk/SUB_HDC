@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import DashboardHeaderImage from "@/components/dashboard-header-image";
 import DashboardPageTitle from "@/components/dashboard-page-title";
 import MainTab from "@/components/main-tab";
+// แต่ละ module เป็นเจ้าของ breadcrumb entry ของตัวเองใน _lib — ที่นี่แค่ import มาต่อ
+import { RAPID_BREADCRUMB } from "@/app/rapid/_lib/rapid-reports.mjs";
 
 const BREADCRUMB_MODULES = [
   {
@@ -44,7 +46,7 @@ const BREADCRUMB_MODULES = [
       "/target-group/kpi/dm-ht": "จำนวนผู้ป่วย DM/HT",
     },
   },
-  { prefix: "/rapid", href: "/rapid/index", label: "งานเร่งรัดติดตาม" },
+  RAPID_BREADCRUMB,
   { prefix: "/report", href: "/report/index", label: "รายงาน" },
   { prefix: "/dashboard/report", href: "/report/index", label: "รายงาน" },
   { prefix: "/ai/chat", href: "/ai/chat", label: "Ask AI" },

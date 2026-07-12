@@ -85,13 +85,12 @@ test("rapid is a right-aligned main-tab module with a title-only topic list", ()
   assert.match(mainTabSource, /\/rapid\/index/);
   assert.match(mainTabSource, /งานเร่งรัดติดตาม/);
   assert.match(mainTabSource, /pathname\.startsWith\("\/rapid\/"\)/);
-  assert.match(headerSource, /prefix: "\/rapid"/);
+  // breadcrumb entry ของ rapid ย้ายไปอยู่ใน _lib ของ module แล้ว — header แค่ import มาต่อ
+  assert.match(headerSource, /RAPID_BREADCRUMB/);
   assert.match(rapidIndexSource, /ModuleHeader/);
   assert.match(rapidIndexSource, /moduleTopicList/);
-  assert.match(rapidIndexSource, /DM Control/);
-  assert.match(rapidIndexSource, /MMR2/);
-  assert.match(rapidIndexSource, /โรคความดันโลหิตสูง/);
-  assert.match(rapidIndexSource, /โรคเบาหวาน/);
+  // ชื่อหัวข้อมาจาก config (RAPID_MENU) — ใช้ชื่อเดียวกับ report.name
+  assert.match(rapidIndexSource, /RAPID_MENU/);
   // bullet เป็นข้อความบรรทัดเดียว — ไม่มี description ใต้หัวข้อ
   assert.doesNotMatch(rapidIndexSource, /<small>/);
 });
