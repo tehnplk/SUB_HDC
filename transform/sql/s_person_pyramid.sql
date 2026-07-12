@@ -26,7 +26,7 @@ FROM (
   SELECT
     hos_values.`hos`,
     sex_values.`sex`,
-    CAST(age_values.`age_years` AS UNSIGNED) AS `age_years`
+    CAST(NULLIF(age_values.`age_years`, '') AS UNSIGNED) AS `age_years`
   FROM `t_person_type_1_3` p
   CROSS JOIN JSON_TABLE(
     CONCAT('["', REPLACE(p.`hos`, ',', '","'), '"]'),

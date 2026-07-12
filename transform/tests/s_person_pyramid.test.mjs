@@ -19,6 +19,7 @@ test("s_person_pyramid summarizes t_person_type_1_3 in five-year bands", async (
   assert.match(sql, /JOIN JSON_TABLE/i);
   assert.match(sql, /sex_values\.`row_no` = hos_values\.`row_no`/i);
   assert.match(sql, /age_values\.`row_no` = hos_values\.`row_no`/i);
+  assert.match(sql, /CAST\(NULLIF\(age_values\.`age_years`, ''\) AS UNSIGNED\)/i);
   assert.match(sql, /sex_values\.`sex` IN \('1', '2'\)/i);
   assert.match(sql, /FLOOR\(`age_years` \/ 5\) \* 5/i);
   assert.match(sql, /WHEN `age_years` >= 85 THEN '85\+'/i);
