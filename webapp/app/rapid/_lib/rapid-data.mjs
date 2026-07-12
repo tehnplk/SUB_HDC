@@ -45,10 +45,15 @@ async function getHospInfoMap(conn) {
 function computeSummary(rows) {
   const target = rows.reduce((sum, row) => sum + row.target, 0);
   const result = rows.reduce((sum, row) => sum + row.result, 0);
+  const control = rows.reduce((sum, row) => sum + row.control, 0);
   return {
     units: rows.length,
     target,
     result,
+    control,
+    screenPercent: target > 0 ? (control / target) * 100 : 0,
+    controlPercent: control > 0 ? (result / control) * 100 : 0,
+    unexamined: target - control,
     percent: target > 0 ? (result / target) * 100 : 0,
     deficit: target - result,
   };
@@ -77,9 +82,10 @@ export async function loadRapidReport(id, { affiliation = "" } = {}) {
   for (const row of payload) {
     const hospcode = String(row?.hospcode || "").trim();
     if (!hospcode) continue;
-    const acc = byHospcode.get(hospcode) || { target: 0, result: 0 };
+    const acc = byHospcode.get(hospcode) || { target: 0, result: 0, control: 0 };
     acc.target += sumCols(row, report.targetCols);
     acc.result += sumCols(row, report.resultCols);
+    acc.control += sumCols(row, report.controlCols || []);
     byHospcode.set(hospcode, acc);
   }
 
@@ -99,6 +105,10 @@ export async function loadRapidReport(id, { affiliation = "" } = {}) {
           ampName: info.ampName || "",
           target: acc.target,
           result: acc.result,
+          control: acc.control,
+          screenPercent: acc.target > 0 ? (acc.control / acc.target) * 100 : 0,
+          controlPercent: acc.control > 0 ? (acc.result / acc.control) * 100 : 0,
+          unexamined: acc.target - acc.control,
           percent: acc.target > 0 ? (acc.result / acc.target) * 100 : 0,
           deficit: acc.target - acc.result,
         };

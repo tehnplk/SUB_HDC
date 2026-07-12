@@ -17,6 +17,7 @@ export async function GET(request, { params }) {
       tableName: report.tableName,
       targetLabel: report.targetLabel,
       resultLabel: report.resultLabel,
+      controlLabel: report.controlLabel || "",
       year,
       fetchedAt: new Date().toISOString(),
       ampCode,

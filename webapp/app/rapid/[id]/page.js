@@ -7,7 +7,7 @@ import Swal from "sweetalert2";
 import ModuleHeader from "@/components/module-header";
 
 // คอลัมน์ที่ sort ได้ — key ต้องตรงกับ field ใน row
-const SORT_COLUMNS = [
+const BASE_SORT_COLUMNS = [
   { key: "hospcode", label: "หน่วยบริการ", type: "text" },
   { key: "affiliation", label: "สังกัด", type: "text" },
   { key: "target", label: "เป้าหมาย", type: "num", numCol: true },
@@ -75,7 +75,21 @@ export default function RapidDetailPage() {
   // สถานะ sort อ่านจาก query string (?sort=&dir=) — default เรียงตาม hospcode
   const sortKey = searchParams.get("sort") || "hospcode";
   const sortDir = searchParams.get("dir") === "desc" ? "desc" : "asc";
-  const sortColumn = SORT_COLUMNS.find((column) => column.key === sortKey) || SORT_COLUMNS[0];
+  const sortColumns = useMemo(
+    () => data?.controlLabel
+      ? [
+        ...BASE_SORT_COLUMNS.slice(0, 2),
+        { key: "target", label: data?.targetLabel || "ผู้ป่วย DM", type: "num", numCol: true },
+        { key: "control", label: data.controlLabel, type: "num", numCol: true },
+        { key: "screenPercent", label: "% ตรวจ", type: "num", numCol: true },
+        { key: "result", label: data?.resultLabel || "คุมน้ำตาลได้ดี", type: "num", numCol: true },
+        { key: "controlPercent", label: "% คุมได้", type: "num", numCol: true },
+        { key: "unexamined", label: "ยังไม่ได้ตรวจ", type: "num", numCol: true },
+      ]
+      : BASE_SORT_COLUMNS.map((column) => column.key === "result" ? { ...column, label: data?.resultLabel || column.label } : column),
+    [data?.controlLabel, data?.resultLabel]
+  );
+  const sortColumn = sortColumns.find((column) => column.key === sortKey) || sortColumns[0];
 
   const rows = useMemo(() => {
     const sign = sortDir === "desc" ? -1 : 1;
@@ -99,10 +113,15 @@ export default function RapidDetailPage() {
   const summary = useMemo(() => {
     const target = rows.reduce((sum, row) => sum + row.target, 0);
     const result = rows.reduce((sum, row) => sum + row.result, 0);
+    const control = rows.reduce((sum, row) => sum + row.control, 0);
     return {
       units: rows.length,
       target,
       result,
+      control,
+      screenPercent: target > 0 ? (control / target) * 100 : 0,
+      controlPercent: control > 0 ? (result / control) * 100 : 0,
+      unexamined: target - control,
       percent: target > 0 ? (result / target) * 100 : 0,
       deficit: target - result,
     };
@@ -128,9 +147,17 @@ export default function RapidDetailPage() {
         <div className="rapidSummaryLine">
           <span><MapPin aria-hidden="true" />อำเภอ <strong>{loading ? "…" : (data?.ampName || "-")}</strong></span>
           <span><Target aria-hidden="true" />{data?.targetLabel || "เป้าหมาย"} <strong>{loading ? "…" : formatNumber(summary.target)}</strong></span>
-          <span><CheckCircle2 aria-hidden="true" />{data?.resultLabel || "ผลงาน"} <strong>{loading ? "…" : formatNumber(summary.result)}</strong></span>
-          <span><Percent aria-hidden="true" />ร้อยละ <strong>{loading ? "…" : formatPercent(summary.percent)}</strong></span>
-          <span><TriangleAlert aria-hidden="true" />ส่วนขาด <strong>{loading ? "…" : formatNumber(summary.deficit)}</strong></span>
+          {data?.controlLabel ? <>
+            <span><CheckCircle2 aria-hidden="true" />{data.controlLabel} <strong>{loading ? "…" : formatNumber(summary.control)}</strong></span>
+            <span><Percent aria-hidden="true" />ตรวจ <strong>{loading ? "…" : formatPercent(summary.screenPercent)}</strong></span>
+            <span><CheckCircle2 aria-hidden="true" />{data.resultLabel} <strong>{loading ? "…" : formatNumber(summary.result)}</strong></span>
+            <span><Percent aria-hidden="true" />คุมได้ <strong>{loading ? "…" : formatPercent(summary.controlPercent)}</strong></span>
+            <span><TriangleAlert aria-hidden="true" />ยังไม่ได้ตรวจ <strong>{loading ? "…" : formatNumber(summary.unexamined)}</strong></span>
+          </> : <>
+            <span><CheckCircle2 aria-hidden="true" />{data?.resultLabel || "ผลงาน"} <strong>{loading ? "…" : formatNumber(summary.result)}</strong></span>
+            <span><Percent aria-hidden="true" />ร้อยละ <strong>{loading ? "…" : formatPercent(summary.percent)}</strong></span>
+            <span><TriangleAlert aria-hidden="true" />ส่วนขาด <strong>{loading ? "…" : formatNumber(summary.deficit)}</strong></span>
+          </>}
         </div>
 
         <div className="rapidToolbar">
@@ -156,7 +183,7 @@ export default function RapidDetailPage() {
           <table className="fileTable">
             <thead>
               <tr>
-                {SORT_COLUMNS.map((column) => {
+                {sortColumns.map((column) => {
                   const active = sortKey === column.key;
                   return (
                     <th key={column.key} className={column.numCol ? "numCol" : undefined} aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
@@ -180,18 +207,31 @@ export default function RapidDetailPage() {
                   </td>
                   <td>{row.affiliation || "-"}</td>
                   <td className="numCol">{formatNumber(row.target)}</td>
-                  <td className="numCol">{formatNumber(row.result)}</td>
-                  <td className="numCol">{formatPercent(row.percent)}</td>
-                  <td className="numCol">
-                    <button type="button" className="deficitDownload" onClick={() => downloadIndividual(row)}>
-                      {formatNumber(row.deficit)}
-                      <Download aria-hidden="true" />
-                    </button>
-                  </td>
+                  {data?.controlLabel ? <>
+                    <td className="numCol">{formatNumber(row.control)}</td>
+                    <td className="numCol">{formatPercent(row.screenPercent)}</td>
+                    <td className="numCol">{formatNumber(row.result)}</td>
+                    <td className="numCol">{formatPercent(row.controlPercent)}</td>
+                    <td className="numCol">
+                      <button type="button" className="deficitDownload" onClick={() => downloadIndividual(row)}>
+                        {formatNumber(row.unexamined)}
+                        <Download aria-hidden="true" />
+                      </button>
+                    </td>
+                  </> : <>
+                    <td className="numCol">{formatNumber(row.result)}</td>
+                    <td className="numCol">{formatPercent(row.percent)}</td>
+                    <td className="numCol">
+                      <button type="button" className="deficitDownload" onClick={() => downloadIndividual(row)}>
+                        {formatNumber(row.deficit)}
+                        <Download aria-hidden="true" />
+                      </button>
+                    </td>
+                  </>}
                 </tr>
               )) : (
                 <tr>
-                  <td className="emptyCell" colSpan={6}>
+                  <td className="emptyCell" colSpan={sortColumns.length}>
                     {loading ? "กำลังโหลดข้อมูล..." : "ไม่พบข้อมูล"}
                   </td>
                 </tr>

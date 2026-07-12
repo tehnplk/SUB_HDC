@@ -13,8 +13,10 @@ export const RAPID_REPORTS = {
     tableName: "s_dm_control",
     targetCols: ["target"],
     resultCols: ["result"],
-    targetLabel: "ผู้ป่วยเบาหวานทั้งหมด",
-    resultLabel: "ควบคุมน้ำตาลได้ดี",
+    controlCols: ["hba1c"],
+    targetLabel: "ผู้ป่วย DM",
+    resultLabel: "คุมน้ำตาลได้ดี",
+    controlLabel: "ได้รับการตรวจ",
   },
   "52": {
     title: "ความครอบคลุมวัคซีนป้องกันหัด-คางทูม-หัดเยอรมัน เข็มที่ 2 (MMR2)",

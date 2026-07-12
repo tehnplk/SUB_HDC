@@ -14,6 +14,11 @@ const headerSource = readFileSync(new URL("../components/module-header.jsx", imp
 test("rapid report config covers the four tracked KPIs", () => {
   assert.deepEqual([...RAPID_REPORT_IDS].sort(), ["143", "275", "276", "52"].sort());
   assert.equal(RAPID_REPORTS["143"].tableName, "s_dm_control");
+  assert.deepEqual(RAPID_REPORTS["143"].resultCols, ["result"]);
+  assert.deepEqual(RAPID_REPORTS["143"].controlCols, ["hba1c"]);
+  assert.equal(RAPID_REPORTS["143"].targetLabel, "ผู้ป่วย DM");
+  assert.equal(RAPID_REPORTS["143"].resultLabel, "คุมน้ำตาลได้ดี");
+  assert.equal(RAPID_REPORTS["143"].controlLabel, "ได้รับการตรวจ");
   assert.equal(RAPID_REPORTS["275"].tableName, "s_dm_screen_risk");
   assert.equal(RAPID_REPORTS["276"].tableName, "s_ht_screen_risk");
   assert.equal(RAPID_REPORTS["52"].tableName, "s_epi2");
@@ -42,6 +47,9 @@ test("rapid detail page shows the required datagrid columns live", () => {
   for (const label of ["หน่วยบริการ", "สังกัด", "เป้าหมาย", "ผลงาน", "ร้อยละ", "ส่วนขาด"]) {
     assert.match(detailSource, new RegExp(label));
   }
+  assert.match(detailSource, /data\?\.resultLabel/);
+  assert.match(detailSource, /data\.controlLabel/);
+  for (const label of ["% ตรวจ", "% คุมได้", "ยังไม่ได้ตรวจ"]) assert.match(detailSource, new RegExp(label));
 });
 
 test("rapid data helper fetches live from HDC and aggregates by hospcode", () => {
@@ -49,6 +57,9 @@ test("rapid data helper fetches live from HDC and aggregates by hospcode", () =>
   assert.match(dataSource, /getHospInfoMap/);
   assert.match(dataSource, /byHospcode/);
   assert.match(dataSource, /deficit/);
+  assert.match(dataSource, /screenPercent/);
+  assert.match(dataSource, /controlPercent/);
+  assert.match(dataSource, /unexamined/);
   // route + export ใช้ helper ตัวเดียวกัน
   assert.match(routeSource, /loadRapidReport/);
   assert.match(exportSource, /loadRapidReport/);
@@ -74,7 +85,7 @@ test("all columns are sortable via query string", () => {
   assert.match(detailSource, /params\.set\("sort"/);
   assert.match(detailSource, /params\.set\("dir"/);
   // ครบทุกคอลัมน์ที่แสดง
-  for (const key of ["hospcode", "affiliation", "target", "result", "percent", "deficit"]) {
+  for (const key of ["hospcode", "affiliation", "target", "result", "control", "percent", "deficit"]) {
     assert.match(detailSource, new RegExp(`key: "${key}"`));
   }
 });
@@ -90,6 +101,9 @@ test("rapid export produces xlsx respecting the affiliation filter", () => {
   assert.match(exportSource, /XLSX/);
   assert.match(exportSource, /affiliation/);
   assert.match(exportSource, /spreadsheetml\.sheet/);
+  assert.match(exportSource, /report\.controlLabel/);
+  assert.match(exportSource, /% ตรวจ/);
+  assert.match(exportSource, /% คุมได้/);
   // ลิงก์ส่งออกบนหน้า detail ส่ง filter สังกัดไปด้วย
   assert.match(detailSource, /\/api\/rapid\/\$\{id\}\/export/);
   assert.match(detailSource, /exportXlsxLink/);

@@ -14,17 +14,20 @@ export async function GET(request, { params }) {
     if (!data) return Response.json({ error: "ไม่พบตัวชี้วัดนี้" }, { status: 404 });
 
     const { report, year, ampName, rows } = data;
+    const headers = report.controlLabel
+      ? ["รหัสหน่วยบริการ", "หน่วยบริการ", "สังกัด", "อำเภอ", report.targetLabel, report.controlLabel, "% ตรวจ", report.resultLabel, "% คุมได้", "ยังไม่ได้ตรวจ"]
+      : ["รหัสหน่วยบริการ", "หน่วยบริการ", "สังกัด", "อำเภอ", "เป้าหมาย", report.resultLabel, "ร้อยละ", "ส่วนขาด"];
     const aoa = [
-      ["รหัสหน่วยบริการ", "หน่วยบริการ", "สังกัด", "อำเภอ", "เป้าหมาย", "ผลงาน", "ร้อยละ", "ส่วนขาด"],
+      headers,
       ...rows.map((row) => [
         row.hospcode,
         row.hospname,
         row.affiliation,
         row.ampName,
         row.target,
-        row.result,
-        Number(row.percent.toFixed(2)),
-        row.deficit,
+        ...(report.controlLabel
+          ? [row.control, Number(row.screenPercent.toFixed(2)), row.result, Number(row.controlPercent.toFixed(2)), row.unexamined]
+          : [row.result, Number(row.percent.toFixed(2)), row.deficit]),
       ]),
     ];
 
