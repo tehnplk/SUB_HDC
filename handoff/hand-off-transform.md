@@ -121,7 +121,7 @@ node --test tests\*.test.mjs
 
 - `transform_table`: ชื่อตารางผลลัพธ์ของ transform
 - `sql_file`: ชื่อไฟล์ SQL ที่ใช้ transform
-- `f43_tables`: รายชื่อตาราง F43 ต้นทาง
+- `source_tables`: รายชื่อตารางต้นทาง อาจเป็น raw F43 หรือ transform table
 - `stored_data`: คำอธิบายว่า transform เก็บข้อมูลอะไร
 - `schema`: รายชื่อคอลัมน์ของตารางผลลัพธ์ เป็น text คั่นด้วย comma เช่น `hospcode,pid,...`
 

@@ -59,7 +59,7 @@ export async function GET() {
       id: item.transform_table || index + 1,
       transform_table: item.transform_table || "",
       sql_file: item.sql_file || "",
-      f43_tables: Array.isArray(item.f43_tables) ? item.f43_tables : [],
+      source_tables: Array.isArray(item.source_tables) ? item.source_tables : [],
       stored_data: item.stored_data || "",
       schema: item.schema || "",
       sql_code: await readSqlFile(item.sql_file),

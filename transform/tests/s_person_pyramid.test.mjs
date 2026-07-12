@@ -42,7 +42,7 @@ test("transform dictionary records the pyramid transform dependency", async () =
   const dictionary = JSON.parse(await readFile(dictionaryPath, "utf8"));
   const entry = dictionary.find((item) => item.transform_table === "s_person_pyramid");
 
-  assert.deepEqual(entry.f43_tables, ["t_person_type_1_3"]);
+  assert.deepEqual(entry.source_tables, ["t_person_type_1_3"]);
   assert.match(entry.stored_data, /ปีงบประมาณ 2569/);
   assert.match(entry.stored_data, /hos, sex และ age_y/);
 });

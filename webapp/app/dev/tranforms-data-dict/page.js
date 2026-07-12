@@ -75,7 +75,7 @@ export default function TransformDataDictionaryPage() {
     return rows.filter((row) => [
       row.transform_table,
       row.sql_file,
-      row.f43_tables.join(","),
+      row.source_tables.join(","),
       row.stored_data,
       row.schema,
     ].join(" ").toLowerCase().includes(query));
@@ -125,7 +125,7 @@ export default function TransformDataDictionaryPage() {
                 <th>#</th>
                 <th>transform_table</th>
                 <th>sql_file</th>
-                <th>f43_tables</th>
+                <th>source_tables</th>
                 <th>stored_data</th>
               </tr>
             </thead>
@@ -155,7 +155,7 @@ export default function TransformDataDictionaryPage() {
                   </td>
                   <td>
                     <div className="transformDictTags">
-                      {row.f43_tables.map((tableName) => <span key={tableName}>{tableName}</span>)}
+                      {row.source_tables.map((tableName) => <span key={tableName}>{tableName}</span>)}
                     </div>
                   </td>
                   <td className="transformDictDescription">{row.stored_data}</td>

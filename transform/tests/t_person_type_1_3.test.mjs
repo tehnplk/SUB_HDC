@@ -74,6 +74,6 @@ test("transform dictionary documents t_person_type_1_3", async () => {
 
   assert.ok(entry);
   assert.equal(entry.sql_file, "t_person_type_1_3.sql");
-  assert.deepEqual(entry.f43_tables, ["person", "card", "home"]);
+  assert.deepEqual(entry.source_tables, ["person", "card", "home"]);
   assert.equal(entry.schema, "fiscal_year,cid,name,hn,hos,pid,type,sex,nation,bdate,age_y,age_m,age_d,inscl,village_id");
 });
