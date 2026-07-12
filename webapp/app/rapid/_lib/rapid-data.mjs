@@ -86,7 +86,21 @@ export async function loadRapidReport(id, { affiliation = "" } = {}) {
     acc.target += sumCols(row, report.targetCols);
     acc.result += sumCols(row, report.resultCols);
     acc.control += sumCols(row, report.controlCols || []);
+    for (const { key, sourceCols, outsideCriteria } of report.breakdownCols || []) {
+      if (outsideCriteria) continue; // คำนวณทีหลังจากยอดรวม
+      acc[key] = (acc[key] || 0) + sumCols(row, sourceCols || [key]);
+    }
     byHospcode.set(hospcode, acc);
+  }
+
+  // คอลัมน์ "นอกเกณฑ์" = max(0, ผลงาน - ผลรวม breakdown อื่น) คำนวณบนยอดรวมรายหน่วย
+  const outsideCols = (report.breakdownCols || []).filter((column) => column.outsideCriteria);
+  if (outsideCols.length) {
+    const classifiedCols = (report.breakdownCols || []).filter((column) => !column.outsideCriteria);
+    for (const acc of byHospcode.values()) {
+      const classified = classifiedCols.reduce((sum, column) => sum + (acc[column.key] || 0), 0);
+      for (const { key } of outsideCols) acc[key] = Math.max(0, (acc.result || 0) - classified);
+    }
   }
 
   let conn;
@@ -111,6 +125,8 @@ export async function loadRapidReport(id, { affiliation = "" } = {}) {
           unexamined: acc.target - acc.control,
           percent: acc.target > 0 ? (acc.result / acc.target) * 100 : 0,
           deficit: acc.target - acc.result,
+          ...Object.fromEntries((report.breakdownCols || []).map(({ key }) => [key, acc[key] || 0])),
+          ...Object.fromEntries((report.breakdownCols || []).map(({ key }) => [`${key}Percent`, acc.result > 0 ? (acc[key] || 0) / acc.result * 100 : 0])),
         };
       })
       // fix เฉพาะอำเภอของหน่วยบริการตาม .env AMP_CODE + filter สังกัดถ้าระบุ

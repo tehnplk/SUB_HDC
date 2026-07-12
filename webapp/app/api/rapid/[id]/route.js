@@ -18,6 +18,8 @@ export async function GET(request, { params }) {
       targetLabel: report.targetLabel,
       resultLabel: report.resultLabel,
       controlLabel: report.controlLabel || "",
+      breakdownCols: report.breakdownCols || [],
+      showBreakdownPercent: Boolean(report.showBreakdownPercent),
       year,
       fetchedAt: new Date().toISOString(),
       ampCode,

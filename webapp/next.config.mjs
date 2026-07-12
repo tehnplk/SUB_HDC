@@ -5,6 +5,11 @@ const nextConfig = {
   },
   async redirects() {
     return [
+      // /rapid/{report_id} เดิม → หน้า slug ของแต่ละตัวชี้วัด
+      { source: "/rapid/143", destination: "/rapid/dm-control", permanent: true },
+      { source: "/rapid/52", destination: "/rapid/mmr2", permanent: true },
+      { source: "/rapid/276", destination: "/rapid/screen-ht", permanent: true },
+      { source: "/rapid/275", destination: "/rapid/screen-dm", permanent: true },
       {
         source: "/dashboard/log-import",
         destination: "/import-check/log-import",

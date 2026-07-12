@@ -1037,6 +1037,19 @@ button:disabled {
   font-size: 15px;
 }
 
+.rapidSummaryLine .rapidSourceLabel {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rapidSummaryLine .rapidSourceLabel .lucide {
+  color: var(--accent-strong);
+}
+
 .rapidToolbar {
   display: flex;
   align-items: center;
@@ -1047,6 +1060,35 @@ button:disabled {
 
 .rapidSelect {
   width: min(100%, 320px);
+}
+
+.rapidGroupHeader {
+  text-align: center;
+}
+
+/* คอลัมน์สังกัด (สธ/อปท) แคบ ให้พื้นที่ไปกับคอลัมน์ตัวเลข */
+.rapidAffCol {
+  width: 3rem;
+  min-width: 3rem;
+  white-space: nowrap;
+  text-align: center;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+
+/* คอลัมน์ตัวเลขในตาราง rapid กว้างขึ้น */
+.rapidTable .numCol {
+  min-width: 5.5rem;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* datagrid ของ rapid ไม่จำกัดความสูง → ไม่มี scrollbar แนวตั้ง
+   (compound selector เพื่อชนะ .tableWrap ที่ประกาศทีหลัง; overflow auto ทั้งคู่แต่
+   ไม่มี max-height จึงไม่มีแนวตั้ง คง scroll แนวนอนของตารางที่กว้างไว้) */
+.tableWrap.rapidTableWrap {
+  max-height: none;
+  overflow: auto;
 }
 
 /* หัวคอลัมน์ sort ได้ (query string) */
@@ -1374,6 +1416,11 @@ button:disabled {
   margin-left: 8px;
   color: var(--muted);
   font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.rapidHospName {
+  display: inline;
   white-space: nowrap;
 }
 

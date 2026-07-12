@@ -14,7 +14,9 @@ export async function GET(request, { params }) {
     if (!data) return Response.json({ error: "ไม่พบตัวชี้วัดนี้" }, { status: 404 });
 
     const { report, year, ampName, rows } = data;
-    const headers = report.controlLabel
+    const headers = report.breakdownCols?.length
+      ? ["รหัสหน่วยบริการ", "หน่วยบริการ", "สังกัด", "อำเภอ", "เป้าหมาย", "คัดกรอง", "%คัดกรอง", "ส่วนขาด (คน)", ...report.breakdownCols.flatMap(({ label }) => report.showBreakdownPercent ? [label, "ร้อยละ"] : [label])]
+      : report.controlLabel
       ? ["รหัสหน่วยบริการ", "หน่วยบริการ", "สังกัด", "อำเภอ", report.targetLabel, report.controlLabel, "% ตรวจ", report.resultLabel, "% คุมได้", "ยังไม่ได้ตรวจ"]
       : ["รหัสหน่วยบริการ", "หน่วยบริการ", "สังกัด", "อำเภอ", "เป้าหมาย", report.resultLabel, "ร้อยละ", "ส่วนขาด"];
     const aoa = [
@@ -25,7 +27,9 @@ export async function GET(request, { params }) {
         row.affiliation,
         row.ampName,
         row.target,
-        ...(report.controlLabel
+        ...(report.breakdownCols?.length
+          ? [row.result, Number(row.percent.toFixed(2)), row.deficit, ...report.breakdownCols.flatMap(({ key }) => report.showBreakdownPercent ? [row[key], Number(row[`${key}Percent`].toFixed(2))] : [row[key]])]
+          : report.controlLabel
           ? [row.control, Number(row.screenPercent.toFixed(2)), row.result, Number(row.controlPercent.toFixed(2)), row.unexamined]
           : [row.result, Number(row.percent.toFixed(2)), row.deficit]),
       ]),

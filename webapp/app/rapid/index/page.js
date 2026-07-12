@@ -3,7 +3,7 @@ import { ChevronRight } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
 import { RAPID_MENU } from "../_lib/rapid-reports.mjs";
 
-// แต่ละหัวข้อลิงก์ไป /rapid/{report_id} — ชื่อใช้เดียวกับ report.name (RAPID_REPORTS[id].title)
+// แต่ละหัวข้อลิงก์ไปหน้า (route) ของ report นั้น ๆ ผ่าน href ที่กำหนดใน RAPID_MENU
 const menuItems = RAPID_MENU;
 
 export default function RapidIndexPage() {
@@ -13,9 +13,9 @@ export default function RapidIndexPage() {
         <ModuleHeader subtitle="งานเร่งรัดติดตามรายตัวชี้วัด" />
 
         <ul className="moduleTopicList moduleTopicListCompact">
-          {menuItems.map(({ id, title }) => (
+          {menuItems.map(({ id, href, title }) => (
             <li key={id}>
-              <Link href={`/rapid/${id}`} className="moduleTopicLink">
+              <Link href={href} className="moduleTopicLink">
                 <span className="moduleTopicBullet" aria-hidden="true" />
                 <span className="standardMenuText">
                   <strong>{title}</strong>

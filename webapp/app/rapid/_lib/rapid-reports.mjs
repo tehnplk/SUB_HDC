@@ -33,6 +33,14 @@ export const RAPID_REPORTS = {
     resultCols: ["result"],
     targetLabel: "ประชากร 35 ปีขึ้นไป",
     resultLabel: "ได้รับการคัดกรอง",
+    breakdownCols: [
+      { key: "normal", label: "ปกติ", sourceCols: ["normal"] },
+      { key: "risk", label: "เสี่ยง", sourceCols: ["risk"] },
+      { key: "high_risk", label: "สงสัยป่วย", sourceCols: ["high_risk"] },
+      { key: "ill", label: "ป่วย", sourceCols: ["ill_1"] },
+      // นอกเกณฑ์ = max(0, คัดกรอง - (ปกติ + เสี่ยง + สงสัยป่วย + ป่วย))
+      { key: "ill_1", label: "นอกเกณฑ์", outsideCriteria: true },
+    ],
   },
   "275": {
     title: "ประชาชนอายุ 35 ปี ขึ้นไปได้รับการคัดกรอง และเสี่ยงต่อโรคเบาหวาน",
@@ -41,17 +49,25 @@ export const RAPID_REPORTS = {
     resultCols: ["result"],
     targetLabel: "ประชากร 35 ปีขึ้นไป",
     resultLabel: "ได้รับการคัดกรอง",
+    breakdownCols: [
+      { key: "normal", label: "ปกติ", sourceCols: ["normal"] },
+      { key: "risk", label: "เสี่ยง", sourceCols: ["risk"] },
+      { key: "high_risk", label: "สงสัยป่วย", sourceCols: ["high_risk"] },
+      // นอกเกณฑ์ = max(0, คัดกรอง - (ปกติ + เสี่ยง + สงสัยป่วย))
+      { key: "ill", label: "นอกเกณฑ์", outsideCriteria: true },
+    ],
   },
 };
 
 export const RAPID_REPORT_IDS = Object.keys(RAPID_REPORTS);
 
-// รายการเมนู bullet ของ /rapid/index — label แบบ fix (ไม่ derive จาก report.name)
+// รายการเมนู bullet ของ /rapid/index — แต่ละ report มีหน้า (route) ของตัวเอง
+// href = slug ของหน้านั้น, label แบบ fix (ไม่ derive จาก report.name)
 export const RAPID_MENU = [
-  { id: "143", title: "ผู้ป่วยโรคเบาหวานควบคุมระดับน้ำตาลได้ดี (DM Control)" },
-  { id: "52", title: "ความครอบคลุมวัคซีนป้องกันหัด-คางทูม-หัดเยอรมัน เข็มที่ 2 (MMR2)" },
-  { id: "276", title: "ประชาชนอายุ 35 ปี ขึ้นไปได้รับการคัดกรอง และเสี่ยงต่อโรคความดันโลหิตสูง" },
-  { id: "275", title: "ประชาชนอายุ 35 ปี ขึ้นไปได้รับการคัดกรอง และเสี่ยงต่อโรคเบาหวาน" },
+  { id: "143", href: "/rapid/dm-control", title: "ผู้ป่วยโรคเบาหวานควบคุมระดับน้ำตาลได้ดี (DM Control)" },
+  { id: "52", href: "/rapid/mmr2", title: "ความครอบคลุมวัคซีนป้องกันหัด-คางทูม-หัดเยอรมัน เข็มที่ 2 (MMR2)" },
+  { id: "276", href: "/rapid/screen-ht", title: "ประชาชนอายุ 35 ปี ขึ้นไปได้รับการคัดกรอง และเสี่ยงต่อโรคความดันโลหิตสูง" },
+  { id: "275", href: "/rapid/screen-dm", title: "ประชาชนอายุ 35 ปี ขึ้นไปได้รับการคัดกรอง และเสี่ยงต่อโรคเบาหวาน" },
 ];
 
 // breadcrumb entry ของ module rapid — label แบบ fix, module เป็นเจ้าของ config เอง
@@ -60,12 +76,7 @@ export const RAPID_BREADCRUMB = {
   prefix: "/rapid",
   href: "/rapid/index",
   label: "งานเร่งรัดติดตาม",
-  pages: {
-    "/rapid/143": "ผู้ป่วยโรคเบาหวานควบคุมระดับน้ำตาลได้ดี (DM Control)",
-    "/rapid/52": "ความครอบคลุมวัคซีนป้องกันหัด-คางทูม-หัดเยอรมัน เข็มที่ 2 (MMR2)",
-    "/rapid/276": "ประชาชนอายุ 35 ปี ขึ้นไปได้รับการคัดกรอง และเสี่ยงต่อโรคความดันโลหิตสูง",
-    "/rapid/275": "ประชาชนอายุ 35 ปี ขึ้นไปได้รับการคัดกรอง และเสี่ยงต่อโรคเบาหวาน",
-  },
+  pages: Object.fromEntries(RAPID_MENU.map(({ href, title }) => [href, title])),
 };
 
 // ปีงบประมาณ (พ.ศ.) ปัจจุบัน — ตั้งแต่ ต.ค. นับเป็นปีถัดไป
