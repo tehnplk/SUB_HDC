@@ -21,6 +21,9 @@
 | `TRANSFORM_HOURLY_SQL_FILES` | `s_visit_montly.sql` | ไฟล์ที่รันเพิ่มทุกต้นชั่วโมง |
 | `TRANSFORM_POLL_MS` | 300000 | จังหวะ retry เมื่อรอบถูกเลื่อน |
 
+- Scheduler คำนวณรอบ daily/hourly จาก timestamp เดียวกัน หากรอบ `00:00`
+  ตรงกับรอบ hourly ให้ daily full transform ทำงาน (daily wins the tie)
+
 - ถ้ากำลัง import (`log_import_file` มี pending/processing) รอบถูกเลื่อน
   แล้ว retry จนสำเร็จ — เช็คซ้ำก่อนทุกไฟล์
 - ทุก process ใช้ MariaDB advisory lock ชื่อ `sub_hdc_transform_cycle` ป้องกัน

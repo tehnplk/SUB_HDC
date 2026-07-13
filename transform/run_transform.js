@@ -212,6 +212,13 @@ function msUntilNextHour(now = new Date()) {
   return next.getTime() - now.getTime();
 }
 
+function getNextSchedule(hourlyFiles = listHourlySqlFiles(), runAt = RUN_AT, now = new Date()) {
+  const dailyWaitMs = msUntilNextRun(runAt, now);
+  const hourlyWaitMs = hourlyFiles.length ? msUntilNextHour(now) : Infinity;
+  const runDaily = dailyWaitMs <= hourlyWaitMs;
+  return { runDaily, waitMs: runDaily ? dailyWaitMs : hourlyWaitMs };
+}
+
 // พยายามรันจนจบรอบ — ถ้าโดนเลื่อนเพราะกำลัง import (runOnce คืน false)
 // หรือ DB ล่มชั่วคราว retry ทุก POLL_MS จนกว่าจะสำเร็จ
 async function runUntilDone(files) {
@@ -231,11 +238,8 @@ async function main() {
   );
   if (RUN_ON_START) await runUntilDone();
   while (true) {
-    const dailyWaitMs = msUntilNextRun();
     const hourlyFiles = listHourlySqlFiles();
-    const hourlyWaitMs = hourlyFiles.length ? msUntilNextHour() : Infinity;
-    const runDaily = dailyWaitMs <= hourlyWaitMs;
-    const waitMs = runDaily ? dailyWaitMs : hourlyWaitMs;
+    const { runDaily, waitMs } = getNextSchedule(hourlyFiles);
     const schedule = runDaily ? RUN_AT : "hourly visit summary";
     console.log(`[transform] next run in ${Math.round(waitMs / 60000)} min (${schedule})`);
     await sleep(waitMs);
@@ -255,6 +259,7 @@ module.exports = {
   acquireTransformLock,
   alignTransformCollation,
   releaseTransformLock,
+  getNextSchedule,
   listHourlySqlFiles,
   listSqlFiles,
   RUN_ORDER,
