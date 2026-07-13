@@ -64,6 +64,8 @@ services:
       - ./webapp/.env
     environment:
       TZ: Asia/Bangkok
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./migrate/table_update:/migrate/table_update:ro
       # lookup dumps โหลดผ่าน run_migrations (content-hash: แก้ไฟล์แล้วโหลดซ้ำ
