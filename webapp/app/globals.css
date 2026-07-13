@@ -120,6 +120,507 @@ p {
   min-width: 0;
 }
 
+.landingConceptPanel {
+  min-height: calc(100vh - 30px);
+}
+
+.landingConcept {
+  display: grid;
+  gap: 22px;
+  padding: clamp(26px, 4vw, 54px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 86% 8%, rgba(21, 128, 61, 0.1), transparent 29%),
+    linear-gradient(145deg, #ffffff 0%, var(--panel-soft) 100%);
+}
+
+.landingConceptBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) clamp(260px, 26vw, 400px);
+  align-items: center;
+  gap: clamp(26px, 4vw, 58px);
+}
+
+.landingConceptVisual {
+  display: grid;
+  width: min(100%, 352px);
+  place-items: center;
+  justify-self: center;
+  padding: 15px;
+  border: 1px solid rgba(15, 63, 105, 0.14);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.44);
+  box-shadow: 0 10px 26px rgba(15, 63, 105, 0.06);
+}
+
+.landingConceptVisual img {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 24px rgba(15, 63, 105, 0.16));
+}
+
+.landingConceptGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.landingConceptCard {
+  display: flex;
+  min-height: 178px;
+  flex-direction: column;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--shadow-sm);
+}
+
+.landingConceptCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.landingConceptIcon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.landingConceptIcon .lucide {
+  width: 21px;
+  height: 21px;
+}
+
+.landingConceptNumber {
+  color: var(--border-strong);
+  font-family: var(--font-space-grotesk);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.landingConceptCard h2 {
+  margin: auto 0 8px;
+  color: var(--foreground);
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.landingConceptCard p {
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+@media (max-width: 980px) {
+  .landingConceptBody {
+    grid-template-columns: 1fr;
+  }
+
+  .landingConceptVisual img {
+    max-width: 224px;
+  }
+
+  .landingConceptVisual {
+    width: min(100%, 256px);
+  }
+}
+
+@media (max-width: 720px) {
+  .landingConceptPanel {
+    min-height: calc(100vh - 30px);
+  }
+
+  .landingConcept {
+    padding: 22px 18px;
+  }
+
+  .landingConceptBody { gap: 24px; }
+
+  .landingConceptVisual img {
+    width: 100%;
+    max-width: 160px;
+  }
+
+  .landingConceptVisual {
+    width: min(52vw, 192px);
+    padding: 15px;
+  }
+
+  .landingConceptGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .landingConceptCard {
+    min-height: 170px;
+  }
+}
+
+/* Public landing page */
+.landingPage {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  padding: 0 clamp(20px, 5vw, 76px);
+  background: #f6faf7;
+  isolation: isolate;
+}
+
+.landingBackdrop {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: -1;
+  height: 760px;
+  background:
+    linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px),
+    radial-gradient(circle at 78% 23%, rgba(74, 222, 128, .18), transparent 26%),
+    linear-gradient(125deg, #082e23 0%, #0b4931 58%, #0b5f3a 100%);
+  background-size: 56px 56px, 56px 56px, auto, auto;
+}
+
+.landingHeader {
+  display: flex;
+  width: min(1320px, 100%);
+  min-height: 94px;
+  margin: 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, .14);
+}
+
+.landingBrand,
+.landingHeaderActions,
+.landingCenterName,
+.landingHeaderLink,
+.landingPrimaryAction,
+.landingSecondaryAction,
+.landingTrustLine,
+.landingWorkspaceLink,
+.landingClosingAction {
+  display: inline-flex;
+  align-items: center;
+}
+
+.landingBrand {
+  gap: 12px;
+  color: #fff;
+  text-decoration: none;
+}
+
+.landingBrandMark {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 14px;
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 12px 36px rgba(0,0,0,.16);
+}
+
+.landingBrandMark img { width: 36px; height: 36px; object-fit: contain; }
+.landingBrand > span:last-child { display: grid; gap: 1px; }
+.landingBrand strong { font-family: var(--font-space-grotesk); font-size: 17px; letter-spacing: .08em; }
+.landingBrand small { color: rgba(255,255,255,.68); font-size: 11px; font-weight: 700; }
+.landingHeaderActions { gap: 10px; }
+
+.landingCenterName {
+  gap: 6px;
+  color: rgba(255,255,255,.72);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.landingCenterName .lucide { width: 15px; }
+
+.landingHeaderLink {
+  gap: 8px;
+  min-height: 42px;
+  padding: 9px 16px;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 999px;
+  background: rgba(255,255,255,.08);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: background .18s, transform .18s;
+}
+
+.landingHeaderLink:hover { background: rgba(255,255,255,.16); transform: translateY(-1px); }
+
+.landingHero {
+  display: grid;
+  width: min(1320px, 100%);
+  min-height: 650px;
+  margin: 0 auto;
+  grid-template-columns: minmax(0, 1.12fr) minmax(360px, .88fr);
+  align-items: center;
+  gap: clamp(42px, 8vw, 116px);
+  padding: 70px 0 94px;
+}
+
+.landingHeroCopy { max-width: 720px; }
+
+.landingKicker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+  color: #86efac;
+  font-family: var(--font-space-grotesk);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+
+.landingKicker span {
+  width: 28px;
+  height: 1px;
+  background: #4ade80;
+}
+
+.landingHero h1 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(45px, 5.4vw, 78px);
+  font-weight: 850;
+  line-height: 1.08;
+  letter-spacing: -.055em;
+}
+
+.landingHero h1 em {
+  color: #a7f3d0;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.landingLead {
+  max-width: 660px;
+  margin-top: 26px;
+  color: rgba(236,253,245,.75);
+  font-size: clamp(16px, 1.5vw, 20px);
+  line-height: 1.8;
+}
+
+.landingHeroActions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+
+.landingPrimaryAction,
+.landingSecondaryAction {
+  min-height: 50px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.landingPrimaryAction {
+  gap: 10px;
+  padding: 12px 22px;
+  background: #fff;
+  color: #0b5b38;
+  box-shadow: 0 14px 32px rgba(0,0,0,.18);
+}
+
+.landingPrimaryAction:hover .lucide,
+.landingWorkspaceCard:hover .landingWorkspaceLink .lucide,
+.landingClosingAction:hover > .lucide { transform: translateX(4px); }
+
+.landingPrimaryAction .lucide,
+.landingWorkspaceLink .lucide,
+.landingClosingAction > .lucide { transition: transform .18s; }
+
+.landingSecondaryAction {
+  justify-content: center;
+  padding: 12px 20px;
+  border: 1px solid rgba(255,255,255,.22);
+  color: #fff;
+}
+
+.landingTrustLine {
+  gap: 7px;
+  margin-top: 22px;
+  color: rgba(255,255,255,.55);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.landingTrustLine .lucide { color: #86efac; }
+
+.landingDataPanel {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.17);
+  border-radius: 24px;
+  background: rgba(4, 38, 28, .55);
+  padding: 20px;
+  box-shadow: 0 26px 70px rgba(0,0,0,.22);
+  backdrop-filter: blur(18px);
+}
+
+.landingDataPanel::after {
+  position: absolute;
+  inset: auto -60px -90px auto;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: rgba(74,222,128,.08);
+  content: "";
+  filter: blur(2px);
+}
+
+.landingPanelTopline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: rgba(255,255,255,.45);
+  font-family: var(--font-space-grotesk);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+
+.landingLiveDot { display: inline-flex; align-items: center; gap: 6px; color: #86efac; letter-spacing: 0; }
+.landingLiveDot::before { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; content: ""; box-shadow: 0 0 0 5px rgba(74,222,128,.1); }
+
+.landingRadar {
+  position: relative;
+  width: min(280px, 72%);
+  aspect-ratio: 1;
+  margin: 20px auto 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(74,222,128,.08), transparent 62%);
+}
+
+.landingRadarRing,
+.landingRadarAxis,
+.landingRadarSweep,
+.landingRadarPoint,
+.landingRadarCore { position: absolute; }
+.landingRadarRing { inset: 0; border: 1px solid rgba(134,239,172,.18); border-radius: 50%; }
+.landingRadarRingInner { inset: 24%; }
+.landingRadarAxisX { top: 50%; right: 0; left: 0; height: 1px; background: rgba(134,239,172,.13); }
+.landingRadarAxisY { top: 0; bottom: 0; left: 50%; width: 1px; background: rgba(134,239,172,.13); }
+.landingRadarSweep { inset: 4%; border-radius: 50%; background: conic-gradient(from 38deg, rgba(74,222,128,.22), transparent 20%, transparent); animation: landingSweep 8s linear infinite; }
+.landingRadarPoint { width: 7px; height: 7px; border: 1px solid #d1fae5; border-radius: 50%; background: #4ade80; box-shadow: 0 0 16px #4ade80; }
+.landingRadarPointOne { top: 24%; left: 29%; }
+.landingRadarPointTwo { right: 18%; top: 48%; }
+.landingRadarPointThree { bottom: 21%; left: 41%; }
+.landingRadarCore { inset: 37%; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.2); border-radius: 50%; background: rgba(255,255,255,.94); box-shadow: 0 0 32px rgba(74,222,128,.24); }
+.landingRadarCore img { width: 70%; height: 70%; object-fit: contain; }
+
+.landingQualityList { display: grid; gap: 7px; }
+.landingQualityItem { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 10px; border: 1px solid rgba(255,255,255,.09); border-radius: 12px; background: rgba(255,255,255,.055); }
+.landingQualityIcon { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 9px; background: rgba(74,222,128,.12); color: #86efac; }
+.landingQualityIcon .lucide { width: 15px; }
+.landingQualityItem > span:nth-child(2) { display: grid; }
+.landingQualityItem strong { color: #fff; font-size: 12px; }
+.landingQualityItem small { color: rgba(255,255,255,.48); font-size: 10px; }
+.landingQualityIndex { color: rgba(255,255,255,.25); font-family: var(--font-space-grotesk); font-size: 10px; font-weight: 800; }
+
+.landingPurpose {
+  width: min(1320px, 100%);
+  margin: 0 auto;
+  padding: 100px 0 110px;
+}
+
+.landingSectionHeading { display: grid; max-width: 740px; gap: 8px; margin-bottom: 42px; }
+.landingSectionHeading > p,
+.landingClosing > div > p { color: #15803d; font-family: var(--font-space-grotesk); font-size: 10px; font-weight: 850; letter-spacing: .16em; }
+.landingSectionHeading h2,
+.landingClosing h2 { margin: 0; color: #10281d; font-size: clamp(29px, 3vw, 44px); line-height: 1.2; letter-spacing: -.035em; }
+.landingSectionHeading > span { color: var(--muted); font-size: 15px; line-height: 1.7; }
+
+.landingWorkspaceGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid #d6e4da; border-left: 1px solid #d6e4da; }
+.landingWorkspaceCard { position: relative; display: flex; min-height: 330px; flex-direction: column; padding: 28px; border-right: 1px solid #d6e4da; border-bottom: 1px solid #d6e4da; background: rgba(255,255,255,.72); color: var(--foreground); text-decoration: none; transition: background .2s, transform .2s, box-shadow .2s; }
+.landingWorkspaceCard:hover { z-index: 2; background: #fff; box-shadow: 0 22px 50px rgba(23, 60, 39, .1); transform: translateY(-5px); }
+.landingWorkspaceNumber { color: #90a89a; font-family: var(--font-space-grotesk); font-size: 11px; font-weight: 800; letter-spacing: .1em; }
+.landingWorkspaceIcon { display: grid; width: 46px; height: 46px; margin: 38px 0 22px; place-items: center; border-radius: 14px; background: #e7f8ec; color: #15803d; }
+.landingWorkspaceIcon .lucide { width: 21px; height: 21px; }
+.landingWorkspaceCard > strong { font-size: 17px; line-height: 1.4; }
+.landingWorkspaceCard > p { margin-top: 9px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.landingWorkspaceLink { gap: 7px; margin-top: auto; padding-top: 24px; color: #166534; font-size: 12px; font-weight: 850; }
+
+.landingClosing {
+  display: flex;
+  width: min(1320px, 100%);
+  margin: 0 auto 56px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 44px;
+  overflow: hidden;
+  padding: clamp(34px, 5vw, 66px);
+  border-radius: 26px;
+  background: #e3f5e8;
+}
+
+.landingClosing > div { display: grid; gap: 10px; }
+.landingClosingAction { min-width: min(390px, 100%); justify-content: space-between; gap: 24px; padding: 20px 22px; border-radius: 16px; background: #0b5b38; color: #fff; text-decoration: none; box-shadow: 0 16px 36px rgba(11,91,56,.2); }
+.landingClosingAction > span { display: grid; }
+.landingClosingAction small { color: rgba(255,255,255,.62); font-size: 10px; }
+.landingClosingAction strong { font-size: 15px; }
+.landingClosingAction > .lucide { width: 20px; height: 20px; }
+
+.landingFooter { display: flex; width: min(1320px, 100%); min-height: 74px; margin: 0 auto; align-items: center; justify-content: space-between; gap: 24px; border-top: 1px solid #d6e4da; color: #718177; font-size: 11px; font-weight: 700; }
+
+@keyframes landingSweep { to { transform: rotate(360deg); } }
+
+@media (max-width: 980px) {
+  .landingHero { grid-template-columns: 1fr; padding-top: 58px; }
+  .landingHeroCopy { max-width: 800px; }
+  .landingDataPanel { width: min(620px, 100%); }
+  .landingWorkspaceGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .landingClosing { align-items: flex-start; flex-direction: column; }
+}
+
+@media (max-width: 640px) {
+  .landingPage { padding: 0 16px; }
+  .landingBackdrop { height: 980px; }
+  .landingHeader { min-height: 78px; }
+  .landingBrand small,
+  .landingCenterName { display: none; }
+  .landingHeaderLink { min-height: 38px; padding: 8px 12px; }
+  .landingHero { min-height: 0; gap: 48px; padding: 54px 0 72px; }
+  .landingHero h1 { font-size: clamp(40px, 12.5vw, 58px); }
+  .landingLead { font-size: 16px; }
+  .landingTrustLine { align-items: flex-start; }
+  .landingDataPanel { padding: 15px; }
+  .landingRadar { width: 68%; }
+  .landingPurpose { padding: 72px 0; }
+  .landingWorkspaceGrid { grid-template-columns: 1fr; }
+  .landingWorkspaceCard { min-height: 280px; }
+  .landingClosing { margin-bottom: 30px; padding: 28px 22px; border-radius: 20px; }
+  .landingClosingAction { min-width: 0; width: 100%; }
+  .landingFooter { align-items: flex-start; flex-direction: column; justify-content: center; gap: 4px; padding: 22px 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landingRadarSweep { animation: none; }
+  .landingWorkspaceCard,
+  .landingHeaderLink { transition: none; }
+}
+
+.headerActions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
 .navLink {
   display: inline-flex;
   align-items: center;
@@ -175,6 +676,23 @@ button .lucide {
   width: 54px;
   height: 54px;
   overflow: hidden;
+}
+
+.headerHomeLink {
+  display: inline-flex;
+  flex: 0 0 auto;
+  border-radius: var(--radius);
+  text-decoration: none;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.headerHomeLink:hover {
+  transform: translateY(-1px);
+}
+
+.headerHomeLink:focus-visible {
+  outline: 3px solid var(--accent-glow);
+  outline-offset: 3px;
 }
 
 .headerImage {
@@ -351,6 +869,383 @@ button:disabled {
 .loginForm {
   display: grid;
   gap: 14px;
+}
+
+.loginProviderForm {
+  margin-bottom: 18px;
+}
+
+.loginProviderButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #ffffff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: 0 10px 20px rgba(21, 128, 61, 0.18);
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+
+.loginProviderButton:hover {
+  background: var(--accent-strong);
+  box-shadow: 0 12px 24px rgba(21, 128, 61, 0.24);
+}
+
+.loginProviderButton:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.loginProviderButton .lucide {
+  width: 19px;
+  height: 19px;
+}
+
+.loginDivider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.loginDivider::before,
+.loginDivider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.adminUsersMain {
+  align-items: flex-start;
+}
+
+.adminUserStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.adminUserStats article {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+}
+
+.adminUserStats .lucide {
+  width: 16px;
+  color: var(--accent);
+}
+
+.adminUserStats strong {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.adminUserStats span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.adminUsersToolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-tint);
+  margin-bottom: 12px;
+}
+
+.adminUsersToolbar .inputWithIcon {
+  width: min(380px, 100%);
+}
+
+.adminSearchInput {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px 0 40px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.adminSearchField .adminSearchInput::placeholder {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+  opacity: 1;
+}
+
+.adminSearchInput:hover {
+  border-color: var(--border-strong);
+}
+
+.adminSearchInput:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.adminFilterControls {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.adminFilterSelect {
+  height: 42px;
+  min-width: 120px;
+  padding: 0 30px 0 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.adminFilterSelect:hover {
+  border-color: var(--border-strong);
+}
+
+.adminFilterSelect:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.adminUsersToolbar > span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.adminUsersTable th,
+.adminUsersTable td {
+  vertical-align: middle;
+}
+
+.adminUserActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.adminLoginCount {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  text-align: center;
+}
+
+.adminActionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 1px solid;
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.adminActionButton .lucide {
+  width: 16px;
+  height: 16px;
+}
+
+.adminEditButton {
+  border-color: var(--border-strong);
+  color: var(--accent-strong);
+}
+
+.adminEditButton:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.adminDeleteButton {
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.adminDeleteButton:hover {
+  border-color: #f87171;
+  background: #fef2f2;
+}
+
+.adminUsersTable td:nth-child(2) strong,
+.adminUsersTable td:nth-child(2) small {
+  display: block;
+}
+
+.adminTwoLine strong,
+.adminTwoLine small {
+  display: block;
+}
+
+.adminTwoLine small {
+  max-width: 250px;
+  margin-top: 3px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adminUsersTable td:nth-child(2) small {
+  max-width: 250px;
+  margin-top: 3px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adminRoleBadge,
+.adminStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.adminRoleBadge {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.adminRole-admin {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.adminStatusBadge .lucide {
+  width: 13px;
+  height: 13px;
+}
+
+.adminStatusActive {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.adminStatusInactive {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.adminUserModal {
+  width: min(560px, calc(100vw - 28px));
+}
+
+.adminUserForm {
+  display: grid;
+  gap: 16px;
+}
+
+.adminUserForm label:not(.adminActiveToggle) {
+  display: grid;
+  gap: 7px;
+  color: var(--muted-strong);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.adminUserForm select,
+.adminUserForm textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--foreground);
+  padding: 10px 12px;
+  font: inherit;
+}
+
+.adminActiveToggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--panel-soft);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.adminActiveToggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+@media (max-width: 720px) {
+  .adminUserStats {
+    grid-template-columns: 1fr;
+  }
+
+  .adminUsersToolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .adminFilterControls {
+    flex-wrap: wrap;
+  }
+
+  .adminSearchField {
+    flex: 1 0 100%;
+  }
+
+  .adminUsersToolbar > span {
+    text-align: right;
+  }
 }
 
 .loginForm label {
@@ -872,8 +1767,9 @@ button:disabled {
 
 .errorMsgCard p {
   margin: 6px 0 12px;
-  font-size: 14px;
+  font-size: 19px;
   font-weight: 600;
+  white-space: pre-line;
 }
 
 .errorMsgAction {
@@ -2337,8 +3233,13 @@ button:disabled {
     align-items: stretch;
   }
 
-  .navLink {
+  .headerActions {
     width: 100%;
+  }
+
+  .navLink {
+    flex: 1 1 auto;
+    width: auto;
     justify-content: center;
     box-sizing: border-box;
     max-width: 100%;
@@ -2645,6 +3546,32 @@ button:disabled {
   pointer-events: none;
 }
 
+.floatingUser.floatingUserHeader {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  z-index: 20;
+  display: block;
+  flex: 0 0 auto;
+}
+
+.floatingUserHeader .floatingUserButton {
+  min-width: 48px;
+  height: 42px;
+  padding: 3px;
+}
+
+.floatingUserHeader .floatingUserChevron {
+  display: none;
+}
+
+.floatingUserHeader .floatingUserMenu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 30;
+}
+
 .floatingUserMenu,
 .floatingUserButton {
   pointer-events: auto;
@@ -2696,19 +3623,20 @@ button:disabled {
   height: 36px;
   place-items: center;
   border-radius: 50%;
-  background: var(--accent);
+  background: #2563eb;
   color: #ffffff;
 }
 
 .floatingUserAvatarGuest {
-  border: 1px solid var(--border-strong);
-  background: #f1f5f9;
-  color: var(--muted-strong);
+  border: 1px solid #93c5fd;
+  background: #eff6ff;
+  color: #2563eb;
 }
 
 .floatingUserAvatar .lucide {
   width: 18px;
   height: 18px;
+  stroke-width: 1.5;
 }
 
 .floatingUserButtonInitial {
@@ -2779,6 +3707,13 @@ button:disabled {
   color: var(--muted);
   font-size: 11px;
   font-weight: 800;
+}
+
+.floatingUserCard small.floatingUserRole {
+  margin-top: 2px;
+  color: var(--muted-strong);
+  line-height: 1.35;
+  white-space: normal;
 }
 
 .floatingUserLinks {

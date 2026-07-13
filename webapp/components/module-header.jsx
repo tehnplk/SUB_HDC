@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import DashboardHeaderImage from "@/components/dashboard-header-image";
 import DashboardPageTitle from "@/components/dashboard-page-title";
 import MainTab from "@/components/main-tab";
+import FloatingUserMenu from "@/components/floating-user-menu";
+import { useUserSession } from "@/components/user-session-context";
 // แต่ละ module เป็นเจ้าของ breadcrumb entry ของตัวเองใน _lib — ที่นี่แค่ import มาต่อ
 import { RAPID_BREADCRUMB } from "@/app/rapid/_lib/rapid-reports.mjs";
 
@@ -53,10 +55,12 @@ const BREADCRUMB_MODULES = [
   { prefix: "/upload", href: "/upload", label: "นำเข้าไฟล์" },
   { prefix: "/person", href: "/person", label: "ข้อมูลประชากร" },
   { prefix: "/update-log", href: "/update-log", label: "ประวัติการปรับปรุง" },
+  { prefix: "/admin", href: "/admin", label: "User management" },
 ];
 
 export default function ModuleHeader() {
   const pathname = usePathname();
+  const userSession = useUserSession();
   const currentModule = BREADCRUMB_MODULES.find((item) => pathname.startsWith(item.prefix));
   const currentPage = currentModule?.pages?.[pathname];
 
@@ -70,10 +74,13 @@ export default function ModuleHeader() {
                 <DashboardPageTitle />
               </div>
           </div>
+          <div className="headerActions">
           <Link href="/upload" className="navLink">
             <UploadCloud aria-hidden="true" />
             นำเข้าไฟล์
           </Link>
+          <FloatingUserMenu {...userSession} variant="header" />
+          </div>
         </div>
         <MainTab />
       </div>

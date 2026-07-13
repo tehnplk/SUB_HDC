@@ -7,7 +7,7 @@ import {
   runExcelExportTool,
   userRequestedExcelExport,
 } from "@/lib/excel-export-tool.mjs";
-import { requireAppAuth } from "../../../../lib/auth-guard.mjs";
+import { requireAppAuth, requireExcelExportAccess } from "../../../../lib/auth-guard.mjs";
 
 export const runtime = "nodejs";
 
@@ -267,6 +267,11 @@ export async function POST(request) {
 
     if (!messages.some((message) => message.role === "user")) {
       return Response.json({ error: "Message is required" }, { status: 400 });
+    }
+
+    if (userRequestedExcelExport(messages)) {
+      const exportDenied = await requireExcelExportAccess();
+      if (exportDenied) return exportDenied;
     }
 
     const client = getDeepSeekClient();

@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const headerSource = readFileSync(new URL("../components/module-header.jsx", import.meta.url), "utf8");
+const headerImageSource = readFileSync(new URL("../components/dashboard-header-image.jsx", import.meta.url), "utf8");
 const pageTitleSource = readFileSync(new URL("../components/dashboard-page-title.jsx", import.meta.url), "utf8");
 const mainTabSource = readFileSync(new URL("../components/main-tab.jsx", import.meta.url), "utf8");
 const typeareaSource = readFileSync(new URL("../app/dashboard/person-target/page.js", import.meta.url), "utf8");
@@ -14,6 +15,8 @@ const globalCss = readFileSync(new URL("../app/globals.css", import.meta.url), "
 
 test("ModuleHeader owns the shared title and main navigation without a redundant topic row", () => {
   assert.match(headerSource, /DashboardHeaderImage/);
+  assert.match(headerImageSource, /<Link href="\/"/);
+  assert.match(headerImageSource, /aria-label="ไปหน้า Landing"/);
   assert.match(headerSource, /DashboardPageTitle/);
   assert.match(headerSource, /MainTab/);
   assert.doesNotMatch(headerSource, /subtitle \? <p className="lead">/);

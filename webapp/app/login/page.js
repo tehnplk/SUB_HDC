@@ -1,13 +1,46 @@
 ﻿import { AuthError } from "next-auth";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
-import { LayoutDashboard, LockKeyhole, LogIn } from "lucide-react";
+import { IdCard, LayoutDashboard, LockKeyhole, LogIn } from "lucide-react";
+
+const DEFAULT_CALLBACK_URL = "/import-check/compare-hdc-person";
+
+function localCallbackUrl(value) {
+  const callbackUrl = String(value || "");
+  return callbackUrl.startsWith("/") && !callbackUrl.startsWith("//") && !callbackUrl.includes("\\")
+    ? callbackUrl
+    : DEFAULT_CALLBACK_URL;
+}
+
+async function providerLoginAction(formData) {
+  "use server";
+  const callbackUrl = localCallbackUrl(formData.get("callbackUrl"));
+  const clientId = process.env.HEALTH_CLIENT_ID;
+  const redirectUri = process.env.HEALTH_REDIRECT_URI;
+  if (!clientId || !redirectUri) redirect("/login?error=provider_config");
+
+  const cookieStore = await cookies();
+  cookieStore.set("provider_callback_url", callbackUrl, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 10,
+    path: "/",
+  });
+
+  const url = new URL("https://moph.id.th/oauth/redirect");
+  url.searchParams.set("client_id", clientId);
+  url.searchParams.set("redirect_uri", redirectUri);
+  url.searchParams.set("response_type", "code");
+  redirect(url.toString());
+}
 
 async function loginAction(formData) {
   "use server";
 
-  const callbackUrl = String(formData.get("callbackUrl") || "/import-check/files-count");
+  const callbackUrl = localCallbackUrl(formData.get("callbackUrl"));
 
   try {
     await signIn("credentials", {
@@ -25,8 +58,16 @@ async function loginAction(formData) {
 
 export default async function LoginPage({ searchParams }) {
   const params = await searchParams;
-  const callbackUrl = typeof params?.callbackUrl === "string" ? params.callbackUrl : "/import-check/files-count";
-  const hasError = params?.error === "1";
+  const callbackUrl = localCallbackUrl(params?.callbackUrl);
+  const error = typeof params?.error === "string" ? params.error : "";
+  const errorMessage =
+    error === "1"
+      ? "Invalid username or password"
+      : error === "provider_not_allowed"
+        ? "ProviderID นี้ไม่ได้รับอนุญาตให้เข้าสู่ระบบ"
+        : error
+          ? "ไม่สามารถเข้าสู่ระบบด้วย ProviderID ได้ กรุณาลองใหม่อีกครั้ง"
+          : "";
 
   return (
     <main className="main loginMain">
@@ -41,7 +82,19 @@ export default async function LoginPage({ searchParams }) {
           </div>
         </div>
 
-        {hasError ? <div className="error">Invalid username or password</div> : null}
+        {errorMessage ? <div className="error">{errorMessage}</div> : null}
+
+        <form action={providerLoginAction} className="loginProviderForm">
+          <input type="hidden" name="callbackUrl" value={callbackUrl} />
+          <button type="submit" className="loginProviderButton">
+            <IdCard aria-hidden="true" />
+            เข้าระบบด้วย ProviderID
+          </button>
+        </form>
+
+        <div className="loginDivider" aria-hidden="true">
+          <span>หรือ</span>
+        </div>
 
         <form action={loginAction} className="loginForm">
           <input type="hidden" name="callbackUrl" value={callbackUrl} />

@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { ChevronDown, ChevronUp, Database, LogOut, UserRound } from "lucide-react";
+import { ChevronDown, ChevronUp, Database, LogIn, LogOut, ShieldCheck, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 const menuItems = [
   { href: "/dev/tranforms-data-dict", label: "Transform Dict", icon: Database },
 ];
 
-export default function FloatingUserMenu({ userName, centerName }) {
+export default function FloatingUserMenu({ userName, userFullname, userAvatarInitial, providerId, userRole, userRoleNote, hoscode, hospitalName, isAdmin, centerName, variant = "floating" }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
@@ -29,8 +29,10 @@ export default function FloatingUserMenu({ userName, centerName }) {
 
   if (pathname === "/login") return null;
 
-  const displayName = userName || "Guest";
-  const initials = displayName.trim().slice(0, 1).toUpperCase() || "U";
+  const displayName = userFullname || userName || providerId || "Guest";
+  const initials = userAvatarInitial?.trim().slice(0, 1) || displayName.trim().slice(0, 1).toUpperCase() || "U";
+  const isAuthenticated = Boolean(userFullname || userName || providerId);
+  const hospitalLabel = [hoscode, hospitalName].filter(Boolean).join(" · ") || centerName || "SUB HDC";
 
   async function handleSignOut() {
     setOpen(false);
@@ -39,19 +41,27 @@ export default function FloatingUserMenu({ userName, centerName }) {
   }
 
   return (
-    <div ref={menuRef} className={`floatingUser ${open ? "floatingUserOpen" : ""}`}>
+    <div ref={menuRef} className={`floatingUser ${variant === "header" ? "floatingUserHeader" : ""} ${open ? "floatingUserOpen" : ""}`}>
       {open ? (
         <div className="floatingUserMenu" role="menu" aria-label="User menu">
+          {!isAuthenticated ? (
+            <Link href="/login" className="floatingUserLink" role="menuitem" onClick={() => setOpen(false)}>
+              <LogIn />
+              <span>Login</span>
+            </Link>
+          ) : (
+            <>
           <div className="floatingUserCard" role="menuitem" aria-label="Profile">
-            <span className={`floatingUserMiniAvatar ${userName ? "" : "floatingUserMiniAvatarGuest"}`}>{initials}</span>
+            <span className={`floatingUserMiniAvatar ${isAuthenticated ? "" : "floatingUserMiniAvatarGuest"}`}>{initials}</span>
             <span>
-              <strong>Profile</strong>
-              <small>{centerName || "SUB HDC"}</small>
+              <strong>{displayName}</strong>
+              <small>{hospitalLabel}</small>
+              {userRole ? <small className="floatingUserRole">{userRole}{userRoleNote ? ` · ${userRoleNote}` : ""}</small> : null}
             </span>
           </div>
 
           <div className="floatingUserLinks">
-            {menuItems.map((item) => {
+            {[...menuItems, ...(isAdmin ? [{ href: "/admin", label: "Manage users", icon: ShieldCheck }] : [])].map((item) => {
               const Icon = item.icon;
               const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
@@ -79,6 +89,8 @@ export default function FloatingUserMenu({ userName, centerName }) {
             <LogOut />
             <span>Logout</span>
           </button>
+            </>
+          )}
         </div>
       ) : null}
 
@@ -89,8 +101,8 @@ export default function FloatingUserMenu({ userName, centerName }) {
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
       >
-        <span className={`floatingUserAvatar ${userName ? "" : "floatingUserAvatarGuest"}`}>
-          {userName ? <span className="floatingUserButtonInitial">{initials}</span> : <UserRound />}
+        <span className={`floatingUserAvatar ${isAuthenticated ? "" : "floatingUserAvatarGuest"}`}>
+          {isAuthenticated ? <span className="floatingUserButtonInitial">{initials}</span> : <UserRound />}
         </span>
         {open ? <ChevronDown className="floatingUserChevron" /> : <ChevronUp className="floatingUserChevron" />}
       </button>

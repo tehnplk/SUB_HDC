@@ -1,8 +1,29 @@
 # Hand-off: Webapp UI Flow
 
+## ProviderID login
+
+- `/login` keeps username/password and adds `เข้าสู่ระบบด้วย ProviderID` as the primary action.
+- When no valid local callback URL is supplied, both sign-in methods redirect to `/import-check/compare-hdc-person`.
+- Authentication starts at Health ID OAuth, returns to `/api/auth/healthid`, exchanges the Health ID token for a Provider ID token/profile, and creates an Auth.js JWT session.
+- The protected-page `callbackUrl` is kept in the short-lived, httpOnly `provider_callback_url` cookie.
+- First-time ProviderID users are inserted into `c_user_provider` with the active `user` role ID from `c_user_role`. Returning users refresh profile and `last_activity`; users with `is_active = 0` are denied.
+- Required env names: `HEALTH_CLIENT_ID`, `HEALTH_CLIENT_SECRET`, `HEALTH_REDIRECT_URI`, `PROVIDER_CLIENT_ID`, `PROVIDER_CLIENT_SECRET`.
+
+## Admin user management
+
+- `/admin` is available only to the configured `.env` account or a ProviderID user with `c_user_provider.role = 1`; the API repeats the same authorization check.
+- The configured username/password account receives the `admin` role. `c_user_provider.role` stores `c_user_role.id`, which is resolved to its role name for ProviderID sessions.
+- `/api/admin/users` lists non-sensitive user fields and allows only `role_id`, `is_active`, and `note` updates. It never returns `cid_hash` or the saved profile.
+- Administrators can hard-delete another ProviderID user after an explicit confirmation; they cannot delete their own ProviderID account.
+- The user menu shows `Manage users` only for administrators.
+- Role/status changes apply to the user's next login because ProviderID sessions are JWT-based with a 24-hour maximum age.
+- `c_user_provider.login_count` starts at 1 on the first successful ProviderID login and increments on every later successful ProviderID login; `/admin` displays it as `LOGIN (ครั้ง)`.
+
 มาตรฐานกลางของ**ทุกเพจ** — ไม่ผูกกับเพจใดเพจหนึ่ง
 
 ## Shell
+
+- The app icon in the shared module header links to `/` (the landing page).
 
 - ทุกโมดูลใช้ shell เดียวกันผ่าน `ModuleHeader` (โลโก้ + ชื่อระบบ + main tab +
   breadcrumb) — ไม่มี tab bar ชั้นที่สอง และ**ไม่มี hero/banner** ทุกหน้า
@@ -73,3 +94,11 @@ API route อ่าน**ตารางสรุปของ transform** (ไม
 cd webapp
 node --test tests\*.test.mjs
 ```
+
+## Root landing page
+
+- `/` uses the standard `main dashboardMain > panel panelWide dashboardPanel > ModuleHeader` shell.
+- The page body presents four cards without a separate content heading: quality checking, target registry, gap tracking, and performance summary.
+- The introduction uses `webapp/public/ai.png` as a responsive supporting visual.
+- Keep the cards in a 2x2 grid before the AI image on desktop and one column on mobile.
+- Focused source test: `webapp/tests/landing-page.test.mjs`.

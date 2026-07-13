@@ -1,11 +1,15 @@
 import * as XLSX from "xlsx";
 import { loadRapidReport } from "@/app/rapid/_lib/rapid-data.mjs";
+import { requireExcelExportAccess } from "@/lib/auth-guard.mjs";
 
 export const runtime = "nodejs";
 
 // ส่งออกผลงานรายหน่วยบริการเป็น xlsx — ข้อมูลสรุป (ไม่มี cid) จึงไม่ต้อง login
 // รองรับ filter สังกัด (?affiliation=) ให้ตรงกับที่กรองบนหน้าเว็บ
 export async function GET(request, { params }) {
+  const exportDenied = await requireExcelExportAccess();
+  if (exportDenied) return exportDenied;
+
   const { id } = await params;
   const affiliation = new URL(request.url).searchParams.get("affiliation") || "";
 

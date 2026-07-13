@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
 import { requireApiJwt } from "@/lib/api-auth.mjs";
+import { requireExcelExportAccess } from "@/lib/auth-guard.mjs";
 import { createDbConnection } from "@/lib/db";
 import { getHospNameMap } from "@/lib/hos-list-query.mjs";
 
@@ -42,6 +43,8 @@ export async function GET(request) {
       headers: { Location: `/error/msg?msg=${msg}` },
     });
   }
+  const exportDenied = await requireExcelExportAccess();
+  if (exportDenied) return exportDenied;
 
   const hospcode = new URL(request.url).searchParams.get("hospcode") || "";
   if (hospcode && !/^\w{1,10}$/.test(hospcode)) {
