@@ -1062,7 +1062,7 @@ button:disabled {
   width: min(100%, 320px);
 }
 
-.rapidGroupHeader {
+.rapidTable .rapidGroupHeader {
   text-align: center;
 }
 
