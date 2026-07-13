@@ -308,7 +308,7 @@ test("c_user_role schema and migration seed the fixed application roles", async 
   assert.match(sources[2], /SELECT IF\(COUNT\(\*\) = 4, 1, 0\)/);
 });
 
-test("legacy user tables are preserved into c_user tables before removal", async () => {
+test("legacy user tables are dropped without migrating their data", async () => {
   const tableDir = path.resolve(process.cwd(), "table");
   const migrationPath = path.resolve(
     process.cwd(),
@@ -319,17 +319,42 @@ test("legacy user tables are preserved into c_user tables before removal", async
   const source = await readFile(migrationPath, "utf8");
 
   assert.doesNotMatch(tableFiles.join("\n"), /^c_role\.sql$/m);
-  assert.match(source, /INSERT INTO `c_user_role`/);
-  assert.match(source, /INSERT INTO `c_user_provider`/);
-  assert.match(source, /SELECT DISTINCT legacy\.`role`, 1, 'Migrated from user_provider'/);
-  assert.match(source, /COALESCE\(mapped_role\.`id`, 4\)/);
-  assert.doesNotMatch(source, /\bcurrent_role\b/i);
-  assert.match(source, /CREATE TEMPORARY TABLE `_validate_legacy_user_tables`/);
+  assert.doesNotMatch(tableFiles.join("\n"), /^user_provider\.sql$/m);
   assert.match(source, /DROP TABLE IF EXISTS `user_provider`;/);
   assert.match(source, /DROP TABLE IF EXISTS `c_role`;/);
-  assert.ok(
-    source.indexOf("INSERT INTO `c_user_provider`") < source.indexOf("DROP TABLE IF EXISTS `user_provider`"),
-    "legacy provider data must be copied before the old table is dropped"
+  // ตกลงกับ user: ลบทิ้งเลย ไม่ก็อปปี้ข้อมูลเดิมเข้าตารางใหม่
+  assert.doesNotMatch(source, /INSERT\s+INTO\s+`c_user_provider`/i);
+  assert.doesNotMatch(source, /INSERT\s+INTO\s+`c_user_role`/i);
+  assert.doesNotMatch(source, /CREATE\s+TABLE[^;]*`user_provider`/i);
+});
+
+test("user tables use the project standard utf8mb3_general_ci collation", async () => {
+  const tableDir = path.resolve(process.cwd(), "table");
+  const migrationDir = path.resolve(process.cwd(), "table_update");
+  const schemaSources = [
+    await readFile(path.join(tableDir, "c_user_provider.sql"), "utf8"),
+    await readFile(path.join(tableDir, "c_user_role.sql"), "utf8"),
+    await readFile(path.join(migrationDir, "20260713_00_create_user_admin_tables.sql"), "utf8"),
+  ];
+  for (const source of schemaSources) {
+    assert.match(source, /DEFAULT\s+CHARSET=utf8mb3\s+COLLATE=utf8mb3_general_ci/i);
+    assert.doesNotMatch(source, /utf8mb4/i);
+  }
+
+  const convertSource = await readFile(
+    path.join(migrationDir, "20260713_convert_c_user_provider_role_to_id.sql"),
+    "utf8"
+  );
+  // ถอด FK และแปลง collation ตารางที่เคยเป็น utf8mb4 ให้ตรงมาตรฐาน
+  assert.match(convertSource, /DROP\s+FOREIGN\s+KEY\s+IF\s+EXISTS\s+`fk_c_user_provider_role`/i);
+  assert.doesNotMatch(convertSource, /ADD\s+CONSTRAINT/i);
+  assert.match(
+    convertSource,
+    /ALTER\s+TABLE\s+`c_user_role`\s+CONVERT\s+TO\s+CHARACTER\s+SET\s+utf8mb3\s+COLLATE\s+utf8mb3_general_ci/i
+  );
+  assert.match(
+    convertSource,
+    /ALTER\s+TABLE\s+`c_user_provider`\s+CONVERT\s+TO\s+CHARACTER\s+SET\s+utf8mb3\s+COLLATE\s+utf8mb3_general_ci/i
   );
 });
 

@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS `c_user_role` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_c_user_role_role` (`role`),
   KEY `idx_c_user_role_is_active` (`is_active`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 INSERT INTO `c_user_role` (`id`, `role`, `is_active`, `note`) VALUES
   (1, 'admin', 1, 'System administrator'),
