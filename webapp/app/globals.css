@@ -1083,6 +1083,16 @@ button:disabled {
   padding-right: 16px;
 }
 
+/* datagrid ใต้ /rapid: คอลัมน์กว้างพอดีเนื้อหา บีบชิดซ้าย ไม่ยืดเต็ม wrapper */
+.fileTable.rapidTable {
+  width: auto;
+}
+
+.fileTable.rapidTable th,
+.fileTable.rapidTable td {
+  white-space: nowrap;
+}
+
 /* datagrid ของ rapid ไม่จำกัดความสูง → ไม่มี scrollbar แนวตั้ง
    (compound selector เพื่อชนะ .tableWrap ที่ประกาศทีหลัง; overflow auto ทั้งคู่แต่
    ไม่มี max-height จึงไม่มีแนวตั้ง คง scroll แนวนอนของตารางที่กว้างไว้) */
