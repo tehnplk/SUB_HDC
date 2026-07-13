@@ -27,6 +27,11 @@ CREATE TABLE IF NOT EXISTS `c_user_role` (
   KEY `idx_c_user_role_is_active` (`is_active`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `c_user_role` (`role`, `is_active`, `note`)
-VALUES ('admin', 1, 'System administrator'), ('superuser', 1, 'All individual data'), ('user', 1, 'Standard ProviderID user'), ('guest', 1, 'Summary data only')
-ON DUPLICATE KEY UPDATE `is_active` = VALUES(`is_active`);
+INSERT INTO `c_user_role` (`id`, `role`, `is_active`, `note`) VALUES
+  (1, 'admin', 1, 'System administrator'),
+  (2, 'superuser', 1, 'All individual data'),
+  (3, 'user', 1, 'Standard ProviderID user'),
+  (4, 'guest', 1, 'Summary data only')
+ON DUPLICATE KEY UPDATE
+  `is_active` = IF(`id` = VALUES(`id`) AND `role` = VALUES(`role`), VALUES(`is_active`), `is_active`),
+  `note` = IF(`id` = VALUES(`id`) AND `role` = VALUES(`role`), VALUES(`note`), `note`);

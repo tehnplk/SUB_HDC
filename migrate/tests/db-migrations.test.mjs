@@ -288,6 +288,50 @@ test("service chiefcomp is text in initial schema and migration", async () => {
   );
 });
 
+test("c_user_role schema and migration seed the fixed application roles", async () => {
+  const tableDir = path.resolve(process.cwd(), "table");
+  const migrationDir = path.resolve(process.cwd(), "table_update");
+  const sources = [
+    await readFile(path.join(tableDir, "c_user_role.sql"), "utf8"),
+    await readFile(path.join(migrationDir, "20260713_00_create_user_admin_tables.sql"), "utf8"),
+    await readFile(path.join(migrationDir, "20260713_seed_c_user_role.sql"), "utf8"),
+  ];
+
+  for (const source of sources) {
+    assert.match(source, /\(1, 'admin', 1, 'System administrator'\)/);
+    assert.match(source, /\(2, 'superuser', 1, 'All individual data'\)/);
+    assert.match(source, /\(3, 'user', 1, 'Standard ProviderID user'\)/);
+    assert.match(source, /\(4, 'guest', 1, 'Summary data only'\)/);
+  }
+
+  assert.match(sources[2], /CHECK \(`ok` = 1\)/);
+  assert.match(sources[2], /SELECT IF\(COUNT\(\*\) = 4, 1, 0\)/);
+});
+
+test("legacy user tables are preserved into c_user tables before removal", async () => {
+  const tableDir = path.resolve(process.cwd(), "table");
+  const migrationPath = path.resolve(
+    process.cwd(),
+    "table_update",
+    "20260713_zz_remove_legacy_user_tables.sql"
+  );
+  const tableFiles = await readdir(tableDir);
+  const source = await readFile(migrationPath, "utf8");
+
+  assert.doesNotMatch(tableFiles.join("\n"), /^c_role\.sql$/m);
+  assert.match(source, /INSERT INTO `c_user_role`/);
+  assert.match(source, /INSERT INTO `c_user_provider`/);
+  assert.match(source, /SELECT DISTINCT legacy\.`role`, 1, 'Migrated from user_provider'/);
+  assert.match(source, /COALESCE\(current_role\.`id`, 4\)/);
+  assert.match(source, /CREATE TEMPORARY TABLE `_validate_legacy_user_tables`/);
+  assert.match(source, /DROP TABLE IF EXISTS `user_provider`;/);
+  assert.match(source, /DROP TABLE IF EXISTS `c_role`;/);
+  assert.ok(
+    source.indexOf("INSERT INTO `c_user_provider`") < source.indexOf("DROP TABLE IF EXISTS `user_provider`"),
+    "legacy provider data must be copied before the old table is dropped"
+  );
+});
+
 test("report query indexes exist in initial schemas and migrations", async () => {
   const tableDir = path.resolve(process.cwd(), "table");
   const migrationDir = path.resolve(process.cwd(), "table_update");

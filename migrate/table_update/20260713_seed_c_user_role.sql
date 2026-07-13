@@ -1,13 +1,3 @@
-CREATE TABLE IF NOT EXISTS `c_user_role` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `role` varchar(100) NOT NULL,
-  `is_active` tinyint(1) NOT NULL DEFAULT 1,
-  `note` text DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_c_user_role_role` (`role`),
-  KEY `idx_c_user_role_is_active` (`is_active`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 INSERT INTO `c_user_role` (`id`, `role`, `is_active`, `note`) VALUES
   (1, 'admin', 1, 'System administrator'),
   (2, 'superuser', 1, 'All individual data'),
@@ -16,3 +6,17 @@ INSERT INTO `c_user_role` (`id`, `role`, `is_active`, `note`) VALUES
 ON DUPLICATE KEY UPDATE
   `is_active` = IF(`id` = VALUES(`id`) AND `role` = VALUES(`role`), VALUES(`is_active`), `is_active`),
   `note` = IF(`id` = VALUES(`id`) AND `role` = VALUES(`role`), VALUES(`note`), `note`);
+
+CREATE TEMPORARY TABLE `_validate_c_user_role_seed` (
+  `ok` tinyint(1) NOT NULL CHECK (`ok` = 1)
+);
+
+INSERT INTO `_validate_c_user_role_seed` (`ok`)
+SELECT IF(COUNT(*) = 4, 1, 0)
+FROM `c_user_role`
+WHERE (`id` = 1 AND `role` = 'admin')
+   OR (`id` = 2 AND `role` = 'superuser')
+   OR (`id` = 3 AND `role` = 'user')
+   OR (`id` = 4 AND `role` = 'guest');
+
+DROP TEMPORARY TABLE `_validate_c_user_role_seed`;
