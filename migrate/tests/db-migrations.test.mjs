@@ -322,7 +322,8 @@ test("legacy user tables are preserved into c_user tables before removal", async
   assert.match(source, /INSERT INTO `c_user_role`/);
   assert.match(source, /INSERT INTO `c_user_provider`/);
   assert.match(source, /SELECT DISTINCT legacy\.`role`, 1, 'Migrated from user_provider'/);
-  assert.match(source, /COALESCE\(current_role\.`id`, 4\)/);
+  assert.match(source, /COALESCE\(mapped_role\.`id`, 4\)/);
+  assert.doesNotMatch(source, /\bcurrent_role\b/i);
   assert.match(source, /CREATE TEMPORARY TABLE `_validate_legacy_user_tables`/);
   assert.match(source, /DROP TABLE IF EXISTS `user_provider`;/);
   assert.match(source, /DROP TABLE IF EXISTS `c_role`;/);

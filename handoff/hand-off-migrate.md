@@ -53,6 +53,7 @@ SQL **ไม่ได้ฝังใน image** — mount สดจาก host (
 
 - `c_user_role` is seeded with fixed IDs: `1=admin`, `2=superuser`, `3=user`, `4=guest` in both the initial schema and an idempotent migration. The migration validates this mapping before it is recorded.
 - Legacy `user_provider` and `c_role` are removed by a guarded migration. Existing providers and custom roles are copied into `c_user_provider` and `c_user_role`, validated, and only then are the old tables dropped.
+- Avoid `current_role` as a MariaDB table alias because it is reserved; the legacy cleanup migration uses `mapped_role`.
 
 ```powershell
 docker compose up -d --build

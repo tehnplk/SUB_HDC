@@ -25,7 +25,7 @@ INSERT INTO `c_user_role` (`role`, `is_active`, `note`)
 SELECT legacy.`name`, legacy.`is_active`, 'Migrated from c_role'
 FROM `c_role` AS legacy
 WHERE NOT EXISTS (
-  SELECT 1 FROM `c_user_role` AS current_role WHERE current_role.`role` = legacy.`name`
+  SELECT 1 FROM `c_user_role` AS mapped_role WHERE mapped_role.`role` = legacy.`name`
 );
 
 INSERT INTO `c_user_role` (`role`, `is_active`, `note`)
@@ -33,7 +33,7 @@ SELECT DISTINCT legacy.`role`, 1, 'Migrated from user_provider'
 FROM `user_provider` AS legacy
 WHERE TRIM(legacy.`role`) <> ''
   AND NOT EXISTS (
-    SELECT 1 FROM `c_user_role` AS current_role WHERE current_role.`role` = legacy.`role`
+    SELECT 1 FROM `c_user_role` AS mapped_role WHERE mapped_role.`role` = legacy.`role`
   );
 
 INSERT INTO `c_user_provider` (
@@ -42,10 +42,10 @@ INSERT INTO `c_user_provider` (
 )
 SELECT
   legacy.`provider_id`, legacy.`cid_hash`, legacy.`fullname`, legacy.`hoscode`,
-  COALESCE(current_role.`id`, 4), 0,
+  COALESCE(mapped_role.`id`, 4), 0,
   legacy.`last_activity`, legacy.`is_active`, legacy.`profile`, legacy.`note`
 FROM `user_provider` AS legacy
-LEFT JOIN `c_user_role` AS current_role ON current_role.`role` = legacy.`role`
+LEFT JOIN `c_user_role` AS mapped_role ON mapped_role.`role` = legacy.`role`
 WHERE NOT EXISTS (
   SELECT 1
   FROM `c_user_provider` AS current_provider
@@ -66,14 +66,14 @@ WHERE current_provider.`id` IS NULL;
 INSERT INTO `_validate_legacy_user_tables` (`ok`)
 SELECT IF(COUNT(*) = 0, 1, 0)
 FROM `c_role` AS legacy
-LEFT JOIN `c_user_role` AS current_role ON current_role.`role` = legacy.`name`
-WHERE current_role.`id` IS NULL;
+LEFT JOIN `c_user_role` AS mapped_role ON mapped_role.`role` = legacy.`name`
+WHERE mapped_role.`id` IS NULL;
 
 INSERT INTO `_validate_legacy_user_tables` (`ok`)
 SELECT IF(COUNT(*) = 0, 1, 0)
 FROM `user_provider` AS legacy
-LEFT JOIN `c_user_role` AS current_role ON current_role.`role` = legacy.`role`
-WHERE TRIM(legacy.`role`) <> '' AND current_role.`id` IS NULL;
+LEFT JOIN `c_user_role` AS mapped_role ON mapped_role.`role` = legacy.`role`
+WHERE TRIM(legacy.`role`) <> '' AND mapped_role.`id` IS NULL;
 
 DROP TEMPORARY TABLE `_validate_legacy_user_tables`;
 DROP TABLE IF EXISTS `user_provider`;
