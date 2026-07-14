@@ -6,6 +6,7 @@
 ## RULE
 - Spawn Sub-agent who set for topic user request first.
 - Do not commit , build , deploy if user not request.
+- new Database table  must use collation  only utf8mb3_general_ci.
 
 ## Research Tool
 - npx  ctx7 cli  skill
