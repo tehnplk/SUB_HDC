@@ -15,8 +15,9 @@ https://<addon>/dashboard/check?session-id=<cid_hash>
 - เมนู Add-On + การต่อ `session-id`: ดู `webapp/app/api/addon-url/route.js`
 - endpoint ตรวจสอบ: `webapp/app/api/addon-auth/route.js`
 - ตัวตรวจ JWT: `webapp/lib/api-auth.mjs` (`verifyApiJwt`)
-- ผู้ใช้ที่ **ไม่ได้ login** จะไม่มี `session-id` ต่อมาใน URL — ระบบเสริมควร
-  ปฏิบัติเป็น guest
+- **ทุกเมนูภายใต้ Add-On ต่อ `session-id` เสมอ**: ผู้ใช้ที่ login ได้
+  `session-id=<cid_hash>`, ผู้ที่ **ไม่ได้ login** ได้ `session-id=none` —
+  ระบบเสริมเจอ `none` (หรือ lookup แล้ว 404) ให้ปฏิบัติเป็น guest
 
 ## Endpoint
 

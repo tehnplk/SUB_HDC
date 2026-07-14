@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { ChevronDown, ChevronUp, Database, LogIn, LogOut, ShieldCheck, UserRound } from "lucide-react";
+import { ChevronDown, ChevronUp, Database, LayoutGrid, LogIn, LogOut, ShieldCheck, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 const menuItems = [
@@ -61,7 +61,7 @@ export default function FloatingUserMenu({ userName, userFullname, userAvatarIni
           </div>
 
           <div className="floatingUserLinks">
-            {[...menuItems, ...(isAdmin ? [{ href: "/admin", label: "Manage users", icon: ShieldCheck }] : [])].map((item) => {
+            {[...menuItems, ...(isAdmin ? [{ href: "/admin", label: "Manage users", icon: ShieldCheck }, { href: "/admin/addon", label: "จัดการระบบ Add-On", icon: LayoutGrid }] : [])].map((item) => {
               const Icon = item.icon;
               const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
 

@@ -55,6 +55,7 @@ const BREADCRUMB_MODULES = [
   { prefix: "/upload", href: "/upload", label: "นำเข้าไฟล์" },
   { prefix: "/person", href: "/person", label: "ข้อมูลประชากร" },
   { prefix: "/update-log", href: "/update-log", label: "ประวัติการปรับปรุง" },
+  { prefix: "/admin/addon", href: "/admin/addon", label: "จัดการระบบ Add-On" },
   { prefix: "/admin", href: "/admin", label: "User management" },
 ];
 

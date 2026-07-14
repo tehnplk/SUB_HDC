@@ -1020,6 +1020,13 @@ button:disabled {
   min-width: 0;
 }
 
+.adminAddonAddButton {
+  flex: 0 0 auto;
+  height: 42px;
+  padding: 0 16px;
+  white-space: nowrap;
+}
+
 .adminFilterSelect {
   height: 42px;
   min-width: 120px;
@@ -1198,7 +1205,9 @@ button:disabled {
 }
 
 .adminUserForm select,
-.adminUserForm textarea {
+.adminUserForm textarea,
+.adminUserForm input[type="text"],
+.adminUserForm input[type="url"] {
   width: 100%;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -1206,6 +1215,39 @@ button:disabled {
   color: var(--foreground);
   padding: 10px 12px;
   font: inherit;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.adminUserForm input[type="text"],
+.adminUserForm input[type="url"] {
+  height: 44px;
+}
+
+.adminUserForm textarea {
+  resize: vertical;
+  min-height: 72px;
+  line-height: 1.5;
+}
+
+.adminUserForm select:hover,
+.adminUserForm textarea:hover,
+.adminUserForm input[type="text"]:hover,
+.adminUserForm input[type="url"]:hover {
+  border-color: var(--border-strong);
+}
+
+.adminUserForm select:focus,
+.adminUserForm textarea:focus,
+.adminUserForm input[type="text"]:focus,
+.adminUserForm input[type="url"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.adminUserForm input::placeholder,
+.adminUserForm textarea::placeholder {
+  color: var(--muted);
 }
 
 .adminActiveToggle {

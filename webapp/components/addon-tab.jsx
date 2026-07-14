@@ -3,8 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Download, ExternalLink, LayoutDashboard, LayoutGrid } from "lucide-react";
 
+// ต่อ session-id เข้า url เสมอ (client-side ใช้กับรายการคงที่) — ค่ามาจาก API
+function appendSessionId(url, sessionId) {
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}session-id=${encodeURIComponent(sessionId || "none")}`;
+}
+
 // รายการคงที่ (ไม่ลง database) — อยู่ท้ายสุดของเมนูเสมอ คั่นด้วย separator
-// same-origin กับแอป จึงไม่ต้องต่อ session-id (ใช้ session cookie เดิม)
+// ต่อ session-id เหมือนรายการอื่น (ถ้ามี = cid_hash, ไม่มี = none)
 const FIXED_ITEMS = [
   {
     system_name: "Dashboard-จังหวัด",
@@ -23,6 +29,7 @@ const FIXED_ITEMS = [
 export default function AddonTab() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
+  const [sessionId, setSessionId] = useState("none");
   const [loaded, setLoaded] = useState(false);
   const wrapRef = useRef(null);
 
@@ -34,6 +41,7 @@ export default function AddonTab() {
       .then((data) => {
         if (!active) return;
         setItems(Array.isArray(data?.items) ? data.items : []);
+        setSessionId(data?.sessionId || "none");
         setLoaded(true);
       })
       .catch(() => {
@@ -94,7 +102,7 @@ export default function AddonTab() {
                 return (
                   <a
                     key={item.url}
-                    href={item.url}
+                    href={appendSessionId(item.url, sessionId)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="addonMenuItem"
