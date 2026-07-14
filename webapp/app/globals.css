@@ -3432,6 +3432,68 @@ button:disabled {
   box-shadow: var(--shadow-sm);
 }
 
+/* main tab 'Add-On' — dropdown ของระบบเสริม (c_addon_url) */
+.addonTabWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.addonTabChevron {
+  width: 14px;
+  height: 14px;
+}
+
+.addonMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 200px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #ffffff;
+  box-shadow: var(--shadow-md, 0 8px 24px rgba(15, 23, 42, 0.12));
+}
+
+.addonMenuItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.addonMenuItem .lucide {
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+}
+
+.addonMenuItem:hover {
+  background: rgba(21, 128, 61, 0.05);
+  color: var(--accent-strong);
+}
+
+.addonMenuEmpty {
+  padding: 8px 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.addonMenuSeparator {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--border);
+}
+
 .pageHeaderTitle {
   display: flex;
   flex-wrap: wrap;

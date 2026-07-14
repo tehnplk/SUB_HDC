@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AlarmClock, ClipboardList, Database, FileText, ShieldCheck, Sparkles, Target } from "lucide-react";
+import AddonTab from "@/components/addon-tab";
 
 const TABS = [
   { href: "/import-check/index", label: "ปริมาณข้อมูล", Icon: FileText },
@@ -67,6 +68,7 @@ export default function MainTab() {
       {/* กระพริบเฉพาะ badge ของกลุ่มขวา (งานเร่งรัดติดตาม) — กลุ่มซ้ายไม่กระพริบ */}
       {TABS.map((tab) => renderTab(tab, pathname, false))}
       {TABS_END.map((tab, index) => renderTab(tab, pathname, badgeBlink, index === 0 ? " tabButtonEnd" : ""))}
+      <AddonTab />
     </nav>
   );
 }
