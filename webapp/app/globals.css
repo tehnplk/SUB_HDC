@@ -1996,6 +1996,26 @@ button:disabled {
   margin: 4px 0 14px;
 }
 
+.rapidHdcReportMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 10px 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.rapidHdcReportMeta span {
+  display: inline-flex;
+  gap: 5px;
+}
+
+.rapidHdcReportMeta code {
+  color: var(--text);
+  font-size: inherit;
+  overflow-wrap: anywhere;
+}
+
 .rapidSelect {
   width: min(100%, 320px);
 }

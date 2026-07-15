@@ -15,6 +15,7 @@ const hookSource = read("../app/rapid/_lib/use-rapid-report.js");
 const sortSource = read("../app/rapid/_lib/rapid-sort.jsx");
 const dataSource = read("../app/rapid/_lib/rapid-data.mjs");
 const routeSource = read("../app/api/rapid/[id]/route.js");
+const hdcReportMetaSource = read("../app/rapid/_components/rapid-hdc-report-meta.jsx");
 const exportSource = read("../app/api/rapid/[id]/export/route.js");
 const headerSource = read("../components/module-header.jsx");
 const nextConfigSource = read("../next.config.mjs");
@@ -69,6 +70,7 @@ test("dedicated pages each fetch their own report id via the shared hook", () =>
     assert.match(page, /useRapidReport\(REPORT_ID\)/);
     assert.match(page, /formatAffiliation/);
     assert.match(page, /rapidHospName/);
+    assert.match(page, /RapidHdcReportMeta/);
     assert.match(page, /แหล่งข้อมูลจาก HDC กลาง/);
     // ทุกหน้ามี dropdown สังกัด + ปุ่ม export ที่ผูก report id ของตัวเอง
     assert.match(page, /ทุกสังกัด/);
@@ -142,9 +144,23 @@ test("rapid data helper fetches live from HDC and derives every metric", () => {
   assert.match(dataSource, /Math\.max\(0/);
   // route + export ใช้ helper ตัวเดียวกัน
   assert.match(routeSource, /loadRapidReport/);
+  assert.match(routeSource, /report_name/);
+  assert.match(routeSource, /source_table/);
+  assert.match(routeSource, /hdc_report_name/);
   assert.match(exportSource, /loadRapidReport/);
   assert.match(dataSource, /c_hostype/);
   assert.match(dataSource, /affiliation/);
+});
+
+test("dm-control displays live HDC report metadata above its datagrid", () => {
+  assert.match(hdcReportMetaSource, /hdc_report_name :/);
+  assert.match(hdcReportMetaSource, /hdc_table :/);
+  assert.match(hdcReportMetaSource, /reportName/);
+  assert.match(hdcReportMetaSource, /sourceTable/);
+  assert.ok(
+    dmControlSource.indexOf("<RapidHdcReportMeta")
+      < dmControlSource.indexOf('className="tableWrap rapidTableWrap"')
+  );
 });
 
 test("rapid export honours the affiliation filter and layout per report", () => {

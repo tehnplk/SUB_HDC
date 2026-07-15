@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { MapPin, Target, CheckCircle2, Percent, TriangleAlert, RefreshCw, FileSpreadsheet, Download, Database } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
 import { useRapidReport } from "../_lib/use-rapid-report";
+import RapidHdcReportMeta from "../_components/rapid-hdc-report-meta";
 import { formatNumber, formatPercent, formatAffiliation, formatDate } from "../_lib/rapid-format";
 import { sortRows, SortHeader } from "../_lib/rapid-sort";
 
@@ -55,6 +56,8 @@ export default function RapidMmr2Page() {
             ส่งออก Excel
           </a>
         </div>
+
+        <RapidHdcReportMeta loading={loading} reportName={data?.hdc_report_name} sourceTable={data?.source_table} />
 
         <div className="tableWrap rapidTableWrap">
           <table className="fileTable rapidTable">
