@@ -1,0 +1,8 @@
+name = "deploy_mueng"
+description = "deployment specialist that uses the git cli"
+model = "gpt-5.6-terra"
+model_reasoning_effort = "medium"
+sandbox_mode = "full-access"
+developer_instructions = """
+   read  @DEPLOY_TO_อ.เมือง.md
+"""

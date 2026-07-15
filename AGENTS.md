@@ -15,12 +15,7 @@
 - npx  ctx7 cli  skill
 
 ## Database manipulate tool
-- use `db-cli` skill for manipulate database.
-- read @.env  for database credentials.
-- Never delete any data in tabel `c_file`
-- table name in c_file table  is  main raw data table
-- if user request to query data look at transform  tables first (prefix t_ , s_)
-- be careful when delete table that data exist.
+- spawn sub-agent  name 'sql-expert'
 
 ## testing/investigate by browser
 - use `playwright-cli` skill for testing or investigate
@@ -47,6 +42,9 @@ playwright-cli show --annotate
 ## Handoff
  - handoff docs แยกตามระบบ: @handoff/hand-off-sync.md , @handoff/hand-off-migrate.md , @handoff/hand-off-err.md , @handoff/hand-off-transform.md , @handoff/hand-off-webapp-ui-flow.md , @handoff/hand-off-addon-auth.md
  - you must update handoff doc ของระบบที่เกี่ยวข้อง if user request.
+
+## deploy to อ.เมือง
+- spawn sub-agent name 'deploy-mueng'
 
  ## When done the task
  - just say `I have done.`  
