@@ -28,11 +28,18 @@
     "schema": "hospcode,type_1,type_2,type_3,type_4,type_5"
   },
   {
-    "transform_table": "s_visit_monthly",
-    "sql_file": "s_visit_monthly.sql",
+    "transform_table": "s_visit",
+    "sql_file": "s_visit.sql",
     "source_tables": ["service"],
-    "stored_data": "เก็บจำนวนการรับบริการจากแฟ้ม service แยกตามหน่วยบริการและปีงบประมาณ โดยแยกยอดเดือน ตุลาคมถึงกันยายน",
-    "schema": "hospcode,fiscal_year,oct,nov,dec,jan,feb,mar,apr,may,jun,jul,aug,sep,total"
+    "stored_data": "เก็บจำนวนคนจาก PID ไม่ซ้ำภายในหน่วยบริการและจำนวนครั้งที่รับบริการจากแฟ้ม service แยกตามหน่วยบริการ ปีงบประมาณ และเดือน",
+    "schema": "hospcode,fiscal_year,month,visit_person,visit_count"
+  },
+  {
+    "transform_table": "s_visit_instype",
+    "sql_file": "s_visit_instype.sql",
+    "source_tables": ["service"],
+    "stored_data": "เก็บจำนวนครั้งรับบริการจากแฟ้ม service แยกตามหน่วยบริการ ปีงบประมาณ เดือน และรหัสสิทธิการรักษา โดยคงรหัสสิทธิเดิมทุกค่าที่ไม่ว่าง",
+    "schema": "hospcode,fiscal_year,month,instype_code,count_visit"
   },
   {
     "transform_table": "t_person_dm_ht",

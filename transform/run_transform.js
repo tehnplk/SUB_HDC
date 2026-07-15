@@ -30,11 +30,12 @@ const TRANSFORM_TABLE_BY_FILE = {
   "s_ht_screen.sql": "s_ht_screen",
   "s_person_pyramid.sql": "s_person_pyramid",
   "s_person_type_count.sql": "s_person_type_count",
-  "s_visit_monthly.sql": "s_visit_monthly",
+  "s_visit.sql": "s_visit",
+  "s_visit_instype.sql": "s_visit_instype",
   "t_person_type_1_3.sql": "t_person_type_1_3",
   "t_person_dm_ht.sql": "t_person_dm_ht",
 };
-const HOURLY_SQL_FILES = (process.env.TRANSFORM_HOURLY_SQL_FILES || "s_visit_monthly.sql")
+const HOURLY_SQL_FILES = (process.env.TRANSFORM_HOURLY_SQL_FILES || "s_visit.sql,s_visit_instype.sql")
   .split(",")
   .map((name) => name.trim().toLowerCase())
   .filter(Boolean);

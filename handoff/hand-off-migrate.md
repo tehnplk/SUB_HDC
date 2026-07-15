@@ -44,6 +44,12 @@ SQL **ไม่ได้ฝังใน image** — mount สดจาก host (
 - **lookup dumps** (`table/lookup/*.sql`): id ผูก content hash — แก้ไฟล์แล้ว
   hash เปลี่ยน → โหลดซ้ำเองรอบถัดไป (dump เป็น DROP+CREATE+INSERT รันซ้ำ
   ปลอดภัย) ครอบไซต์เก่าที่ initdb ของ MariaDB ไม่รันซ้ำ
+- `table/lookup/c_instype.sql` เก็บรหัสสิทธิการรักษาพยาบาล 4 หลักจากชีต
+  `gid=1423146080`: `code`, `instype_name`, `note`, `insc_group` รวม 110 รหัส
+  โดยเก็บ `code` เป็น `varchar(4)` เพื่อรักษาเลขศูนย์นำหน้า; `insc_group`
+  เป็น nullable soft reference ไป `c_instype_group.id`
+- `table/lookup/c_instype_group.sql` เก็บกลุ่มสิทธิ 4 ค่า:
+  `1=ข้าราชการ รัฐวิสาหกิจ`, `2=ประกันสังคม`, `3=UC ทั้งหมด`, `4=ต่างด้าว`
 - env: ใน container ได้จาก `env_file: ./webapp/.env`; รัน local ใช้
   `process.loadEnvFile()` โหลด `webapp/.env` ให้เอง — รันจาก repo root:
   `node migrate/run_migrations.js`

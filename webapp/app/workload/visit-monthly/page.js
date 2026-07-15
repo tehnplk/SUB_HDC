@@ -68,17 +68,19 @@ export default function VisitMonthlyWorkloadPage() {
         </div>
 
         <div className="tableWrap ncdWorkloadTableWrap">
-          <table className="fileTable ncdScreenWorkloadTable">
+          <table className="fileTable visitMonthlyWorkloadTable">
             <thead>
-              <tr className="ncdTableSummary"><th aria-label="สรุปผล" />{months.map((month) => <th key={month.key} />)}<th className="numCol"><strong>{loading ? "—" : formatNumber(data?.total)}</strong></th></tr>
-              <tr><th>หน่วยบริการ</th>{months.map((month) => <th key={month.key} className="numCol">{month.label}</th>)}<th className="numCol">รวม</th></tr>
+              <tr><th rowSpan={2}>หน่วยบริการ</th>{months.map((month) => <th key={month.value} className="visitMonthGroup" colSpan={2}>{month.label}</th>)}</tr>
+              <tr>{months.flatMap((month) => [<th key={`${month.value}-person`} className="numCol visitMonthFirst">คน</th>, <th key={`${month.value}-count`} className="numCol">ครั้ง</th>])}</tr>
             </thead>
             <tbody>
               {rows.length ? rows.map((row) => <tr key={row.hospcode}>
                 <td className="fileCol">{row.hospcode}{row.hospname ? <span className="hospNameShort">{row.hospname}</span> : null}</td>
-                {months.map((month) => <td key={month.key} className="numCol">{formatNumber(row.months?.[month.key])}</td>)}
-                <td className="numCol ncdTotalCell">{formatNumber(row.total)}</td>
-              </tr>) : <tr><td className="emptyCell" colSpan={2 + months.length}>{loading ? "กำลังโหลดข้อมูล..." : "ไม่พบข้อมูล"}</td></tr>}
+                {months.flatMap((month) => {
+                  const value = row.months?.[month.value] || { visitPerson: 0, visitCount: 0 };
+                  return [<td key={`${month.value}-person`} className="numCol visitMonthFirst">{formatNumber(value.visitPerson)}</td>, <td key={`${month.value}-count`} className="numCol">{formatNumber(value.visitCount)}</td>];
+                })}
+              </tr>) : <tr><td className="emptyCell" colSpan={1 + months.length * 2}>{loading ? "กำลังโหลดข้อมูล..." : "ไม่พบข้อมูล"}</td></tr>}
             </tbody>
           </table>
         </div>

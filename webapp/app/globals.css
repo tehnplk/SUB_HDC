@@ -2162,6 +2162,12 @@ button:disabled {
 
 .ncdWorkloadTableWrap { margin-top: 0; }
 .ncdWorkloadTable th { white-space: nowrap; }
+.visitMonthlyWorkloadTable { min-width: 1120px; table-layout: fixed; }
+.visitMonthlyWorkloadTable th, .visitMonthlyWorkloadTable td { padding: 6px 4px; white-space: nowrap; font-size: 11px; }
+.visitMonthlyWorkloadTable th:first-child, .visitMonthlyWorkloadTable td:first-child { width: 190px; min-width: 190px; }
+.visitMonthlyWorkloadTable .numCol { width: 42px; min-width: 42px; text-align: center; }
+.visitMonthlyWorkloadTable .visitMonthGroup { border-left: 1px solid var(--border); text-align: center; }
+.visitMonthlyWorkloadTable .visitMonthFirst { border-left: 1px solid var(--border); }
 .ncdLegacyWorkloadTable, .ncdMonthlyWorkloadTable { display: none; }
 .ncdScreenWorkloadTable { min-width: 960px; table-layout: fixed; font-size: 11px; }
 .ncdScreenWorkloadTable.fileTable th { padding: 7px 6px; font-size: 10px; letter-spacing: 0.03em; }

@@ -90,6 +90,9 @@ API route อ่าน**ตารางสรุปของ transform** (ไม
 
 ## Work Load
 
+- `/workload/visit-monthly` reads `s_visit` at
+  `hospcode + fiscal_year + month` grain and shows both `visit_person` (คน)
+  and `visit_count` (ครั้ง) for each fiscal month.
 - `/workload/ncdscreen-workload` filters every displayed topic (DM and HT),
   summary, and monthly trend by `สังกัด`. The affiliation lookup comes from
   `c_hostype.hostype_name` joined through `c_hospital.hostype_new`, with

@@ -18,14 +18,29 @@
 |---|---|---|
 | `TRANSFORM_RUN_AT` | `00:00` | รอบเต็มวันละครั้ง (TZ Asia/Bangkok) |
 | `TRANSFORM_RUN_ON_START` | `false` | ไม่รันตอน container start |
-| `TRANSFORM_HOURLY_SQL_FILES` | `s_visit_monthly.sql` | ไฟล์ที่รันเพิ่มทุกต้นชั่วโมง |
+| `TRANSFORM_HOURLY_SQL_FILES` | `s_visit.sql,s_visit_instype.sql` | ไฟล์ที่รันเพิ่มทุกต้นชั่วโมง |
 | `TRANSFORM_POLL_MS` | 300000 | จังหวะ retry เมื่อรอบถูกเลื่อน |
 
-## `s_visit_monthly`
+## `s_visit`
 
-- Grain: one row per `hospcode` + Thai `fiscal_year` (October–September).
-- Schema: `hospcode,fiscal_year,oct,nov,dec,jan,feb,mar,apr,may,jun,jul,aug,sep,total`.
-- `total` is the sum of the twelve month columns. The first execution migrates the prior `year_month,visit_count` layout before refreshing the summary.
+- Grain: one row per `hospcode` + Thai `fiscal_year` + calendar `month` (1–12).
+- Schema: `hospcode,fiscal_year,month,visit_person,visit_count`.
+- `visit_person` is the number of distinct nonempty `service.pid` values (คน)
+  within each hospital, fiscal year, and month; `visit_count` is the number of
+  service records (ครั้ง).
+- The obsolete `s_visit_monthly` table is removed once by
+  `migrate/table_update/20260715_drop_s_visit_monthly.sql`; the recurring
+  transform does not run DDL against the retired output.
+
+## `s_visit_instype`
+
+- Grain: one row per `hospcode` + Thai `fiscal_year` + calendar `month` +
+  `instype_code`.
+- Schema: `hospcode,fiscal_year,month,instype_code,count_visit`.
+- `count_visit` counts service records (ครั้ง). The transform preserves every
+  nonempty `service.instype`, including legacy codes that are not yet present in
+  `c_instype`, so the workload total is not reduced by lookup coverage.
+- Runs hourly together with `s_visit` by default.
 
 ## `s_dm_screen` and `s_ht_screen`
 

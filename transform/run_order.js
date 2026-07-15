@@ -7,7 +7,8 @@ const path = require("node:path");
 
 const RUN_ORDER = [
   "s_person_type_count.sql",
-  "s_visit_monthly.sql",
+  "s_visit.sql",
+  "s_visit_instype.sql",
   "t_person_type_1_3.sql",
   "s_dm_screen.sql",
   "s_ht_screen.sql",

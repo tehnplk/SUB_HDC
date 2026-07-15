@@ -4,18 +4,18 @@ import { getHospInfoMap } from "@/lib/hos-list-query.mjs";
 export const runtime = "nodejs";
 
 const MONTHS = [
-  { key: "oct", label: "ต.ค." },
-  { key: "nov", label: "พ.ย." },
-  { key: "dec", label: "ธ.ค." },
-  { key: "jan", label: "ม.ค." },
-  { key: "feb", label: "ก.พ." },
-  { key: "mar", label: "มี.ค." },
-  { key: "apr", label: "เม.ย." },
-  { key: "may", label: "พ.ค." },
-  { key: "jun", label: "มิ.ย." },
-  { key: "jul", label: "ก.ค." },
-  { key: "aug", label: "ส.ค." },
-  { key: "sep", label: "ก.ย." },
+  { value: 10, label: "ต.ค." },
+  { value: 11, label: "พ.ย." },
+  { value: 12, label: "ธ.ค." },
+  { value: 1, label: "ม.ค." },
+  { value: 2, label: "ก.พ." },
+  { value: 3, label: "มี.ค." },
+  { value: 4, label: "เม.ย." },
+  { value: 5, label: "พ.ค." },
+  { value: 6, label: "มิ.ย." },
+  { value: 7, label: "ก.ค." },
+  { value: 8, label: "ส.ค." },
+  { value: 9, label: "ก.ย." },
 ];
 
 function toNumber(value) {
@@ -33,14 +33,14 @@ export async function GET(request) {
     const requestedAffiliation = searchParams.get("affiliation") || "";
 
     const [yearRows] = await conn.query(
-      "SELECT DISTINCT fiscal_year FROM `s_visit_monthly` ORDER BY fiscal_year DESC"
+      "SELECT DISTINCT fiscal_year FROM `s_visit` ORDER BY fiscal_year DESC"
     );
     const fiscalYears = yearRows.map((row) => toNumber(row.fiscal_year)).filter(Boolean);
     const fiscalYear = fiscalYears.includes(requestedYear) ? requestedYear : (fiscalYears[0] || null);
     const hospitalInfo = await getHospInfoMap(conn);
 
     const [hospRows] = await conn.query(
-      "SELECT DISTINCT hospcode FROM `s_visit_monthly` ORDER BY hospcode"
+      "SELECT DISTINCT hospcode FROM `s_visit` ORDER BY hospcode"
     );
     const allHospitals = hospRows.map((row) => ({
       hospcode: row.hospcode,
@@ -54,7 +54,7 @@ export async function GET(request) {
       : allHospitals;
 
     if (!fiscalYear) {
-      return Response.json({ fiscalYears, fiscalYear: null, affiliations, hospitals, months: MONTHS, rows: [], total: 0 });
+      return Response.json({ fiscalYears, fiscalYear: null, affiliations, hospitals, months: MONTHS, rows: [] });
     }
 
     const where = ["fiscal_year = ?"];
@@ -65,21 +65,30 @@ export async function GET(request) {
     }
 
     const [rawRows] = await conn.query(
-      `SELECT hospcode, ${MONTHS.map((month) => `\`${month.key}\``).join(", ")}, total
-       FROM \`s_visit_monthly\`
+      `SELECT hospcode, month, visit_person, visit_count
+       FROM \`s_visit\`
        WHERE ${where.join(" AND ")}
-       ORDER BY hospcode`,
+       ORDER BY hospcode, month`,
       values
     );
-    const rows = rawRows
-      .map((row) => ({
-        hospcode: row.hospcode,
-        hospname: hospitalInfo[row.hospcode]?.hospname || "",
-        affiliation: hospitalInfo[row.hospcode]?.affiliation || "",
-        months: Object.fromEntries(MONTHS.map((month) => [month.key, toNumber(row[month.key])])),
-        total: toNumber(row.total),
-      }))
-      .filter((row) => !requestedAffiliation || row.affiliation === requestedAffiliation);
+    const byHospital = new Map();
+    for (const rawRow of rawRows) {
+      const info = hospitalInfo[rawRow.hospcode] || {};
+      if (requestedAffiliation && info.affiliation !== requestedAffiliation) continue;
+      const row = byHospital.get(rawRow.hospcode) || {
+        hospcode: rawRow.hospcode,
+        hospname: info.hospname || "",
+        affiliation: info.affiliation || "",
+        months: Object.fromEntries(MONTHS.map((month) => [month.value, { visitPerson: 0, visitCount: 0 }])),
+      };
+      const month = row.months[toNumber(rawRow.month)];
+      if (month) {
+        month.visitPerson = toNumber(rawRow.visit_person);
+        month.visitCount = toNumber(rawRow.visit_count);
+      }
+      byHospital.set(rawRow.hospcode, row);
+    }
+    const rows = [...byHospital.values()].sort((left, right) => left.hospcode.localeCompare(right.hospcode));
 
     return Response.json({
       fiscalYears,
@@ -88,7 +97,6 @@ export async function GET(request) {
       hospitals,
       months: MONTHS,
       rows,
-      total: rows.reduce((sum, row) => sum + row.total, 0),
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

@@ -8,7 +8,8 @@ const sqlFiles = [
   "s_ht_screen.sql",
   "s_person_pyramid.sql",
   "s_person_type_count.sql",
-  "s_visit_monthly.sql",
+  "s_visit.sql",
+  "s_visit_instype.sql",
   "t_person_type_1_3.sql",
   "t_person_dm_ht.sql",
 ];
