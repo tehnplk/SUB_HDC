@@ -4,9 +4,11 @@ import path from "node:path";
 import test from "node:test";
 
 const sqlFiles = [
+  "s_dm_screen.sql",
+  "s_ht_screen.sql",
   "s_person_pyramid.sql",
   "s_person_type_count.sql",
-  "s_visit_montly.sql",
+  "s_visit_monthly.sql",
   "t_person_type_1_3.sql",
   "t_person_dm_ht.sql",
 ];

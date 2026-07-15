@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getHospNameMap } from "../lib/hos-list-query.mjs";
+import { getHospInfoMap, getHospNameMap } from "../lib/hos-list-query.mjs";
 
 test("getHospNameMap maps hospcode to hospname_short and skips empty names", async () => {
   const conn = {
@@ -31,4 +31,20 @@ test("getHospNameMap returns empty map when c_hospital table is missing", async 
   };
 
   assert.deepEqual(await getHospNameMap(conn), {});
+});
+
+test("getHospInfoMap normalizes affiliation and hospital names", async () => {
+  const conn = {
+    async query() {
+      return [[
+        { hospcode: "07584", hospname_short: "สอน.บ้านกลาง", affiliation: "สธ." },
+        { hospcode: "99999", hospname_short: "ทดสอบ", affiliation: "-" },
+      ]];
+    },
+  };
+
+  assert.deepEqual(await getHospInfoMap(conn), {
+    "07584": { hospname: "สอน.บ้านกลาง", affiliation: "สธ." },
+    "99999": { hospname: "ทดสอบ", affiliation: "" },
+  });
 });

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AlarmClock, ClipboardList, Database, FileText, ShieldCheck, Sparkles, Target } from "lucide-react";
+import { Activity, AlarmClock, ClipboardList, Database, FileText, ShieldCheck, Sparkles, Target } from "lucide-react";
 import AddonTab from "@/components/addon-tab";
 
 const TABS = [
@@ -11,6 +11,7 @@ const TABS = [
   { href: "/quality", label: "คุณภาพ", Icon: ShieldCheck },
   { href: "/standard/index", label: "ข้อมูลมาตรฐาน", Icon: Database },
   { href: "/target-group/index", label: "ทะเบียนกลุ่มเป้าหมาย", Icon: Target },
+  { href: "/workload", label: "Work Load", Icon: Activity },
   { href: "/report/index", label: "รายงาน", Icon: ClipboardList },
   { href: "/ai/chat", label: "Ask AI", Icon: Sparkles },
 ];
@@ -31,6 +32,7 @@ function renderTab(tab, pathname, badgeBlink, extraClass = "") {
     || (tab.href === "/standard/index" && pathname.startsWith("/standard/"))
     || (tab.href === "/import-check/index" && pathname.startsWith("/import-check/"))
     || (tab.href === "/target-group/index" && pathname.startsWith("/target-group/"))
+    || (tab.href === "/workload" && pathname.startsWith("/workload"))
     || (tab.href === "/rapid/index" && pathname.startsWith("/rapid/"))
     || (tab.href === "/report/index" && pathname.startsWith("/report/"));
 

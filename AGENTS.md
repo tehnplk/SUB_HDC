@@ -16,7 +16,7 @@
 - npx  ctx7 cli  skill
 
 ## Database manipulate tool
-- spawn sub-agent  name 'sql-expert'
+- when have to retieve  or manipulate  data from databse with sql command spawn sub-agent  name 'sql-expert'
 
 ## testing/investigate by browser
 - use `playwright-cli` skill for testing or investigate

@@ -18,13 +18,13 @@ const {
 test("listHourlySqlFiles selects only configured hourly transform files", () => {
   const files = [
     path.join("transform", "sql", "s_person_type_count.sql"),
-    path.join("transform", "sql", "s_visit_montly.sql"),
+    path.join("transform", "sql", "s_visit_monthly.sql"),
     path.join("transform", "sql", "t_person_dm_ht.sql"),
   ];
 
   assert.deepEqual(
-    listHourlySqlFiles(files, ["s_visit_montly.sql"]),
-    [path.join("transform", "sql", "s_visit_montly.sql")]
+    listHourlySqlFiles(files, ["s_visit_monthly.sql"]),
+    [path.join("transform", "sql", "s_visit_monthly.sql")]
   );
 });
 
@@ -64,7 +64,7 @@ test("daily transforms schedule at midnight", () => {
 
 test("daily transform wins when midnight overlaps the hourly schedule", () => {
   const now = new Date(2026, 6, 10, 23, 30, 0, 0);
-  assert.deepEqual(getNextSchedule(["s_visit_montly.sql"], "00:00", now), {
+  assert.deepEqual(getNextSchedule(["s_visit_monthly.sql"], "00:00", now), {
     runDaily: true,
     waitMs: 30 * 60 * 1000,
   });
@@ -103,6 +103,6 @@ test("transform skips collation conversion when output already matches raw", asy
     },
   };
 
-  assert.equal(await alignTransformCollation(conn, "s_visit_montly.sql"), false);
+  assert.equal(await alignTransformCollation(conn, "s_visit_monthly.sql"), false);
   assert.equal(calls.length, 1);
 });

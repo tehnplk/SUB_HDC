@@ -18,8 +18,21 @@
 |---|---|---|
 | `TRANSFORM_RUN_AT` | `00:00` | รอบเต็มวันละครั้ง (TZ Asia/Bangkok) |
 | `TRANSFORM_RUN_ON_START` | `false` | ไม่รันตอน container start |
-| `TRANSFORM_HOURLY_SQL_FILES` | `s_visit_montly.sql` | ไฟล์ที่รันเพิ่มทุกต้นชั่วโมง |
+| `TRANSFORM_HOURLY_SQL_FILES` | `s_visit_monthly.sql` | ไฟล์ที่รันเพิ่มทุกต้นชั่วโมง |
 | `TRANSFORM_POLL_MS` | 300000 | จังหวะ retry เมื่อรอบถูกเลื่อน |
+
+## `s_visit_monthly`
+
+- Grain: one row per `hospcode` + Thai `fiscal_year` (October–September).
+- Schema: `hospcode,fiscal_year,oct,nov,dec,jan,feb,mar,apr,may,jun,jul,aug,sep,total`.
+- `total` is the sum of the twelve month columns. The first execution migrates the prior `year_month,visit_count` layout before refreshing the summary.
+
+## `s_dm_screen` and `s_ht_screen`
+
+- Grain: one row per `hospcode`, Thai `fiscal_year`, and calendar `month` (1–12) in each table.
+- Source: both tables read `ncdscreen` joined to `t_person_type_1_3` by fiscal year and CID, so only Typearea 1/3 records are included. `t_person_type_1_3.sql` must run first.
+- `s_dm_screen.dm_screen` counts records with nonempty `bslevel`.
+- `s_ht_screen.ht_screen` counts records with a complete first SBP/DBP pair (`sbp_1`, `dbp_1`). The second measurement is optional and does not affect the count.
 
 - Scheduler คำนวณรอบ daily/hourly จาก timestamp เดียวกัน หากรอบ `00:00`
   ตรงกับรอบ hourly ให้ daily full transform ทำงาน (daily wins the tie)

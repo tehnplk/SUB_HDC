@@ -24,7 +24,7 @@
   --radius-sm: 8px;
   --radius: 10px;
   --radius-lg: 14px;
-  --app-content-width: 1440px;
+  --app-content-width: 1600px;
   --app-gutter: 15px;
 }
 
@@ -2016,6 +2016,194 @@ button:disabled {
   overflow-wrap: anywhere;
 }
 
+/* NCD screening workload */
+.ncdWorkloadPanel {
+  overflow: hidden;
+}
+
+.ncdWorkloadHero {
+  display: contents;
+}
+
+.ncdWorkloadHero > :first-child,
+.ncdSummaryGrid {
+  display: none;
+}
+
+.ncdEyebrow,
+.ncdMetricCard,
+.ncdTrendTitle,
+.ncdLegend,
+.ncdTabBar button {
+  display: inline-flex;
+  align-items: center;
+}
+
+.ncdEyebrow {
+  gap: 7px;
+  color: #0d7655;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: .1em;
+}
+
+.ncdWorkloadHero h1 {
+  margin: 7px 0 5px;
+  color: #154538;
+  font-size: clamp(21px, 3vw, 29px);
+  line-height: 1.2;
+}
+
+.ncdWorkloadHero p {
+  margin: 0;
+  color: #547064;
+  font-size: 13px;
+}
+
+.ncdFilterBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.ncdWorkloadFilters {
+  grid-template-columns: minmax(150px, 200px) minmax(180px, 240px) minmax(260px, 1fr);
+  margin: 18px 0;
+}
+
+.ncdFilterBar .field {
+  min-width: 152px;
+}
+
+.ncdFilterBar .field:last-child {
+  min-width: 230px;
+}
+
+.ncdFilterBar .field span {
+  display: block;
+  margin: 0 0 4px 2px;
+  color: #547064;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.ncdFilterBar select {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #b6d9c8;
+  border-radius: 9px;
+  background: #fff;
+  color: #173c31;
+  font: inherit;
+  font-size: 13px;
+  padding: 0 28px 0 10px;
+}
+
+.ncdSummaryGrid {
+  display: none;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.ncdMetricCard {
+  position: relative;
+  gap: 10px;
+  min-height: 78px;
+  padding: 15px 17px;
+  overflow: hidden;
+  border: 1px solid #e0eae5;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.ncdMetricCard::after {
+  position: absolute;
+  right: -17px;
+  bottom: -26px;
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+  content: "";
+  opacity: .55;
+}
+
+.ncdMetricCard svg { width: 25px; height: 25px; z-index: 1; }
+.ncdMetricCard span { z-index: 1; color: var(--muted); font-size: 12px; font-weight: 700; }
+.ncdMetricCard strong { z-index: 1; margin-left: auto; color: var(--text); font-size: 24px; font-variant-numeric: tabular-nums; }
+.ncdMetricCard.dm svg { color: #0b8a67; }.ncdMetricCard.dm::after { background: #b8ead9; }
+.ncdMetricCard.ht svg { color: #c15342; }.ncdMetricCard.ht::after { background: #f8d1ca; }
+.ncdMetricCard.total svg { color: #4f6fc4; }.ncdMetricCard.total::after { background: #d6e1fb; }
+
+.ncdTabBar {
+  display: flex;
+  gap: 2px;
+  margin: 0 0 12px;
+  border-bottom: 1px solid #dce7e1;
+}
+
+.ncdTabBar button {
+  gap: 7px;
+  margin-bottom: -1px;
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 760;
+  cursor: pointer;
+}
+
+.ncdTabBar button.active { border-bottom-color: #0b8a67; color: #086148; }
+.ncdTabBar button:hover { color: #086148; }
+.ncdTabBar svg { width: 16px; height: 16px; }
+
+.ncdWorkloadTableWrap { margin-top: 0; }
+.ncdWorkloadTable th { white-space: nowrap; }
+.ncdLegacyWorkloadTable, .ncdMonthlyWorkloadTable { display: none; }
+.ncdScreenWorkloadTable { min-width: 960px; table-layout: fixed; font-size: 11px; }
+.ncdScreenWorkloadTable.fileTable th { padding: 7px 6px; font-size: 10px; letter-spacing: 0.03em; }
+.ncdScreenWorkloadTable.fileTable td { padding: 7px 6px; font-size: 14px; }
+.ncdScreenWorkloadTable .numCol { width: 60px; min-width: 60px; }
+.ncdScreenWorkloadTable .numCol { text-align: center; }
+.ncdScreenWorkloadTable th:first-child, .ncdScreenWorkloadTable td:first-child { width: 210px; min-width: 210px; }
+.ncdMonthlyWorkloadTable { min-width: 1120px; table-layout: fixed; font-size: 11px; }
+.ncdMonthlyWorkloadTable .ncdMonthGroup { text-align: center; }
+.ncdMonthlyWorkloadTable.fileTable th { padding: 6px 4px; font-size: 10px; letter-spacing: 0.02em; }
+.ncdMonthlyWorkloadTable.fileTable td { padding: 6px 4px; font-size: 11px; }
+.ncdMonthlyWorkloadTable .numCol { width: 39px; min-width: 39px; }
+.ncdMonthlyWorkloadTable th:first-child, .ncdMonthlyWorkloadTable td:first-child { width: 180px; min-width: 180px; }
+.ncdMonthlyWorkloadTable .hospNameShort { margin-left: 4px; }
+.ncdWorkloadTable .ncdTableSummary th { padding-top: 10px; padding-bottom: 2px; border-bottom: 0; color: var(--muted); font-size: 12px; }
+.ncdWorkloadTable .ncdTableSummary strong { color: #075e45; font-size: 18px; font-variant-numeric: tabular-nums; }
+.ncdTotalCell { color: #075e45; font-weight: 850; }
+
+.ncdTrendPanel {
+  min-height: 355px;
+  padding: 18px;
+  border: 1px solid #dbeae3;
+  border-radius: 14px;
+  background: #fcfffd;
+}
+
+.ncdTrendTitle { justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.ncdTrendTitle > div { display: grid; gap: 2px; }.ncdTrendTitle span { color: var(--muted); font-size: 12px; }.ncdTrendTitle strong { color: #174537; font-size: 16px; }
+.ncdLegend { gap: 6px; color: #176a55; font-size: 12px; font-weight: 700; }.ncdLegend i { width: 18px; height: 3px; border-radius: 99px; }.ncdLegend i.dm { background: #0d73b8; }.ncdLegend i.ht { margin-left: 6px; background: #d65a42; }
+.ncdTrendCanvas { width: 100%; min-height: 285px; }.ncdTrendCanvas svg { width: 100%; height: 285px; overflow: visible; }
+.ncdTrendGrid { stroke: #dfeae5; stroke-width: 1; }.ncdTrendLine { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }.ncdTrendLine.dm { stroke: #0d73b8; }.ncdTrendLine.ht { stroke: #d65a42; }.ncdTrendPoint { fill: #fff; stroke-width: 3; }.ncdTrendPoint.dm { stroke: #0d73b8; }.ncdTrendPoint.ht { stroke: #d65a42; }.ncdTrendAxis { fill: #71837a; font-size: 12px; font-family: inherit; }
+
+@media (max-width: 760px) {
+  .ncdWorkloadFilters { grid-template-columns: 1fr; margin: 14px 0; }
+  .ncdWorkloadHero { align-items: stretch; flex-direction: column; padding: 17px; }
+  .ncdFilterBar .field, .ncdFilterBar .field:last-child { flex: 1 1 100%; min-width: 0; }
+  .ncdSummaryGrid { grid-template-columns: 1fr; gap: 8px; }
+  .ncdMetricCard { min-height: 64px; }.ncdMetricCard strong { font-size: 21px; }
+  .ncdTrendPanel { padding: 14px 8px; }.ncdTrendTitle { padding: 0 8px; align-items: start; flex-direction: column; }
+  .ncdTrendCanvas { overflow-x: auto; }.ncdTrendCanvas svg { min-width: 620px; }
+}
+
 .rapidSelect {
   width: min(100%, 320px);
 }
@@ -2214,8 +2402,9 @@ button:disabled {
 
 .tableWrap {
   min-width: 0;
-  max-height: 480px;
-  overflow: hidden auto;
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: visible;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: #ffffff;
@@ -3364,7 +3553,15 @@ button:disabled {
   }
 
   .tabButton {
+    gap: 6px;
+    padding: 7px 10px;
+    font-size: 12px;
     white-space: nowrap;
+  }
+
+  .tabButton .lucide {
+    width: 15px;
+    height: 15px;
   }
 
   .titleRow {
@@ -3469,14 +3666,16 @@ button:disabled {
 
 .tabButton {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 8px;
-  padding: 8px 20px;
+  padding: 8px 16px;
   border: 0;
   border-radius: var(--radius);
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
+  white-space: nowrap;
   text-decoration: none;
   background: transparent;
   cursor: pointer;

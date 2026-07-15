@@ -23,6 +23,15 @@ const BREADCRUMB_MODULES = [
     },
   },
   {
+    prefix: "/workload",
+    href: "/workload",
+    label: "Work Load",
+    pages: {
+      "/workload/ncdscreen-workload": "การคัดกรองเบาหวานความดัน",
+      "/workload/visit-monthly": "จำนวนให้บริการผู้ป่วยนอก",
+    },
+  },
+  {
     prefix: "/standard",
     href: "/standard/index",
     label: "ข้อมูลมาตรฐาน",

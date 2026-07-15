@@ -88,6 +88,13 @@ data flow: page (client) → `fetch("/api/...", { cache: "no-store" })` →
 API route อ่าน**ตารางสรุปของ transform** (ไม่ query ตารางดิบ) — หน้าใหม่
 ควรมี API + ตารางสรุปของตัวเอง ดู @handoff/hand-off-transform.md
 
+## Work Load
+
+- `/workload/ncdscreen-workload` filters every displayed topic (DM and HT),
+  summary, and monthly trend by `สังกัด`. The affiliation lookup comes from
+  `c_hostype.hostype_name` joined through `c_hospital.hostype_new`, with
+  `c_hospital.dep_name` as fallback.
+
 ## การทดสอบ
 
 ```powershell

@@ -26,13 +26,15 @@ const POLL_MS = Number(process.env.TRANSFORM_POLL_MS || 5 * 60 * 1000);
 const TRANSFORM_LOCK_NAME = process.env.TRANSFORM_LOCK_NAME || "sub_hdc_transform_cycle";
 const TRANSFORM_COLLATION = "utf8mb3_general_ci";
 const TRANSFORM_TABLE_BY_FILE = {
+  "s_dm_screen.sql": "s_dm_screen",
+  "s_ht_screen.sql": "s_ht_screen",
   "s_person_pyramid.sql": "s_person_pyramid",
   "s_person_type_count.sql": "s_person_type_count",
-  "s_visit_montly.sql": "s_visit_montly",
+  "s_visit_monthly.sql": "s_visit_monthly",
   "t_person_type_1_3.sql": "t_person_type_1_3",
   "t_person_dm_ht.sql": "t_person_dm_ht",
 };
-const HOURLY_SQL_FILES = (process.env.TRANSFORM_HOURLY_SQL_FILES || "s_visit_montly.sql")
+const HOURLY_SQL_FILES = (process.env.TRANSFORM_HOURLY_SQL_FILES || "s_visit_monthly.sql")
   .split(",")
   .map((name) => name.trim().toLowerCase())
   .filter(Boolean);

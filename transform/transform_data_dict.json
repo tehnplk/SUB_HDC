@@ -1,5 +1,19 @@
 [
   {
+    "transform_table": "s_dm_screen",
+    "sql_file": "s_dm_screen.sql",
+    "source_tables": ["ncdscreen", "t_person_type_1_3"],
+    "stored_data": "เก็บจำนวนการคัดกรองเบาหวานจาก bslevel เฉพาะประชากร Typearea 1 หรือ 3 แยกตามหน่วยบริการ ปีงบประมาณ และเดือน",
+    "schema": "hospcode,fiscal_year,month,dm_screen"
+  },
+  {
+    "transform_table": "s_ht_screen",
+    "sql_file": "s_ht_screen.sql",
+    "source_tables": ["ncdscreen", "t_person_type_1_3"],
+    "stored_data": "เก็บจำนวนการคัดกรองความดันโลหิตสูงจากคู่ค่า sbp_1 และ dbp_1 เฉพาะประชากร Typearea 1 หรือ 3 แยกตามหน่วยบริการ ปีงบประมาณ และเดือน",
+    "schema": "hospcode,fiscal_year,month,ht_screen"
+  },
+  {
     "transform_table": "s_person_pyramid",
     "sql_file": "s_person_pyramid.sql",
     "source_tables": ["t_person_type_1_3"],
@@ -14,11 +28,11 @@
     "schema": "hospcode,type_1,type_2,type_3,type_4,type_5"
   },
   {
-    "transform_table": "s_visit_montly",
-    "sql_file": "s_visit_montly.sql",
+    "transform_table": "s_visit_monthly",
+    "sql_file": "s_visit_monthly.sql",
     "source_tables": ["service"],
-    "stored_data": "เก็บจำนวนการรับบริการจากแฟ้ม service แยกตามหน่วยบริการและเดือนของวันที่รับบริการ",
-    "schema": "hospcode,year_month,visit_count"
+    "stored_data": "เก็บจำนวนการรับบริการจากแฟ้ม service แยกตามหน่วยบริการและปีงบประมาณ โดยแยกยอดเดือน ตุลาคมถึงกันยายน",
+    "schema": "hospcode,fiscal_year,oct,nov,dec,jan,feb,mar,apr,may,jun,jul,aug,sep,total"
   },
   {
     "transform_table": "t_person_dm_ht",

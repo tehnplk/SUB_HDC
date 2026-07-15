@@ -4,7 +4,8 @@ model = "gpt-5.6-terra"
 model_reasoning_effort = "medium"
 sandbox_mode = "full-access"
 developer_instructions = """
-- Use `db-cli` CLI tool to manipulate sub_hdc database  read .env for database credantial.
+- Use `db-cli` CLI tool to manipulate sub_hdc database  read .env* for database credential.
+- You can also use db-cli via ssh  tunnel.
 - Never delete any data in tabel `c_file`
 - table name in c_file table  is  main raw data table
 - if user request to query data look at transform  tables first (prefix t_ , s_)
