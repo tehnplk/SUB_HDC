@@ -2161,6 +2161,9 @@ button:disabled {
 .ncdTabBar svg { width: 16px; height: 16px; }
 
 .ncdWorkloadTableWrap { margin-top: 0; }
+.workloadDatagridActions { display: flex; justify-content: flex-end; margin: 0 0 8px; }
+.workloadExportLink { gap: 6px; min-height: 34px; padding: 6px 10px; border: 1px solid #b7dac8; border-radius: 8px; background: #f7fcf9; font-size: 12px; font-weight: 750; text-decoration: none; }
+.workloadExportLink:hover { background: #eef9f2; transform: translateY(-1px); }
 .ncdWorkloadTable th { white-space: nowrap; }
 .visitMonthlyWorkloadTable { min-width: 1120px; table-layout: fixed; }
 .visitMonthlyWorkloadTable th, .visitMonthlyWorkloadTable td { padding: 6px 4px; white-space: nowrap; font-size: 11px; }

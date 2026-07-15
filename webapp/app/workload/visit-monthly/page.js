@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { FileSpreadsheet } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
 
 function formatNumber(value) {
@@ -39,6 +40,10 @@ export default function VisitMonthlyWorkloadPage() {
 
   const rows = data?.rows || [];
   const months = data?.months || [];
+  const exportParams = new URLSearchParams();
+  if (fiscalYear) exportParams.set("fiscalYear", fiscalYear);
+  if (affiliation) exportParams.set("affiliation", affiliation);
+  if (hospcode) exportParams.set("hospcode", hospcode);
 
   return (
     <div className="main dashboardMain">
@@ -65,6 +70,13 @@ export default function VisitMonthlyWorkloadPage() {
               {(data?.hospitals || []).map((hospital) => <option key={hospital.hospcode} value={hospital.hospcode}>{hospital.hospcode}{hospital.hospname ? ` — ${hospital.hospname}` : ""}</option>)}
             </select>
           </label>
+        </div>
+
+        <div className="workloadDatagridActions">
+          <a className="exportXlsxLink workloadExportLink" href={`/api/visit-monthly-workload/export?${exportParams}`}>
+            <FileSpreadsheet aria-hidden="true" />
+            ส่งออก Excel
+          </a>
         </div>
 
         <div className="tableWrap ncdWorkloadTableWrap">

@@ -97,6 +97,10 @@ API route อ่าน**ตารางสรุปของ transform** (ไม
   summary, and monthly trend by `สังกัด`. The affiliation lookup comes from
   `c_hostype.hostype_name` joined through `c_hospital.hostype_new`, with
   `c_hospital.dep_name` as fallback.
+- Every Work Load datagrid has a top-right `ส่งออก Excel` action. Export routes
+  reuse the same filtered API handlers, so fiscal year, affiliation, hospital,
+  and the active NCD metric match the visible grid. Visit exports contain both
+  คน and ครั้ง columns for each fiscal month.
 
 ## การทดสอบ
 

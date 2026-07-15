@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Activity, BarChart3, Building2, ClipboardCheck, HeartPulse, Stethoscope } from "lucide-react";
+import { Activity, BarChart3, Building2, ClipboardCheck, FileSpreadsheet, HeartPulse, Stethoscope } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
 
 function formatNumber(value) {
@@ -84,6 +84,10 @@ export default function NcdScreenWorkloadPage() {
   const trend = useMemo(() => data?.trend || [], [data]);
   const months = data?.months || [];
   const metricKey = tab === "ht" ? "ht" : "dm";
+  const exportParams = new URLSearchParams({ metric: metricKey });
+  if (fiscalYear) exportParams.set("fiscalYear", fiscalYear);
+  if (affiliation) exportParams.set("affiliation", affiliation);
+  if (hospcode) exportParams.set("hospcode", hospcode);
 
   return (
     <div className="main dashboardMain">
@@ -132,7 +136,14 @@ export default function NcdScreenWorkloadPage() {
         </div>
 
         {tab === "dm" || tab === "ht" ? (
-          <div className="tableWrap ncdWorkloadTableWrap">
+          <>
+            <div className="workloadDatagridActions">
+              <a className="exportXlsxLink workloadExportLink" href={`/api/ncdscreen-workload/export?${exportParams}`}>
+                <FileSpreadsheet aria-hidden="true" />
+                ส่งออก Excel
+              </a>
+            </div>
+            <div className="tableWrap ncdWorkloadTableWrap">
             <table className="fileTable ncdScreenWorkloadTable">
               <thead><tr><th>หน่วยบริการ</th>{months.map((month) => <th key={month.value} className="numCol">{month.label}</th>)}</tr></thead>
               <tbody>{rows.length ? rows.map((row) => <tr key={row.hospcode}><td className="fileCol">{row.hospcode}{row.hospname ? <span className="hospNameShort">{row.hospname}</span> : null}</td>{months.map((month) => <td key={month.value} className="numCol">{formatNumber(row.months?.[month.value]?.[metricKey])}</td>)}</tr>) : <tr><td className="emptyCell" colSpan={1 + months.length}>{loading ? "กำลังโหลดข้อมูล..." : "ไม่พบข้อมูล"}</td></tr>}</tbody>
@@ -161,7 +172,8 @@ export default function NcdScreenWorkloadPage() {
               <thead><tr className="ncdTableSummary"><th aria-label="สรุปผล" /><th className="numCol"><strong>{loading ? "—" : formatNumber(summary.dm)}</strong></th><th className="numCol"><strong>{loading ? "—" : formatNumber(summary.ht)}</strong></th><th className="numCol"><strong>{loading ? "—" : formatNumber(summary.total)}</strong></th></tr><tr><th>หน่วยบริการ</th><th className="numCol">คัดกรองเบาหวาน</th><th className="numCol">คัดกรองความดัน</th><th className="numCol">ผลรวม</th></tr></thead>
               <tbody>{rows.length ? rows.map((row) => <tr key={row.hospcode}><td className="fileCol">{row.hospcode}{row.hospname ? <span className="hospNameShort">{row.hospname}</span> : null}</td><td className="numCol">{formatNumber(row.dm)}</td><td className="numCol">{formatNumber(row.ht)}</td><td className="numCol ncdTotalCell">{formatNumber(row.total)}</td></tr>) : <tr><td className="emptyCell" colSpan={4}>{loading ? "กำลังโหลดข้อมูล..." : "ไม่พบข้อมูล"}</td></tr>}</tbody>
             </table>
-          </div>
+            </div>
+          </>
         ) : (
           <div className="ncdTrendPanel">
             <div className="ncdTrendTitle"><div><span>แนวโน้มรายเดือน</span><strong>เบาหวาน + ความดัน</strong></div><span className="ncdLegend"><i className="dm" />คัดกรองเบาหวาน (ครั้ง)<i className="ht" />คัดกรองความดัน (ครั้ง)</span></div>

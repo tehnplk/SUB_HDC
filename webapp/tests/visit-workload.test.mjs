@@ -4,6 +4,7 @@ import test from "node:test";
 
 const pageSource = readFileSync(new URL("../app/workload/visit-monthly/page.js", import.meta.url), "utf8");
 const apiSource = readFileSync(new URL("../app/api/visit-monthly-workload/route.js", import.meta.url), "utf8");
+const exportSource = readFileSync(new URL("../app/api/visit-monthly-workload/export/route.js", import.meta.url), "utf8");
 
 test("visit workload provides year, affiliation, and hospital filters", () => {
   assert.match(pageSource, /\/api\/visit-monthly-workload/);
@@ -11,6 +12,18 @@ test("visit workload provides year, affiliation, and hospital filters", () => {
   assert.match(pageSource, /ทุกหน่วยบริการ/);
   assert.match(pageSource, /params\.set\("affiliation", affiliation\)/);
   assert.match(pageSource, /setHospcode\(""\)/);
+  assert.match(pageSource, /workloadDatagridActions/);
+  assert.match(pageSource, /\/api\/visit-monthly-workload\/export/);
+  assert.match(pageSource, /FileSpreadsheet/);
+});
+
+test("visit workload exports the filtered datagrid as xlsx", () => {
+  assert.match(exportSource, /requireExcelExportAccess/);
+  assert.match(exportSource, /getVisitWorkload/);
+  assert.match(exportSource, /XLSX\.utils\.aoa_to_sheet/);
+  assert.match(exportSource, /visitPerson/);
+  assert.match(exportSource, /visitCount/);
+  assert.match(exportSource, /Content-Disposition/);
 });
 
 test("visit workload reads s_visit and filters safely", () => {

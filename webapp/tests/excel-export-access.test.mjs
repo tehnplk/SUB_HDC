@@ -10,12 +10,21 @@ test("Excel exports deny Guest and unauthenticated users at every file endpoint"
   const personDupExport = read("../app/api/quality/person-dup/export/route.js");
   const rapidExport = read("../app/api/rapid/[id]/export/route.js");
   const aiExport = read("../app/api/ai/export/[filename]/route.js");
+  const visitWorkloadExport = read("../app/api/visit-monthly-workload/export/route.js");
+  const ncdWorkloadExport = read("../app/api/ncdscreen-workload/export/route.js");
   const aiChat = read("../app/api/ai/chat/route.js");
 
   assert.match(guardSource, /export async function requireExcelExportAccess/);
   assert.match(guardSource, /!session\?\.user/);
   assert.match(guardSource, /Number\(session\.user\.roleId\) === 4/);
-  for (const source of [dmHtExport, personDupExport, rapidExport, aiExport]) {
+  for (const source of [
+    dmHtExport,
+    personDupExport,
+    rapidExport,
+    aiExport,
+    visitWorkloadExport,
+    ncdWorkloadExport,
+  ]) {
     assert.match(source, /requireExcelExportAccess/);
     assert.match(source, /exportDenied/);
   }

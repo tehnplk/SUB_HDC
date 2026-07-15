@@ -6,6 +6,7 @@ const indexSource = readFileSync(new URL("../app/import-check/index/page.js", im
 const portalSource = readFileSync(new URL("../app/workload/page.js", import.meta.url), "utf8");
 const pageSource = readFileSync(new URL("../app/workload/ncdscreen-workload/page.js", import.meta.url), "utf8");
 const apiSource = readFileSync(new URL("../app/api/ncdscreen-workload/route.js", import.meta.url), "utf8");
+const exportSource = readFileSync(new URL("../app/api/ncdscreen-workload/export/route.js", import.meta.url), "utf8");
 const headerSource = readFileSync(new URL("../components/module-header.jsx", import.meta.url), "utf8");
 const mainTabSource = readFileSync(new URL("../components/main-tab.jsx", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
@@ -29,8 +30,19 @@ test("NCD screening workload page provides filters, workload tab, and total tren
   assert.match(pageSource, /แนวโน้ม/);
   assert.match(pageSource, /function TrendLine/);
   assert.match(pageSource, /เบาหวาน \+ ความดัน/);
+  assert.match(pageSource, /workloadDatagridActions/);
+  assert.match(pageSource, /\/api\/ncdscreen-workload\/export/);
+  assert.match(pageSource, /FileSpreadsheet/);
   assert.match(styles, /\.ncdWorkloadHero/);
   assert.match(styles, /\.ncdTrendLine/);
+});
+
+test("NCD workload exports the active filtered datagrid as xlsx", () => {
+  assert.match(exportSource, /requireExcelExportAccess/);
+  assert.match(exportSource, /getNcdWorkload/);
+  assert.match(exportSource, /metric.*ht.*ht.*dm/);
+  assert.match(exportSource, /XLSX\.utils\.aoa_to_sheet/);
+  assert.match(exportSource, /Content-Disposition/);
 });
 
 test("NCD screening workload API reads the Typearea 1/3 summary and filters safely", () => {
