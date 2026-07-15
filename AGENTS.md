@@ -1,7 +1,7 @@
 ## About Repo
 - Health Data Center  , Dashboard and Health Data Analysis
 - Get raw  data from  `ข้อมูล 43 แฟ้มตามมาตรฐานโครงสร้างกระทรวงสาธารณสุข`
-- Get 3rd party data  from `https://opendata.moph.go.th/api/document/` by province = 65
+- Get live  HDC data from api read @handoff/hand-off-hdc-api.md
 
 ## RULE
 - Spawn Sub-agent who set for topic user request first.
