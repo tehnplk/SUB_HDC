@@ -1,7 +1,10 @@
 ## About Repo
 - Health Data Center  , Dashboard and Health Data Analysis
 - Get raw  data from  `ข้อมูล 43 แฟ้มตามมาตรฐานโครงสร้างกระทรวงสาธารณสุข`
-- Get live  HDC data from api read @handoff/hand-off-hdc-api.md
+
+## Live HDC API
+
+- Before fetching live HDC API data, read and follow @handoff/hand-off-hdc-api.md.
 
 ## RULE
 - Spawn Sub-agent who set for topic user request first.
