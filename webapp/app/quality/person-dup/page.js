@@ -33,11 +33,16 @@ function formatTransformedAt(value) {
   return date.toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" });
 }
 
+function duplicateType(person) {
+  return person.entries.map((entry) => entry.type).sort().join("-");
+}
+
 export default function QualityPersonDupPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedHospcode, setSelectedHospcode] = useState("");
+  const [selectedDuplicateType, setSelectedDuplicateType] = useState("");
 
   useEffect(() => {
     setLoading(true);
@@ -58,12 +63,11 @@ export default function QualityPersonDupPage() {
 
   const persons = data?.persons || [];
 
-  const filteredPersons = useMemo(() => {
-    if (!selectedHospcode) return persons;
-    return persons.filter((person) =>
-      person.entries.some((entry) => entry.hos === selectedHospcode)
-    );
-  }, [persons, selectedHospcode]);
+  const filteredPersons = useMemo(() => persons.filter((person) => {
+    const matchesHospcode = !selectedHospcode
+      || person.entries.some((entry) => entry.hos === selectedHospcode);
+    return matchesHospcode && (!selectedDuplicateType || duplicateType(person) === selectedDuplicateType);
+  }), [persons, selectedHospcode, selectedDuplicateType]);
 
   return (
     <div className="main dashboardMain">
@@ -80,6 +84,15 @@ export default function QualityPersonDupPage() {
             disabled={loading}
             label="กรองตามหน่วยบริการ"
           />
+          <label className="field">
+            <span className="srOnly">ประเภทการซ้ำ</span>
+            <select value={selectedDuplicateType} onChange={(event) => setSelectedDuplicateType(event.target.value)} disabled={loading} aria-label="ประเภทการซ้ำ">
+              <option value="">ทั้งหมด</option>
+              <option value="1-1">ซ้ำ TYPE 1-1</option>
+              <option value="1-3">ซ้ำ TYPE 1-3</option>
+              <option value="3-3">ซ้ำ TYPE 3-3</option>
+            </select>
+          </label>
         </div>
 
         <div className="dataSourceLabel">

@@ -49,6 +49,14 @@ test("person-dup page shows the required columns with a hospcode filter and no v
   assert.match(pageSource, /processedAt/);
 });
 
+test("person-dup page filters complete duplicate groups by their TYPE combination", () => {
+  assert.match(pageSource, /selectedDuplicateType/);
+  assert.match(pageSource, /duplicateType\(person\) === selectedDuplicateType/);
+  for (const option of ["ซ้ำ TYPE 1-1", "ซ้ำ TYPE 1-3", "ซ้ำ TYPE 3-3"]) {
+    assert.match(pageSource, new RegExp(option));
+  }
+});
+
 test("quality dashboard exposes a clickable card that links to the person-dup page", () => {
   assert.match(qualitySource, /href="\/quality\/person-dup"/);
   assert.match(qualitySource, /ประเภทการอยู่อาศัยซ้ำกันข้ามหน่วยบริการ \(PERSON - TYPEAREA\)/);
