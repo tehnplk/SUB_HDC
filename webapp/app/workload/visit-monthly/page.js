@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { FileSpreadsheet } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
+import ExcelExportButton from "@/components/excel-export-button";
 import HospitalFilter from "@/components/hospital-filter";
 import FiscalYearFilter from "@/components/fiscal-year-filter";
 import AffiliationFilter from "@/components/affiliation-filter";
@@ -62,10 +63,10 @@ export default function VisitMonthlyWorkloadPage() {
         </div>
 
         <div className="workloadDatagridActions">
-          <a className="exportXlsxLink workloadExportLink" href={`/api/visit-monthly-workload/export?${exportParams}`}>
+          <ExcelExportButton href={`/api/visit-monthly-workload/export?${exportParams}`}>
             <FileSpreadsheet aria-hidden="true" />
             ส่งออก Excel
-          </a>
+          </ExcelExportButton>
         </div>
 
         <div className="tableWrap ncdWorkloadTableWrap">

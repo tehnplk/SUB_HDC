@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 export function filterHospitalOptions(hospitals, query) {
   const normalizedQuery = String(query || "").trim().toLocaleLowerCase("th-TH");
@@ -28,6 +28,8 @@ export default function HospitalFilter({
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const clearClickRef = useRef(false);
+  const activeIndexRef = useRef(-1);
   const listboxId = useId();
   const selectedHospital = useMemo(
     () => hospitals.find((hospital) => hospital.hospcode === value),
@@ -44,12 +46,14 @@ export default function HospitalFilter({
 
   useEffect(() => {
     setQuery(selectedHospital ? hospitalLabel(selectedHospital) : "");
+    activeIndexRef.current = -1;
     setActiveIndex(-1);
   }, [selectedHospital]);
 
   function selectHospital(hospcode) {
     onChange(hospcode);
     setOpen(false);
+    activeIndexRef.current = -1;
     setActiveIndex(-1);
   }
 
@@ -69,9 +73,19 @@ export default function HospitalFilter({
         aria-activedescendant={activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined}
         aria-expanded={open}
         onFocus={() => setOpen(true)}
+        onMouseDown={(event) => {
+          const { right } = event.currentTarget.getBoundingClientRect();
+          const isNativeClear = Boolean(query) && event.clientX >= right - 36;
+          clearClickRef.current = isNativeClear;
+          if (!isNativeClear && !String(query || "").trim()) setOpen(true);
+        }}
         onChange={(event) => {
-          setQuery(event.target.value);
-          setOpen(true);
+          const nextQuery = event.target.value;
+          const clearedByNativeControl = clearClickRef.current && !nextQuery;
+          clearClickRef.current = false;
+          setQuery(nextQuery);
+          setOpen(clearedByNativeControl ? false : Boolean(nextQuery.trim()));
+          activeIndexRef.current = -1;
           setActiveIndex(-1);
           if (value) onChange("");
         }}
@@ -79,16 +93,23 @@ export default function HospitalFilter({
           if (event.key === "ArrowDown") {
             event.preventDefault();
             setOpen(true);
-            setActiveIndex((index) => Math.min(index + 1, visibleOptions.length - 1));
+            const nextIndex = Math.min(activeIndexRef.current + 1, visibleOptions.length - 1);
+            activeIndexRef.current = nextIndex;
+            setActiveIndex(nextIndex);
           } else if (event.key === "ArrowUp") {
             event.preventDefault();
             setOpen(true);
-            setActiveIndex((index) => index < 0 ? visibleOptions.length - 1 : Math.max(index - 1, 0));
-          } else if (event.key === "Enter" && activeIndex >= 0) {
+            const nextIndex = activeIndexRef.current < 0
+              ? visibleOptions.length - 1
+              : Math.max(activeIndexRef.current - 1, 0);
+            activeIndexRef.current = nextIndex;
+            setActiveIndex(nextIndex);
+          } else if (event.key === "Enter" && activeIndexRef.current >= 0) {
             event.preventDefault();
-            selectHospital(visibleOptions[activeIndex].hospcode);
+            selectHospital(visibleOptions[activeIndexRef.current].hospcode);
           } else if (event.key === "Escape") {
             setOpen(false);
+            activeIndexRef.current = -1;
             setActiveIndex(-1);
           }
         }}

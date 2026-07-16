@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Activity, BarChart3, Building2, ClipboardCheck, FileSpreadsheet, HeartPulse, Stethoscope } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
+import ExcelExportButton from "@/components/excel-export-button";
 import HospitalFilter from "@/components/hospital-filter";
 import FiscalYearFilter from "@/components/fiscal-year-filter";
 import AffiliationFilter from "@/components/affiliation-filter";
@@ -127,10 +128,10 @@ export default function NcdScreenWorkloadPage() {
         {tab === "dm" || tab === "ht" ? (
           <>
             <div className="workloadDatagridActions">
-              <a className="exportXlsxLink workloadExportLink" href={`/api/ncdscreen-workload/export?${exportParams}`}>
+              <ExcelExportButton href={`/api/ncdscreen-workload/export?${exportParams}`}>
                 <FileSpreadsheet aria-hidden="true" />
                 ส่งออก Excel
-              </a>
+              </ExcelExportButton>
             </div>
             <div className="tableWrap ncdWorkloadTableWrap">
             <table className="fileTable ncdScreenWorkloadTable">

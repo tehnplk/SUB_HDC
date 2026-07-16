@@ -11,13 +11,14 @@ test("quality portal links to the SERVICE entitlement-error report", async () =>
   assert.match(page, /รายการบริการที่ให้รหัสสิทธิรักษาที่ไม่มีในระบบ/);
 });
 
-test("SERVICE entitlement-error report supports affiliation and hospital filters", async () => {
+test("SERVICE entitlement-error report groups counts by hospital and opens individual details", async () => {
   const [page, route] = await Promise.all([
     readFile(path.join(root, "app", "quality", "service-instype-err", "page.js"), "utf8"),
     readFile(path.join(root, "app", "api", "quality", "service-instype-err", "route.js"), "utf8"),
   ]);
 
   assert.match(page, /<AffiliationFilter/);
+  assert.match(page, /filterGrid qualityFilters/);
   assert.match(page, /params\.set\("fiscalYear", fiscalYear\)/);
   assert.match(page, /<FiscalYearFilter/);
   assert.match(page, /onChange=\{\(year\) => \{ setFiscalYear\(year\); setAffiliation\(""\); setHospcode\(""\); \}\}/);
@@ -28,6 +29,33 @@ test("SERVICE entitlement-error report supports affiliation and hospital filters
   assert.match(route, /const where = \["fiscal_year = \?"\]/);
   assert.match(route, /searchParams\.get\("affiliation"\)/);
   assert.match(route, /searchParams\.get\("hospcode"\)/);
+  assert.match(route, /searchParams\.get\("details"\) === "1"/);
+  assert.match(route, /COUNT\(\*\) AS count/);
+  assert.match(route, /GROUP BY hospcode/);
   assert.match(route, /FROM `t_service_intype_error`/);
   assert.match(route, /requireApiJwt/);
+  assert.match(page, /tableCountButton/);
+  assert.match(page, /openDetails/);
+  assert.match(page, /reportModalBackdrop/);
+  assert.match(page, /dataSourceLabel/);
+  assert.match(page, /ExcelExportButton/);
+  assert.match(page, /exportHrefFor\(row\.hospcode\)/);
+  assert.match(page, /serviceInstypeErrorTable/);
+  assert.match(page, /serviceInstypeActionCol/);
+  assert.match(page, /t_service_intype_error/);
+  assert.match(page, /processedAt/);
+  assert.match(route, /transform_sql_task = 't_service_intype_error\.sql'/);
+  assert.match(route, /transformedAt/);
+});
+
+test("SERVICE entitlement-error export preserves active filters and requires Excel export access", async () => {
+  const route = await readFile(path.join(root, "app", "api", "quality", "service-instype-err", "export", "route.js"), "utf8");
+  assert.match(route, /requireApiJwt/);
+  assert.match(route, /requireExcelExportAccess/);
+  assert.match(route, /searchParams\.get\("fiscalYear"\)/);
+  assert.match(route, /searchParams\.get\("affiliation"\)/);
+  assert.match(route, /searchParams\.get\("hospcode"\)/);
+  assert.match(route, /if \(!requestedHospcode\)/);
+  assert.match(route, /FROM `t_service_intype_error`/);
+  assert.match(route, /Content-Disposition/);
 });

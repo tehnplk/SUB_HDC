@@ -28,6 +28,7 @@ test("Typearea and pyramid pages are available under /standard", () => {
   assert.match(typeareaSource, /dashboard\/person-target\/page/);
   assert.match(pyramidPageSource, /fetch\("\/api\/person-pyramid"/);
   assert.match(pyramidPageSource, /85\+/);
+  assert.doesNotMatch(pyramidPageSource, /personTargetRefresh|RefreshCw|refreshing/);
 });
 
 test("dm-ht-count page and API count the DM/HT register per registered unit", () => {
@@ -37,6 +38,7 @@ test("dm-ht-count page and API count the DM/HT register per registered unit", ()
   assert.match(dmHtPageSource, /selectedHospcode/);
   assert.match(dmHtPageSource, /fetch\("\/api\/dm-ht-count"/);
   assert.match(dmHtPageSource, /hospNameShort/);
+  assert.doesNotMatch(dmHtPageSource, /personTargetRefresh|RefreshCw|refreshing/);
   assert.match(dmHtApiSource, /t_person_dm_ht/);
   assert.match(dmHtApiSource, /FIND_IN_SET\(u\.hospcode, t\.hos_person_type_1_3\)/);
   assert.match(dmHtApiSource, /getHospNameMap/);

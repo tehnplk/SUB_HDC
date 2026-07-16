@@ -43,6 +43,10 @@ test("person-dup page shows the required columns with a hospcode filter and no v
   }
   assert.match(pageSource, /selectedHospcode/);
   assert.match(pageSource, /hospNameShort/);
+  assert.match(pageSource, /filterGrid qualityFilters/);
+  assert.match(pageSource, /dataSourceLabel/);
+  assert.match(pageSource, /t_person_type_1_3/);
+  assert.match(pageSource, /processedAt/);
 });
 
 test("quality dashboard exposes a clickable card that links to the person-dup page", () => {

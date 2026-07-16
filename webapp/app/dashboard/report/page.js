@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
+import ExcelExportButton from "@/components/excel-export-button";
 import { ImportingNotice, useImportingGuard } from "@/components/importing-guard";
 
 function formatDate(value) {
@@ -388,15 +389,13 @@ export default function ReportDashboard() {
                 </p>
               </div>
               <div className="reportModalActions">
-                <button
-                  type="button"
-                  className="reportExportButton"
+                <ExcelExportButton
                   onClick={exportReport}
                   disabled={modalState.loading || !modalState.rows.length}
                 >
                   <Download aria-hidden="true" />
                   Export Excel
-                </button>
+                </ExcelExportButton>
                 <button type="button" className="reportModalClose" onClick={closeModal} aria-label="ปิด">
                   <X aria-hidden="true" />
                 </button>

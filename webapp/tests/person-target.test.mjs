@@ -16,6 +16,7 @@ test("person target dashboard shows unit-level Typearea columns", () => {
   assert.match(pageSource, /Typearea 1 \+ 3/);
   assert.match(pageSource, /HospitalFilter/);
   assert.match(pageSource, /selectedHospcode/);
+  assert.doesNotMatch(pageSource, /personTargetRefresh|RefreshCw|refreshing/);
   assert.match(pageSource, /เป้าหมาย/);
   assert.match(pageSource, /หน่วยบริการ/);
   assert.doesNotMatch(pageSource, /personTargetHero/);

@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { MapPin, Target, CheckCircle2, Percent, TriangleAlert, RefreshCw, FileSpreadsheet, Download, Database } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
+import ExcelExportButton from "@/components/excel-export-button";
 import AffiliationFilter from "@/components/affiliation-filter";
 import { useRapidReport } from "../_lib/use-rapid-report";
 import RapidHdcReportMeta from "../_components/rapid-hdc-report-meta";
@@ -49,10 +50,10 @@ export default function RapidDmControlPage() {
 
         <div className="rapidToolbar">
           <AffiliationFilter value={affiliation} affiliations={affiliations} disabled={loading} onChange={(name) => setParam("aff", name)} className="field rapidSelect" />
-          <a className="exportXlsxLink" href={`/api/rapid/${REPORT_ID}/export${affiliation ? `?affiliation=${encodeURIComponent(affiliation)}` : ""}`}>
+          <ExcelExportButton href={`/api/rapid/${REPORT_ID}/export${affiliation ? `?affiliation=${encodeURIComponent(affiliation)}` : ""}`}>
             <FileSpreadsheet aria-hidden="true" />
             ส่งออก Excel
-          </a>
+          </ExcelExportButton>
         </div>
 
         <RapidHdcReportMeta loading={loading} reportName={data?.hdc_report_name} sourceTable={data?.source_table} />

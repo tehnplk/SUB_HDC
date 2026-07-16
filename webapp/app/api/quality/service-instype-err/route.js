@@ -16,6 +16,7 @@ export async function GET(request) {
     const requestedYear = Number(searchParams.get("fiscalYear"));
     const requestedHospcode = searchParams.get("hospcode") || "";
     const requestedAffiliation = searchParams.get("affiliation") || "";
+    const detailsRequested = searchParams.get("details") === "1";
     const hospitalInfo = await getHospInfoMap(conn, { affiliationSource: "depShort" });
 
     const [yearRows] = await conn.query(
@@ -23,6 +24,19 @@ export async function GET(request) {
     );
     const fiscalYears = yearRows.map((row) => Number(row.fiscal_year)).filter(Boolean);
     const fiscalYear = fiscalYears.includes(requestedYear) ? requestedYear : (fiscalYears[0] || null);
+    let transformedAt = null;
+    try {
+      const [[latestTransform]] = await conn.query(
+        `SELECT finish_at FROM \`log_transform\`
+         WHERE transform_sql_task = 't_service_intype_error.sql'
+           AND finish_at IS NOT NULL
+         ORDER BY finish_at DESC
+         LIMIT 1`
+      );
+      transformedAt = latestTransform?.finish_at || null;
+    } catch {
+      // Older installations may not have log_transform yet.
+    }
 
     const [hospRows] = await conn.query(
       "SELECT DISTINCT hospcode FROM `t_service_intype_error` WHERE fiscal_year = ? ORDER BY hospcode",
@@ -39,6 +53,13 @@ export async function GET(request) {
       ? allHospitals.filter((hospital) => hospital.affiliation === requestedAffiliation)
       : allHospitals;
 
+    if (requestedHospcode && !allHospitals.some((hospital) => hospital.hospcode === requestedHospcode)) {
+      return Response.json({ error: "ไม่พบหน่วยบริการ" }, { status: 400 });
+    }
+    if (requestedHospcode && requestedAffiliation && hospitalInfo[requestedHospcode]?.affiliation !== requestedAffiliation) {
+      return Response.json({ error: "หน่วยบริการไม่อยู่ในสังกัดที่เลือก" }, { status: 400 });
+    }
+
     const where = ["fiscal_year = ?"];
     const values = [fiscalYear];
     if (requestedHospcode) {
@@ -46,22 +67,51 @@ export async function GET(request) {
       values.push(requestedHospcode);
     }
 
+    if (detailsRequested) {
+      if (!requestedHospcode) {
+        return Response.json({ error: "ต้องระบุรหัสหน่วยบริการ" }, { status: 400 });
+      }
+      const [rawRows] = await conn.query(
+        `SELECT hospcode, fiscal_year, pid, seq, date_serve, instype
+         FROM \`t_service_intype_error\`
+         WHERE ${where.join(" AND ")}
+         ORDER BY date_serve, pid, seq`,
+        values
+      );
+      const rows = rawRows.map((row) => ({
+        ...row,
+        hospname: hospitalInfo[row.hospcode]?.hospname || "",
+        affiliation: hospitalInfo[row.hospcode]?.affiliation || "",
+      }));
+      return Response.json({ rows, count: rows.length, transformedAt });
+    }
+
     const [rawRows] = await conn.query(
-      `SELECT hospcode, fiscal_year, pid, seq, date_serve, instype
+      `SELECT hospcode, COUNT(*) AS count
        FROM \`t_service_intype_error\`
-       ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
-       ORDER BY hospcode, date_serve, pid, seq`,
+       WHERE ${where.join(" AND ")}
+       GROUP BY hospcode
+       ORDER BY count DESC, hospcode`,
       values
     );
     const rows = rawRows
       .filter((row) => !requestedAffiliation || hospitalInfo[row.hospcode]?.affiliation === requestedAffiliation)
       .map((row) => ({
-        ...row,
+        hospcode: row.hospcode,
         hospname: hospitalInfo[row.hospcode]?.hospname || "",
         affiliation: hospitalInfo[row.hospcode]?.affiliation || "",
+        count: Number(row.count),
       }));
 
-    return Response.json({ fiscalYears, fiscalYear, affiliations, hospitals, rows, count: rows.length });
+    return Response.json({
+      fiscalYears,
+      fiscalYear,
+      affiliations,
+      hospitals,
+      rows,
+      count: rows.reduce((sum, row) => sum + row.count, 0),
+      transformedAt,
+    });
   } catch (error) {
     const message = error?.code === "ER_NO_SUCH_TABLE"
       ? "ยังไม่มีตารางสรุป t_service_intype_error กรุณารอ transform ทำงานก่อน"

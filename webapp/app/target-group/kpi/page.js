@@ -6,11 +6,11 @@ import {
   Building2,
   FileSpreadsheet,
   HeartPulse,
-  RefreshCw,
   TableProperties,
   Users,
 } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
+import ExcelExportButton from "@/components/excel-export-button";
 import TopicBullet from "@/components/topic-bullet";
 import HospitalFilter from "@/components/hospital-filter";
 
@@ -31,13 +31,11 @@ function formatDate(value) {
 export function DmHtCountDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [selectedHospcode, setSelectedHospcode] = useState("");
 
-  async function loadData({ isRefresh = false } = {}) {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
+  async function loadData() {
+    setLoading(true);
     setError("");
 
     try {
@@ -49,7 +47,6 @@ export function DmHtCountDashboard() {
       setError(loadError.message);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }
 
@@ -85,7 +82,6 @@ export function DmHtCountDashboard() {
 
         <div className="personTargetToolbar">
           <HospitalFilter value={selectedHospcode} onChange={setSelectedHospcode} hospitals={hospitals} disabled={loading} className="field personTargetSearch" />
-          <button type="button" className="personTargetRefresh" onClick={() => loadData({ isRefresh: true })} disabled={loading || refreshing}><RefreshCw aria-hidden="true" className={refreshing ? "personTargetSpin" : ""} />รีเฟรช</button>
         </div>
 
         <div className="tableMeta personTargetMeta"><span><TableProperties aria-hidden="true" /> {loading ? "กำลังโหลดข้อมูล..." : "ขึ้นทะเบียนตาม TYPEAREA 1 และ 3"}</span><span>Transform ล่าสุด: {formatDate(data?.transformedAt)}</span></div>
@@ -99,7 +95,7 @@ export function DmHtCountDashboard() {
                   <td className="personTargetRank">{index + 1}</td>
                   <td className="fileCol">{row.hospcode}{row.hospname ? <span className="hospNameShort">{row.hospname}</span> : null}</td>
                   <td className="numCol">{formatNumber(row.dmOnly)}</td><td className="numCol">{formatNumber(row.htOnly)}</td><td className="numCol">{formatNumber(row.dmHt)}</td><td className="numCol targetPopulationCell">{formatNumber(row.patients)}</td>
-                  <td className="exportCol"><a className="exportXlsxLink" href={`/api/dm-ht-count/export?hospcode=${encodeURIComponent(row.hospcode)}`} title={`ส่งออกทะเบียน DM/HT ${row.hospcode} เป็น xlsx`} aria-label={`ส่งออกทะเบียน DM/HT ${row.hospcode} เป็น xlsx`}><FileSpreadsheet aria-hidden="true" /></a></td>
+                  <td className="exportCol"><ExcelExportButton href={`/api/dm-ht-count/export?hospcode=${encodeURIComponent(row.hospcode)}`} title={`ส่งออกทะเบียน DM/HT ${row.hospcode} เป็น xlsx`} ariaLabel={`ส่งออกทะเบียน DM/HT ${row.hospcode} เป็น xlsx`} /></td>
                 </tr>
               )) : <tr><td className="emptyCell" colSpan={7}>{loading ? "กำลังโหลดข้อมูล..." : "ไม่พบทะเบียนผู้ป่วย DM/HT"}</td></tr>}
             </tbody>

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FileSpreadsheet, RefreshCw } from "lucide-react";
+import { Database, FileSpreadsheet } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
+import ExcelExportButton from "@/components/excel-export-button";
 import HospitalFilter from "@/components/hospital-filter";
 
 function formatBirth(value) {
@@ -71,7 +72,7 @@ export default function QualityPersonDupPage() {
 
         {error ? <div className="error">{error}</div> : null}
 
-        <div className="personTargetToolbar">
+        <div className="filterGrid qualityFilters">
           <HospitalFilter
             value={selectedHospcode}
             onChange={setSelectedHospcode}
@@ -81,21 +82,23 @@ export default function QualityPersonDupPage() {
           />
         </div>
 
+        <div className="dataSourceLabel">
+          <Database aria-hidden="true" />
+          <span>แหล่งข้อมูล: ตารางสรุป t_person_type_1_3 (แฟ้ม PERSON)</span>
+          <span className="processedAt">ประมวลผลเมื่อ: {loading ? "..." : formatTransformedAt(data?.transformedAt)}</span>
+        </div>
+
         <div className="tableMeta metaLine dupMetaRow">
-          <span className="dupMetaSource">
-            <RefreshCw aria-hidden="true" />
-            {loading ? "…" : `ประมวลผลจากตารางสรุป t_person_type_1_3 เมื่อ : ${formatTransformedAt(data?.transformedAt)}`}
-          </span>
           <span className="dupCountLabel">
             ทั้งหมด {filteredPersons.length.toLocaleString("th-TH")} คน
-            <a
+            <ExcelExportButton
               className="exportXlsxLink"
               href={`/api/quality/person-dup/export${selectedHospcode ? `?hospcode=${encodeURIComponent(selectedHospcode)}` : ""}`}
               title="ส่งออกรายชื่อแบบปกปิดเป็น Excel"
             >
               <FileSpreadsheet aria-hidden="true" />
               <span className="srOnly">ส่งออก Excel</span>
-            </a>
+            </ExcelExportButton>
           </span>
         </div>
 

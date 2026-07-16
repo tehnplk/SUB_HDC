@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Building2,
-  RefreshCw,
   TableProperties,
   Target,
   UploadCloud,
@@ -30,13 +29,11 @@ function formatDate(value) {
 export default function PersonTargetDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [selectedHospcode, setSelectedHospcode] = useState("");
 
-  async function loadData({ isRefresh = false } = {}) {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
+  async function loadData() {
+    setLoading(true);
     setError("");
 
     try {
@@ -48,7 +45,6 @@ export default function PersonTargetDashboard() {
       setError(loadError.message);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }
 
@@ -106,15 +102,6 @@ export default function PersonTargetDashboard() {
             disabled={loading}
             className="field personTargetSearch"
           />
-          <button
-            type="button"
-            className="personTargetRefresh"
-            onClick={() => loadData({ isRefresh: true })}
-            disabled={loading || refreshing}
-          >
-            <RefreshCw aria-hidden="true" className={refreshing ? "personTargetSpin" : ""} />
-            รีเฟรช
-          </button>
         </div>
 
         <div className="tableMeta personTargetMeta">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BarChart3, Building2, RefreshCw, TableProperties, Users } from "lucide-react";
+import { BarChart3, Building2, TableProperties, Users } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
 import HospitalFilter from "@/components/hospital-filter";
 
@@ -25,12 +25,10 @@ export default function PersonPyramidPage() {
   const [data, setData] = useState(null);
   const [selectedHospcode, setSelectedHospcode] = useState("");
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  async function loadData({ isRefresh = false } = {}) {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
+  async function loadData() {
+    setLoading(true);
     setError("");
     try {
       const response = await fetch("/api/person-pyramid", { cache: "no-store" });
@@ -41,7 +39,6 @@ export default function PersonPyramidPage() {
       setError(loadError.message);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }
 
@@ -84,9 +81,6 @@ export default function PersonPyramidPage() {
             disabled={loading}
             className="field pyramidSelect"
           />
-          <button type="button" className="personTargetRefresh" onClick={() => loadData({ isRefresh: true })} disabled={loading || refreshing}>
-            <RefreshCw aria-hidden="true" className={refreshing ? "personTargetSpin" : ""} />รีเฟรช
-          </button>
         </div>
 
         <div className="statGrid pyramidStatGrid">
