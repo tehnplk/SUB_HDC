@@ -9,8 +9,8 @@ import AddonTab from "@/components/addon-tab";
 const TABS = [
   { href: "/import-check/index", label: "ปริมาณข้อมูล", Icon: FileText },
   { href: "/quality", label: "คุณภาพ", Icon: ShieldCheck },
-  { href: "/standard/index", label: "ข้อมูลมาตรฐาน", Icon: Database },
-  { href: "/target-group/index", label: "ทะเบียนกลุ่มเป้าหมาย", Icon: Target },
+  { href: "/standard/index", label: "ข้อมูลพื้นฐาน", Icon: Database },
+  { href: "/target-group/index", label: "กลุ่มเป้าหมาย", Icon: Target },
   { href: "/workload", label: "Work Load", Icon: Activity },
   { href: "/report/index", label: "รายงาน", Icon: ClipboardList },
   { href: "/ai/chat", label: "Ask AI", Icon: Sparkles },
@@ -19,7 +19,7 @@ const TABS = [
 // กลุ่มขวาของ tab bar — ชิดขอบขวา; badge = จำนวนหัวข้อที่ต้องเร่งรัด
 // (ยังเป็นค่าคงที่ตามหัวข้อใน /rapid/index — มีระบบนับจริงค่อยเปลี่ยนเป็น fetch)
 const TABS_END = [
-  { href: "/rapid/index", label: "งานเร่งรัดติดตาม", Icon: AlarmClock, badge: 4 },
+  { href: "/rapid/index", label: "เร่งรัดติดตาม", Icon: AlarmClock, badge: 4 },
 ];
 
 const BADGE_BLINK_KEY = "tabBadgeBlinked";

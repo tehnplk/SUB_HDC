@@ -116,13 +116,11 @@ export default function TargetGroupKpiIndexPage() {
       <section className="panel panelWide dashboardPanel standardPanel">
         <ModuleHeader subtitle="ทะเบียนกลุ่มเป้าหมายตามตัวชี้วัด" />
 
-        <ul className="moduleTopicList moduleTopicListSmall">
+        <ul className="moduleTopicList">
           <li>
             <Link href="/target-group/kpi/dm-ht" className="moduleTopicLink">
               <span className="moduleTopicBullet" aria-hidden="true" />
-              <span className="standardMenuText">
-                <strong>จำนวนผู้ป่วย DM/HT</strong>
-              </span>
+              <span className="moduleTopicText">จำนวนผู้ป่วย DM/HT</span>
               <ChevronRight className="standardMenuArrow" aria-hidden="true" />
             </Link>
           </li>

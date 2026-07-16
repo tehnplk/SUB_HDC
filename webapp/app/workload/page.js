@@ -5,13 +5,11 @@ import ModuleHeader from "@/components/module-header";
 const workloadItems = [
   {
     href: "/workload/visit-monthly",
-    title: "จำนวนให้บริการผู้ป่วยนอก",
-    description: "แสดงจำนวนการรับบริการผู้ป่วยนอกรายหน่วยบริการ แยกตามเดือน",
+    topic: "จำนวนให้บริการผู้ป่วยนอก",
   },
   {
     href: "/workload/ncdscreen-workload",
-    title: "การคัดกรองเบาหวานความดัน",
-    description: "ติดตามผลงานรายหน่วยบริการ และแนวโน้มผลรวมรายเดือนของประชากร Typearea 1 หรือ 3",
+    topic: "การคัดกรองเบาหวานความดัน",
   },
 ];
 
@@ -21,11 +19,11 @@ export default function WorkloadPage() {
       <section className="panel panelWide dashboardPanel standardPanel">
         <ModuleHeader subtitle="ศูนย์รวมผลงานบริการสุขภาพรายหน่วยบริการ" />
         <ul className="moduleTopicList">
-          {workloadItems.map(({ href, title, description }) => (
+          {workloadItems.map(({ href, topic }) => (
             <li key={href}>
               <Link href={href} className="moduleTopicLink">
                 <span className="moduleTopicBullet" aria-hidden="true" />
-                <span className="standardMenuText"><strong>{title}</strong><small>{description}</small></span>
+                <span className="moduleTopicText">{topic}</span>
                 <ChevronRight className="standardMenuArrow" aria-hidden="true" />
               </Link>
             </li>

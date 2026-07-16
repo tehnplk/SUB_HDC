@@ -1899,31 +1899,15 @@ button:disabled {
   box-shadow: 0 0 0 4px var(--accent-glow);
 }
 
-.standardMenuText {
-  display: grid;
-  gap: 7px;
-}
-
-.standardMenuText strong {
+.moduleTopicText {
+  min-width: 0;
+  overflow: hidden;
   color: #174c2e;
-  font-size: 18px;
+  font-size: 15px;
+  font-weight: 700;
   line-height: 1.3;
-}
-
-/* ลิสต์หัวข้อแบบกระชับ — ตัวอักษรเท่า subtitle (.lead 16px) */
-.moduleTopicListCompact .standardMenuText strong {
-  font-size: 16px;
-}
-
-.moduleTopicListSmall .standardMenuText strong {
-  font-size: 14px;
-}
-
-.standardMenuText small {
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 650;
-  line-height: 1.55;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .standardMenuArrow {

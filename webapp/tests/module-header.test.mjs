@@ -51,18 +51,19 @@ test("standard submodules use the shared header rather than a second tab bar", (
 test("standard navigation stays active across its child routes", () => {
   assert.match(mainTabSource, /pathname\.startsWith\("\/standard\/"\)/);
   assert.match(mainTabSource, /pathname\.startsWith\("\/import-check\/"\)/);
+  assert.match(mainTabSource, /href: "\/standard\/index", label: "ข้อมูลพื้นฐาน"/);
 });
 
 test("target-group is a main-tab module with an index menu of its child topics", () => {
   assert.match(mainTabSource, /\/target-group\/index/);
-  assert.match(mainTabSource, /ทะเบียนกลุ่มเป้าหมาย/);
+  assert.match(mainTabSource, /href: "\/target-group\/index", label: "กลุ่มเป้าหมาย"/);
   assert.match(mainTabSource, /pathname\.startsWith\("\/target-group\/"\)/);
   assert.match(headerSource, /prefix: "\/target-group"/);
   assert.match(targetGroupIndexSource, /ModuleHeader/);
   assert.match(targetGroupIndexSource, /moduleTopicList/);
   assert.match(targetGroupIndexSource, /กลุ่มเป้าหมายตามตัวชี้วัด/);
   assert.match(targetGroupIndexSource, /href: "\/target-group\/kpi"/);
-  assert.match(targetGroupIndexSource, /ทะเบียนรายคนของกลุ่มเป้าหมายที่ใช้นับตัวชี้วัด/);
+  assert.doesNotMatch(targetGroupIndexSource, /description:|<small>|standardMenuText/);
   assert.doesNotMatch(targetGroupIndexSource, /จำนวนผู้ป่วย DM\/HT ในเขต/);
   const targetGroupKpiSource = readFileSync(
     new URL("../app/target-group/kpi/page.js", import.meta.url),
@@ -71,8 +72,7 @@ test("target-group is a main-tab module with an index menu of its child topics",
   assert.match(targetGroupKpiSource, /href="\/target-group\/kpi\/dm-ht"/);
   assert.match(targetGroupKpiSource, /จำนวนผู้ป่วย DM\/HT/);
   assert.doesNotMatch(targetGroupKpiSource, /<small>/);
-  assert.match(targetGroupKpiSource, /moduleTopicListSmall/);
-  assert.match(globalCss, /\.moduleTopicListSmall \.standardMenuText strong\s*\{\s*font-size:\s*14px;/);
+  assert.doesNotMatch(targetGroupKpiSource, /moduleTopicListSmall/);
   assert.match(targetGroupIndexSource, /กลุ่มเป้าหมายการจัดเก็บรายได้/);
   assert.match(headerSource, /"\/target-group\/kpi\/dm-ht": "จำนวนผู้ป่วย DM\/HT"/);
 });
@@ -86,7 +86,7 @@ test("rapid is a right-aligned main-tab module with a title-only topic list", ()
   assert.match(mainTabSource, /TABS_END/);
   assert.match(mainTabSource, /tabButtonEnd/);
   assert.match(mainTabSource, /\/rapid\/index/);
-  assert.match(mainTabSource, /งานเร่งรัดติดตาม/);
+  assert.match(mainTabSource, /href: "\/rapid\/index", label: "เร่งรัดติดตาม"/);
   assert.match(mainTabSource, /pathname\.startsWith\("\/rapid\/"\)/);
   // breadcrumb entry ของ rapid ย้ายไปอยู่ใน _lib ของ module แล้ว — header แค่ import มาต่อ
   assert.match(headerSource, /RAPID_BREADCRUMB/);
@@ -96,6 +96,30 @@ test("rapid is a right-aligned main-tab module with a title-only topic list", ()
   assert.match(rapidIndexSource, /RAPID_MENU/);
   // bullet เป็นข้อความบรรทัดเดียว — ไม่มี description ใต้หัวข้อ
   assert.doesNotMatch(rapidIndexSource, /<small>/);
+  assert.match(rapidIndexSource, /moduleTopicText/);
+});
+
+test("all portal topic menus use one topic-only line", () => {
+  const portalSources = [
+    "../app/dashboard/quality/page.js",
+    "../app/import-check/index/page.js",
+    "../app/standard/index/page.js",
+    "../app/target-group/index/page.js",
+    "../app/target-group/kpi/page.js",
+    "../app/workload/page.js",
+    "../app/rapid/index/page.js",
+  ].map((path) => readFileSync(new URL(path, import.meta.url), "utf8"));
+
+  for (const portalSource of portalSources) {
+    assert.match(portalSource, /moduleTopicList/);
+    assert.match(portalSource, /moduleTopicBullet/);
+    assert.match(portalSource, /moduleTopicText/);
+    assert.doesNotMatch(portalSource, /description:|<small>|standardMenuText/);
+  }
+
+  assert.match(globalCss, /\.moduleTopicText\s*\{[\s\S]*?white-space:\s*nowrap;/);
+  assert.match(globalCss, /\.moduleTopicText\s*\{[\s\S]*?font-size:\s*15px;/);
+  assert.doesNotMatch(globalCss, /moduleTopicList(?:Compact|Small) \.moduleTopicText/);
 });
 
 test("report is a top-level module rather than a Dashboard main-tab item", () => {

@@ -12,14 +12,12 @@ export default function RapidIndexPage() {
       <section className="panel panelWide dashboardPanel standardPanel">
         <ModuleHeader subtitle="งานเร่งรัดติดตามรายตัวชี้วัด" />
 
-        <ul className="moduleTopicList moduleTopicListCompact">
+        <ul className="moduleTopicList">
           {menuItems.map(({ id, href, title }) => (
             <li key={id}>
               <Link href={href} className="moduleTopicLink">
                 <span className="moduleTopicBullet" aria-hidden="true" />
-                <span className="standardMenuText">
-                  <strong>{title}</strong>
-                </span>
+                <span className="moduleTopicText">{title}</span>
                 <ChevronRight className="standardMenuArrow" aria-hidden="true" />
               </Link>
             </li>

@@ -5,13 +5,11 @@ import ModuleHeader from "@/components/module-header";
 const menuItems = [
   {
     href: "/target-group/kpi",
-    title: "กลุ่มเป้าหมายตามตัวชี้วัด",
-    description: "ทะเบียนรายคนของกลุ่มเป้าหมายที่ใช้นับตัวชี้วัด",
+    topic: "กลุ่มเป้าหมายตามตัวชี้วัด",
   },
   {
     href: "#",
-    title: "กลุ่มเป้าหมายการจัดเก็บรายได้",
-    description: "ทะเบียนรายคนของกลุ่มเป้าหมายสำหรับงานจัดเก็บรายได้",
+    topic: "กลุ่มเป้าหมายการจัดเก็บรายได้",
   },
 ];
 
@@ -22,14 +20,11 @@ export default function TargetGroupIndexPage() {
         <ModuleHeader subtitle="ทะเบียนกลุ่มเป้าหมายรายคนสำหรับติดตามงาน" />
 
         <ul className="moduleTopicList">
-          {menuItems.map(({ href, title, description }) => (
-            <li key={title}>
+          {menuItems.map(({ href, topic }) => (
+            <li key={topic}>
               <Link href={href} className="moduleTopicLink">
                 <span className="moduleTopicBullet" aria-hidden="true" />
-                <span className="standardMenuText">
-                  <strong>{title}</strong>
-                  <small>{description}</small>
-                </span>
+                <span className="moduleTopicText">{topic}</span>
                 <ChevronRight className="standardMenuArrow" aria-hidden="true" />
               </Link>
             </li>

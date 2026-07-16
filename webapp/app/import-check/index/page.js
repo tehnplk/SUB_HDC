@@ -5,18 +5,15 @@ import ModuleHeader from "@/components/module-header";
 const menuItems = [
   {
     href: "/import-check/log-import",
-    title: "ประวัติการนำเข้า",
-    description: "ติดตามสถานะคิว รายการนำเข้า และรายละเอียดข้อผิดพลาดของไฟล์ข้อมูล",
+    topic: "ประวัติการนำเข้า",
   },
   {
     href: "/import-check/files-count",
-    title: "จำนวนข้อมูลรายแฟ้ม",
-    description: "ตรวจจำนวนข้อมูลแต่ละแฟ้ม แยกตามหน่วยบริการและปีงบประมาณ",
+    topic: "จำนวนข้อมูลรายแฟ้ม",
   },
   {
     href: "/import-check/compare-hdc-person",
-    title: "เปรียบเทียบประชากรกับ HDC",
-    description: "เทียบจำนวนประชากรแยก TYPEAREA ระหว่าง HDC กับ SUB-HDC รายหน่วยบริการ",
+    topic: "เปรียบเทียบประชากรกับ HDC",
   },
 ];
 
@@ -27,15 +24,12 @@ export default function ImportCheckIndexPage() {
         <ModuleHeader subtitle="ตรวจสอบความพร้อมและผลการนำเข้าข้อมูล" />
 
         <ul className="moduleTopicList">
-          {menuItems.map(({ href, title, description }) => (
+          {menuItems.map(({ href, topic }) => (
             <li key={href}>
               <Link href={href} className="moduleTopicLink">
-              <span className="moduleTopicBullet" aria-hidden="true" />
-              <span className="standardMenuText">
-                <strong>{title}</strong>
-                <small>{description}</small>
-              </span>
-              <ChevronRight className="standardMenuArrow" aria-hidden="true" />
+                <span className="moduleTopicBullet" aria-hidden="true" />
+                <span className="moduleTopicText">{topic}</span>
+                <ChevronRight className="standardMenuArrow" aria-hidden="true" />
               </Link>
             </li>
           ))}
