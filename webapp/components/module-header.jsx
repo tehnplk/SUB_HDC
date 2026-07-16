@@ -46,8 +46,8 @@ const BREADCRUMB_MODULES = [
     href: "/quality",
     label: "คุณภาพ",
     pages: {
-      "/quality/person-dup": "ประชากร TYPE 1 และ 3 ซ้ำกัน",
-      "/quality/service-instype-err": "รายการบริการที่ให้รหัสสิทธิรักษาที่ไม่มีในระบบ",
+      "/quality/person-dup": "ประเภทการอยู่อาศัยซ้ำกันข้ามหน่วยบริการ (PERSON - TYPEAREA)",
+      "/quality/service-instype-err": "รายการบริการที่ให้รหัสสิทธิรักษาที่ไม่มีในระบบ (SERVICE - INSTYPE)",
     },
   },
   {

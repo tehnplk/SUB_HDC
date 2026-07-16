@@ -68,7 +68,7 @@ export default function QualityPersonDupPage() {
   return (
     <div className="main dashboardMain">
       <section className="panel panelWide dashboardPanel">
-        <ModuleHeader subtitle="ประชากร TYPE 1,3 ที่เลขบัตร 13 หลักเดียวกันซ้ำมากกว่า 1 หน่วยบริการ" />
+        <ModuleHeader subtitle="ประเภทการอยู่อาศัยซ้ำกันข้ามหน่วยบริการ (PERSON - TYPEAREA)" />
 
         {error ? <div className="error">{error}</div> : null}
 

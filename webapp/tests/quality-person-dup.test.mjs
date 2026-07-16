@@ -51,10 +51,11 @@ test("person-dup page shows the required columns with a hospcode filter and no v
 
 test("quality dashboard exposes a clickable card that links to the person-dup page", () => {
   assert.match(qualitySource, /href="\/quality\/person-dup"/);
-  assert.match(qualitySource, /ประชากร TYPE 1 และ 3 ซ้ำกัน/);
+  assert.match(qualitySource, /ประเภทการอยู่อาศัยซ้ำกันข้ามหน่วยบริการ \(PERSON - TYPEAREA\)/);
 });
 
 test("quality navigation stays active and breadcrumbed across the person-dup child route", () => {
   assert.match(mainTabSource, /pathname\.startsWith\("\/quality\/"\)/);
   assert.match(headerSource, /"\/quality\/person-dup":/);
+  assert.match(headerSource, /ประเภทการอยู่อาศัยซ้ำกันข้ามหน่วยบริการ \(PERSON - TYPEAREA\)/);
 });

@@ -79,7 +79,7 @@ export default function ServiceInstypeErrorPage() {
   return (
     <div className="main dashboardMain">
       <section className="panel panelWide dashboardPanel">
-        <ModuleHeader subtitle="รายการบริการที่ให้รหัสสิทธิรักษาที่ไม่มีในระบบ" />
+        <ModuleHeader subtitle="รายการบริการที่ให้รหัสสิทธิรักษาที่ไม่มีในระบบ (SERVICE - INSTYPE)" />
 
         {error ? <div className="error">{error}</div> : null}
 

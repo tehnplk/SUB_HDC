@@ -8,7 +8,7 @@ const root = process.cwd();
 test("quality portal links to the SERVICE entitlement-error report", async () => {
   const page = await readFile(path.join(root, "app", "dashboard", "quality", "page.js"), "utf8");
   assert.match(page, /href="\/quality\/service-instype-err"/);
-  assert.match(page, /รายการบริการที่ให้รหัสสิทธิรักษาที่ไม่มีในระบบ/);
+  assert.match(page, /รายการบริการที่ให้รหัสสิทธิรักษาที่ไม่มีในระบบ \(SERVICE - INSTYPE\)/);
 });
 
 test("SERVICE entitlement-error report groups counts by hospital and opens individual details", async () => {
