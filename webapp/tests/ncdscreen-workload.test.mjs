@@ -23,7 +23,7 @@ test("NCD screening workload belongs to the Work Load portal, not Import Check",
 test("NCD screening workload page provides filters, workload tab, and total trend", () => {
   assert.match(pageSource, /\/api\/ncdscreen-workload/);
   assert.match(pageSource, /ปีงบประมาณ/);
-  assert.match(pageSource, /ทุกสังกัด/);
+  assert.match(pageSource, /<AffiliationFilter/);
   assert.match(pageSource, /params\.set\("affiliation", affiliation\)/);
   assert.match(pageSource, /หน่วยบริการ/);
   assert.match(pageSource, /ผลงาน/);

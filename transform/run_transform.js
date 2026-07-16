@@ -32,6 +32,7 @@ const TRANSFORM_TABLE_BY_FILE = {
   "s_person_type_count.sql": "s_person_type_count",
   "s_visit.sql": "s_visit",
   "s_visit_instype.sql": "s_visit_instype",
+  "t_service_intype_error.sql": "t_service_intype_error",
   "t_person_type_1_3.sql": "t_person_type_1_3",
   "t_person_dm_ht.sql": "t_person_dm_ht",
 };

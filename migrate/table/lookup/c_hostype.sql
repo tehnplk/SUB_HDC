@@ -1,25 +1,31 @@
--- MySQL-compatible export generated from Docker PostgreSQL database sub_hdc_center
--- Tables: one table per file
+-- MySQL-compatible lookup seed for c_hostype.
 SET NAMES utf8mb3;
-SET FOREIGN_KEY_CHECKS=0;
 
-DROP TABLE IF EXISTS `c_hostype`;
-CREATE TABLE `c_hostype` (
-  `code` VARCHAR(255) NOT NULL,
-  `hostype_name` VARCHAR(255) NULL,
-  `dep_name` VARCHAR(255) NULL,
-  `hostype` VARCHAR(255) NULL,
-  `hostype_list` VARCHAR(255) NULL,
+CREATE TABLE IF NOT EXISTS `c_hostype` (
+  `code` varchar(255) NOT NULL,
+  `hostype_name` varchar(255) NULL,
+  `dep_name` varchar(255) NULL,
+  `dep_short` varchar(255) NULL,
+  `hostype` varchar(255) NULL,
+  `hostype_list` varchar(255) NULL,
   PRIMARY KEY (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
-INSERT INTO `c_hostype` (`code`, `hostype_name`, `dep_name`, `hostype`, `hostype_list`) VALUES
-('11', 'กระทรวงสาธารณสุข', 'กรมสุขภาพจิต', 'รพ.จิตเวช', 'รายโรงพยาบาล'),
-('12', 'สังกัดอื่น', NULL, 'รพ.นอกสังกัด', 'รายโรงพยาบาล'),
-('13', 'สังกัดอื่น', 'กระทรวงยุติธรรม', 'สถานพยาบาล', 'รายหน่วยบริการ'),
-('18', 'กระทรวงสาธารณสุข', 'สำนักปลัดกระทรวงสาธารณสุข', 'รพ.สต.', 'รายหน่วยบริการ'),
-('21', 'องค์กรปกครองส่วนท้องถิ่น', 'องค์กรปกครองส่วนท้องถิ่น', 'รพ.สต.', 'รายหน่วยบริการ'),
-('5', 'กระทรวงสาธารณสุข', 'สำนักปลัดกระทรวงสาธารณสุข', 'รพศ.', 'รายโรงพยาบาล'),
-('7', 'กระทรวงสาธารณสุข', 'สำนักปลัดกระทรวงสาธารณสุข', 'รพ.', 'รายโรงพยาบาล'),
-('8', 'กระทรวงสาธารณสุข', 'สำนักปลัดกระทรวงสาธารณสุข', 'ศูนย์สุขภาพ', 'รายหน่วยบริการ');
 
-SET FOREIGN_KEY_CHECKS=1;
+ALTER TABLE `c_hostype`
+  ADD COLUMN IF NOT EXISTS `dep_short` varchar(255) DEFAULT NULL AFTER `dep_name`;
+
+START TRANSACTION;
+
+DELETE FROM `c_hostype`;
+
+INSERT INTO `c_hostype` (`code`, `hostype_name`, `dep_name`, `dep_short`, `hostype`, `hostype_list`) VALUES
+('11', 'กระทรวงสาธารณสุข', 'กรมสุขภาพจิต', 'กรมสุขภาพจิต', 'รพ.จิตเวช', 'รายโรงพยาบาล'),
+('12', 'สังกัดอื่น', NULL, 'รพ.นอกสังกัด', 'รพ.นอกสังกัด', 'รายโรงพยาบาล'),
+('13', 'สังกัดอื่น', 'กระทรวงยุติธรรม', 'สถานพยาบาล', 'สถานพยาบาล', 'รายหน่วยบริการ'),
+('18', 'กระทรวงสาธารณสุข', 'สำนักงานปลัดกระทรวงสาธารณสุข', 'สธ', 'รพ.สต.', 'รายหน่วยบริการ'),
+('21', 'องค์กรปกครองส่วนท้องถิ่น', 'องค์กรปกครองส่วนท้องถิ่น', 'อปท', 'รพ.สต.', 'รายหน่วยบริการ'),
+('5', 'กระทรวงสาธารณสุข', 'สำนักงานปลัดกระทรวงสาธารณสุข', 'สธ', 'รพศ.', 'รายโรงพยาบาล'),
+('7', 'กระทรวงสาธารณสุข', 'สำนักงานปลัดกระทรวงสาธารณสุข', 'สธ', 'รพ.', 'รายโรงพยาบาล'),
+('8', 'กระทรวงสาธารณสุข', 'สำนักงานปลัดกระทรวงสาธารณสุข', 'สธ', 'ศูนย์สุขภาพ', 'รายหน่วยบริการ');
+
+COMMIT;

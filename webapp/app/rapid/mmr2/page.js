@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { MapPin, Target, CheckCircle2, Percent, TriangleAlert, RefreshCw, FileSpreadsheet, Download, Database } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
+import AffiliationFilter from "@/components/affiliation-filter";
 import { useRapidReport } from "../_lib/use-rapid-report";
 import RapidHdcReportMeta from "../_components/rapid-hdc-report-meta";
 import { formatNumber, formatPercent, formatAffiliation, formatDate } from "../_lib/rapid-format";
@@ -42,15 +43,7 @@ export default function RapidMmr2Page() {
         </div>
 
         <div className="rapidToolbar">
-          <label className="field rapidSelect">
-            <span className="srOnly">เลือกสังกัด</span>
-            <select value={affiliation} onChange={(event) => setParam("aff", event.target.value)} disabled={loading}>
-              <option value="">ทุกสังกัด</option>
-              {affiliations.map((name) => (
-                <option key={name} value={name}>{name}</option>
-              ))}
-            </select>
-          </label>
+          <AffiliationFilter value={affiliation} affiliations={affiliations} disabled={loading} onChange={(name) => setParam("aff", name)} className="field rapidSelect" />
           <a className="exportXlsxLink" href={`/api/rapid/${REPORT_ID}/export${affiliation ? `?affiliation=${encodeURIComponent(affiliation)}` : ""}`}>
             <FileSpreadsheet aria-hidden="true" />
             ส่งออก Excel

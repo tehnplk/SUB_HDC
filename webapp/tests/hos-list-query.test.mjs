@@ -48,3 +48,17 @@ test("getHospInfoMap normalizes affiliation and hospital names", async () => {
     "99999": { hospname: "ทดสอบ", affiliation: "" },
   });
 });
+
+test("getHospInfoMap can use c_hostype dep_short for affiliation", async () => {
+  let query = "";
+  const conn = {
+    async query(sql) {
+      query = sql;
+      return [[{ hospcode: "07584", hospname_short: "Hospital", affiliation: "สธ" }]];
+    },
+  };
+
+  const map = await getHospInfoMap(conn, { affiliationSource: "depShort" });
+  assert.match(query, /NULLIF\(t\.dep_short, ''\)/);
+  assert.equal(map["07584"].affiliation, "สธ");
+});

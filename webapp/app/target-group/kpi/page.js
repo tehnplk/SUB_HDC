@@ -7,12 +7,12 @@ import {
   FileSpreadsheet,
   HeartPulse,
   RefreshCw,
-  Search,
   TableProperties,
   Users,
 } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
 import TopicBullet from "@/components/topic-bullet";
+import HospitalFilter from "@/components/hospital-filter";
 
 function formatNumber(value) {
   return Number(value || 0).toLocaleString("th-TH");
@@ -33,7 +33,7 @@ export function DmHtCountDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedHospcode, setSelectedHospcode] = useState("");
 
   async function loadData({ isRefresh = false } = {}) {
     if (isRefresh) setRefreshing(true);
@@ -58,12 +58,13 @@ export function DmHtCountDashboard() {
   }, []);
 
   const rows = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-    if (!term) return data?.rows || [];
-    return (data?.rows || []).filter((row) => (
-      row.hospcode.toLowerCase().includes(term) || row.hospname.toLowerCase().includes(term)
-    ));
-  }, [data?.rows, searchTerm]);
+    if (!selectedHospcode) return data?.rows || [];
+    return (data?.rows || []).filter((row) => row.hospcode === selectedHospcode);
+  }, [data?.rows, selectedHospcode]);
+  const hospitals = useMemo(
+    () => (data?.rows || []).map(({ hospcode, hospname }) => ({ hospcode, hospname })),
+    [data?.rows]
+  );
 
   const summary = data?.summary;
 
@@ -83,7 +84,7 @@ export function DmHtCountDashboard() {
         </div>
 
         <div className="personTargetToolbar">
-          <label className="field personTargetSearch"><span className="srOnly">ค้นหาหน่วยบริการ</span><div className="inputWithIcon"><Search aria-hidden="true" /><input className="fieldInput reportSearchInput" type="search" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="ค้นหาชื่อหรือรหัสหน่วยบริการ" /></div></label>
+          <HospitalFilter value={selectedHospcode} onChange={setSelectedHospcode} hospitals={hospitals} disabled={loading} className="field personTargetSearch" />
           <button type="button" className="personTargetRefresh" onClick={() => loadData({ isRefresh: true })} disabled={loading || refreshing}><RefreshCw aria-hidden="true" className={refreshing ? "personTargetSpin" : ""} />รีเฟรช</button>
         </div>
 

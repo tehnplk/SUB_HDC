@@ -5,13 +5,13 @@ import Link from "next/link";
 import {
   Building2,
   RefreshCw,
-  Search,
   TableProperties,
   Target,
   UploadCloud,
   Users,
 } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
+import HospitalFilter from "@/components/hospital-filter";
 
 function formatNumber(value) {
   return Number(value || 0).toLocaleString("th-TH");
@@ -32,7 +32,7 @@ export default function PersonTargetDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedHospcode, setSelectedHospcode] = useState("");
 
   async function loadData({ isRefresh = false } = {}) {
     if (isRefresh) setRefreshing(true);
@@ -57,12 +57,9 @@ export default function PersonTargetDashboard() {
   }, []);
 
   const rows = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-    if (!term) return data?.rows || [];
-    return (data?.rows || []).filter((row) => (
-      row.hospcode.toLowerCase().includes(term) || row.hospname.toLowerCase().includes(term)
-    ));
-  }, [data?.rows, searchTerm]);
+    if (!selectedHospcode) return data?.rows || [];
+    return (data?.rows || []).filter((row) => row.hospcode === selectedHospcode);
+  }, [data?.rows, selectedHospcode]);
 
   const summary = data?.summary;
 
@@ -102,19 +99,13 @@ export default function PersonTargetDashboard() {
         </div>
 
         <div className="personTargetToolbar">
-          <label className="field personTargetSearch">
-            <span className="srOnly">ค้นหาหน่วยบริการ</span>
-            <div className="inputWithIcon">
-              <Search aria-hidden="true" />
-              <input
-                className="fieldInput reportSearchInput"
-                type="search"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="ค้นหาชื่อหรือรหัสหน่วยบริการ"
-              />
-            </div>
-          </label>
+          <HospitalFilter
+            value={selectedHospcode}
+            onChange={setSelectedHospcode}
+            hospitals={(data?.rows || []).map(({ hospcode, hospname }) => ({ hospcode, hospname }))}
+            disabled={loading}
+            className="field personTargetSearch"
+          />
           <button
             type="button"
             className="personTargetRefresh"

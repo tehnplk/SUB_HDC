@@ -8,7 +8,7 @@ const exportSource = readFileSync(new URL("../app/api/visit-monthly-workload/exp
 
 test("visit workload provides year, affiliation, and hospital filters", () => {
   assert.match(pageSource, /\/api\/visit-monthly-workload/);
-  assert.match(pageSource, /ทุกสังกัด/);
+  assert.match(pageSource, /<AffiliationFilter/);
   assert.match(pageSource, /ทุกหน่วยบริการ/);
   assert.match(pageSource, /params\.set\("affiliation", affiliation\)/);
   assert.match(pageSource, /setHospcode\(""\)/);

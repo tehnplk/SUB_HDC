@@ -73,7 +73,7 @@ test("dedicated pages each fetch their own report id via the shared hook", () =>
     assert.match(page, /RapidHdcReportMeta/);
     assert.match(page, /แหล่งข้อมูลจาก HDC กลาง/);
     // ทุกหน้ามี dropdown สังกัด + ปุ่ม export ที่ผูก report id ของตัวเอง
-    assert.match(page, /ทุกสังกัด/);
+    assert.match(page, /<AffiliationFilter/);
     assert.match(page, /\/api\/rapid\/\$\{REPORT_ID\}\/export/);
     assert.match(page, /exportXlsxLink/);
     assert.match(page, /deficitDownload/);

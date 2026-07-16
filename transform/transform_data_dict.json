@@ -42,6 +42,13 @@
     "schema": "hospcode,fiscal_year,month,instype_code,count_visit"
   },
   {
+    "transform_table": "t_service_intype_error",
+    "sql_file": "t_service_intype_error.sql",
+    "source_tables": ["service", "c_instype"],
+    "stored_data": "รายการ SERVICE ปีงบประมาณ 2569 ที่รหัสสิทธิไม่พบในตาราง lookup c_instype",
+    "schema": "hospcode,fiscal_year,pid,seq,date_serve,instype"
+  },
+  {
     "transform_table": "t_person_dm_ht",
     "sql_file": "t_person_dm_ht.sql",
     "source_tables": ["person", "diagnosis_opd", "diagnosis_ipd", "chronic"],

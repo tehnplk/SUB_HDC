@@ -502,6 +502,19 @@ test("lookupMigrationId is bound to file content, not just the name", () => {
   assert.notEqual(idA, idB);
 });
 
+test("c_hostype defines and seeds the optional short department name", async () => {
+  const lookup = await readFile(path.resolve(process.cwd(), "table", "lookup", "c_hostype.sql"), "utf8");
+
+  assert.match(lookup, /`dep_short` VARCHAR\(255\) NULL/i);
+  assert.doesNotMatch(lookup, /DROP TABLE IF EXISTS `c_hostype`/i);
+  assert.match(lookup, /ADD COLUMN IF NOT EXISTS `dep_short` varchar\(255\) DEFAULT NULL AFTER `dep_name`/i);
+  assert.match(lookup, /START TRANSACTION;[\s\S]*DELETE FROM `c_hostype`;[\s\S]*INSERT INTO `c_hostype`[\s\S]*COMMIT;/i);
+  assert.match(lookup, /'กรมสุขภาพจิต', 'กรมสุขภาพจิต'/);
+  assert.match(lookup, /'องค์กรปกครองส่วนท้องถิ่น', 'อปท'/);
+  assert.match(lookup, /NULL, 'รพ\.นอกสังกัด', 'รพ\.นอกสังกัด'/);
+  assert.match(lookup, /'กระทรวงยุติธรรม', 'สถานพยาบาล', 'สถานพยาบาล'/);
+});
+
 test("applyLookupFile loads a dump once and reloads only when its content changes", async () => {
   await withTempDir(async (dir) => {
     const file = path.join(dir, "c_hostype.sql");

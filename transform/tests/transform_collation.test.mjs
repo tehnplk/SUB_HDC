@@ -10,6 +10,7 @@ const sqlFiles = [
   "s_person_type_count.sql",
   "s_visit.sql",
   "s_visit_instype.sql",
+  "t_service_intype_error.sql",
   "t_person_type_1_3.sql",
   "t_person_dm_ht.sql",
 ];

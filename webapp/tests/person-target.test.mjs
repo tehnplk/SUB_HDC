@@ -14,6 +14,8 @@ test("person target API reads the transform summary and derives Typearea 1 + 3",
 test("person target dashboard shows unit-level Typearea columns", () => {
   assert.match(pageSource, /fetch\("\/api\/person-target"/);
   assert.match(pageSource, /Typearea 1 \+ 3/);
+  assert.match(pageSource, /HospitalFilter/);
+  assert.match(pageSource, /selectedHospcode/);
   assert.match(pageSource, /เป้าหมาย/);
   assert.match(pageSource, /หน่วยบริการ/);
   assert.doesNotMatch(pageSource, /personTargetHero/);

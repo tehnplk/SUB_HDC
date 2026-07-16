@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { FileSpreadsheet, RefreshCw } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
+import HospitalFilter from "@/components/hospital-filter";
 
 function formatBirth(value) {
   if (!value || !/^\d{8}$/.test(value)) return value || "-";
@@ -71,22 +72,13 @@ export default function QualityPersonDupPage() {
         {error ? <div className="error">{error}</div> : null}
 
         <div className="personTargetToolbar">
-          <label className="field">
-            <span className="srOnly">กรองตามหน่วยบริการ</span>
-            <select
-              value={selectedHospcode}
-              disabled={loading}
-              onChange={(event) => setSelectedHospcode(event.target.value)}
-            >
-              <option value="">ทุกหน่วยบริการ</option>
-              {(data?.hospcodes || []).map((item) => (
-                <option key={item.code} value={item.code}>
-                  {item.code}
-                  {item.name ? ` ${item.name}` : ""}
-                </option>
-              ))}
-            </select>
-          </label>
+          <HospitalFilter
+            value={selectedHospcode}
+            onChange={setSelectedHospcode}
+            hospitals={(data?.hospcodes || []).map((item) => ({ hospcode: item.code, hospname: item.name }))}
+            disabled={loading}
+            label="กรองตามหน่วยบริการ"
+          />
         </div>
 
         <div className="tableMeta metaLine dupMetaRow">

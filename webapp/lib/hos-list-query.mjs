@@ -86,11 +86,15 @@ export async function getHospNameMap(conn) {
 
 // ชื่อย่อ + สังกัดรายหน่วยบริการ โดยใช้ประเภทหน่วยบริการเป็นหลัก
 // และ fallback ไปยัง dep_name สำหรับ lookup เก่าที่ยังไม่มี c_hostype ครบ
-export async function getHospInfoMap(conn) {
+export async function getHospInfoMap(conn, { affiliationSource = "hostypeName" } = {}) {
+  const affiliationExpression = affiliationSource === "depShort"
+    ? "COALESCE(NULLIF(t.dep_short, ''), NULLIF(h.dep_name, ''))"
+    : "COALESCE(NULLIF(t.hostype_name, ''), NULLIF(h.dep_name, ''))";
+
   try {
     const [rows] = await conn.query(
       `SELECT h.hospcode, h.hospname_short,
-              COALESCE(NULLIF(t.hostype_name, ''), NULLIF(h.dep_name, '')) AS affiliation
+              ${affiliationExpression} AS affiliation
        FROM c_hospital h
        LEFT JOIN c_hostype t ON t.code = h.hostype_new
        WHERE h.hospcode IS NOT NULL AND h.hospcode != ''`

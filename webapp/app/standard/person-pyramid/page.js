@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart3, Building2, RefreshCw, TableProperties, Users } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
+import HospitalFilter from "@/components/hospital-filter";
 
 function formatNumber(value) {
   return Number(value || 0).toLocaleString("th-TH");
@@ -76,13 +77,13 @@ export default function PersonPyramidPage() {
         {error ? <div className="error">{error}</div> : null}
 
         <div className="pyramidToolbar">
-          <label className="field pyramidSelect">
-            <span className="srOnly">หน่วยบริการ</span>
-            <select value={selectedHospcode} onChange={(event) => setSelectedHospcode(event.target.value)} disabled={loading}>
-              <option value="">ทุกหน่วยบริการ</option>
-              {hospcodes.map(([hospcode, label]) => <option key={hospcode} value={hospcode}>{label}</option>)}
-            </select>
-          </label>
+          <HospitalFilter
+            value={selectedHospcode}
+            onChange={setSelectedHospcode}
+            hospitals={hospcodes.map(([hospcode, label]) => ({ hospcode, hospname: label.replace(`${hospcode} — `, "") }))}
+            disabled={loading}
+            className="field pyramidSelect"
+          />
           <button type="button" className="personTargetRefresh" onClick={() => loadData({ isRefresh: true })} disabled={loading || refreshing}>
             <RefreshCw aria-hidden="true" className={refreshing ? "personTargetSpin" : ""} />รีเฟรช
           </button>

@@ -33,6 +33,8 @@ test("Typearea and pyramid pages are available under /standard", () => {
 test("dm-ht-count page and API count the DM/HT register per registered unit", () => {
   assert.match(dmHtChildPageSource, /DmHtCountDashboard/);
   assert.match(dmHtPageSource, /ModuleHeader/);
+  assert.match(dmHtPageSource, /HospitalFilter/);
+  assert.match(dmHtPageSource, /selectedHospcode/);
   assert.match(dmHtPageSource, /fetch\("\/api\/dm-ht-count"/);
   assert.match(dmHtPageSource, /hospNameShort/);
   assert.match(dmHtApiSource, /t_person_dm_ht/);

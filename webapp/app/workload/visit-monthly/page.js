@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { FileSpreadsheet } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
+import HospitalFilter from "@/components/hospital-filter";
+import FiscalYearFilter from "@/components/fiscal-year-filter";
+import AffiliationFilter from "@/components/affiliation-filter";
 
 function formatNumber(value) {
   return Number(value || 0).toLocaleString("th-TH");
@@ -53,23 +56,9 @@ export default function VisitMonthlyWorkloadPage() {
         {error ? <div className="error">{error}</div> : null}
 
         <div className="filterGrid ncdWorkloadFilters">
-          <label className="field"><span className="srOnly">เลือกปีงบประมาณ</span>
-            <select value={fiscalYear} onChange={(event) => setFiscalYear(event.target.value)} disabled={loading}>
-              {(data?.fiscalYears || []).map((year) => <option key={year} value={year}>ปีงบประมาณ {year}</option>)}
-            </select>
-          </label>
-          <label className="field"><span className="srOnly">เลือกสังกัด</span>
-            <select value={affiliation} onChange={(event) => { setAffiliation(event.target.value); setHospcode(""); }} disabled={loading}>
-              <option value="">ทุกสังกัด</option>
-              {(data?.affiliations || []).map((item) => <option key={item} value={item}>{item}</option>)}
-            </select>
-          </label>
-          <label className="field"><span className="srOnly">เลือกหน่วยบริการ</span>
-            <select value={hospcode} onChange={(event) => setHospcode(event.target.value)} disabled={loading}>
-              <option value="">ทุกหน่วยบริการ</option>
-              {(data?.hospitals || []).map((hospital) => <option key={hospital.hospcode} value={hospital.hospcode}>{hospital.hospcode}{hospital.hospname ? ` — ${hospital.hospname}` : ""}</option>)}
-            </select>
-          </label>
+          <FiscalYearFilter value={fiscalYear} years={data?.fiscalYears || []} disabled={loading} onChange={setFiscalYear} />
+          <AffiliationFilter value={affiliation} affiliations={data?.affiliations || []} disabled={loading} onChange={(name) => { setAffiliation(name); setHospcode(""); }} />
+          <HospitalFilter value={hospcode} onChange={setHospcode} hospitals={data?.hospitals || []} disabled={loading} allLabel="ทุกหน่วยบริการ" />
         </div>
 
         <div className="workloadDatagridActions">

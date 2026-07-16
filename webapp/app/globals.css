@@ -1481,6 +1481,80 @@ button:disabled {
   color: var(--muted);
 }
 
+.hospitalFilter {
+  position: relative;
+}
+
+.hospitalFilterInput {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 650;
+  padding: 0 12px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.hospitalFilterInput:hover {
+  border-color: #a8c6b1;
+}
+
+.hospitalFilterInput:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-glow);
+}
+
+.hospitalFilterInput:disabled {
+  background: #f3f7f4;
+  color: var(--muted);
+}
+
+.hospitalFilterOptions {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 5px);
+  right: 0;
+  left: 0;
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.16);
+}
+
+.hospitalFilterOptions button {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--foreground);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.hospitalFilterOptions button:hover,
+.hospitalFilterOptions button[aria-selected="true"],
+.hospitalFilterOptions button.hospitalFilterOptionActive {
+  background: var(--panel-soft);
+}
+
+.hospitalFilterOptions p {
+  margin: 0;
+  padding: 11px 12px;
+  color: var(--muted-strong);
+  font-size: 13px;
+}
+
 .fieldInput::placeholder {
   color: #2f6fed;
   font-size: 12px;
