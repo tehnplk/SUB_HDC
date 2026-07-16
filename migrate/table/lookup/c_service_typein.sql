@@ -1,0 +1,21 @@
+-- Source: MOPH 43-file structure doc, SERVICE.TYPEIN
+SET NAMES utf8mb3;
+
+CREATE TABLE IF NOT EXISTS `c_service_typein` (
+  `code` varchar(1) NOT NULL,
+  `typein_name` varchar(255) NOT NULL,
+  PRIMARY KEY (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+
+START TRANSACTION;
+
+DELETE FROM `c_service_typein`;
+
+INSERT INTO `c_service_typein` (`code`, `typein_name`) VALUES
+  ('1', 'มารับบริการเอง'),
+  ('2', 'มารับบริการตามนัดหมาย'),
+  ('3', 'ได้รับการส่งต่อจากหน่วยบริการอื่น'),
+  ('4', 'ได้รับการส่งตัวจากบริการ EMS'),
+  ('5', 'การแพทย์ทางไกล');
+
+COMMIT;

@@ -6,7 +6,7 @@ import test from "node:test";
 const root = process.cwd();
 
 test("c_chronic_discharge preserves the 11 source discharge codes", async () => {
-  const sql = await readFile(path.join(root, "migrate", "table", "lookup", "c_chronic_discharge.sql"), "utf8");
+  const sql = await readFile(path.resolve(process.cwd(), "table", "lookup", "c_chronic_discharge.sql"), "utf8");
 
   assert.match(sql, /CREATE TABLE IF NOT EXISTS `c_chronic_discharge`/i);
   assert.match(sql, /`code` varchar\(2\) NOT NULL/i);

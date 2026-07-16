@@ -13,7 +13,8 @@
 - If the user misspells a word, briefly state the correct spelling before proceeding.
 
 ## Research Tool
-- npx  ctx7 cli  skill
+- Use `npx ctx7` CLI for technical research.
+- Use the `nlm` CLI for knowledge research.
 
 ## Database manipulate tool
 - when have to retieve  or manipulate  data from databse with sql command spawn sub-agent  name 'sql-expert'

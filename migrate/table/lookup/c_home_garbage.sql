@@ -1,0 +1,22 @@
+-- Source: MOPH 43-file structure doc, HOME.GARBAGE
+SET NAMES utf8mb3;
+
+CREATE TABLE IF NOT EXISTS `c_home_garbage` (
+  `code` varchar(1) NOT NULL,
+  `garbage_name` varchar(255) NOT NULL,
+  PRIMARY KEY (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+
+START TRANSACTION;
+
+DELETE FROM `c_home_garbage`;
+
+INSERT INTO `c_home_garbage` (`code`, `garbage_name`) VALUES
+  ('1', 'กำจัดเองโดยการฝัง'),
+  ('2', 'กำจัดเองโดยการเผา'),
+  ('3', 'กำจัดเองโดยการหมักทำปุ๋ย'),
+  ('4', 'กองทิ้ง'),
+  ('5', 'ท้องถิ่นให้บริการ'),
+  ('9', 'ไม่ทราบ');
+
+COMMIT;
