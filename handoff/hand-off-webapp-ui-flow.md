@@ -49,8 +49,19 @@
 หน้า index ของโมดูลเป็นลิสต์เมนู `moduleTopicList` — ข้อความ bullet
 สื่อความเดียวกับ subtitle ของหน้าปลายทาง (ไม่ต้องตรงคำต่อคำ) ทุก portal
 แสดงเฉพาะหัวข้อด้วย `moduleTopicText` หนึ่งบรรทัด ห้ามมี title/description
-สองชั้นหรือ `<small>` ใต้หัวข้อ และใช้ขนาดตัวอักษรมาตรฐาน 15px ทุก portal
+สองชั้นหรือ `<small>` ใต้หัวข้อ และใช้ขนาดตัวอักษรมาตรฐาน 14px ทุก portal
 โดยไม่สร้าง size modifier แยกรายหน้า
+
+- รายการ topic bullet ทุก portal ใช้ `TopicBullet` ร่วมกัน โดยส่ง prop
+  `href` และ `topic`; component เป็นเจ้าของ markup ของ bullet, ข้อความ และลูกศร
+  เพื่อคงมาตรฐาน 14px น้ำหนักปกติ (400) ทุกชั้น
+
+- `/target-group/kpi/dm-ht` breadcrumb ต้องมี 3 ระดับ:
+  `กลุ่มเป้าหมาย` → `กลุ่มเป้าหมายตามตัวชี้วัด` → `จำนวนผู้ป่วย DM/HT`;
+  สองระดับแรกต้องเป็นลิงก์กลับไปยังหน้าดัชนีของแต่ละระดับ
+- Breadcrumb ใช้ component ร่วม `Breadcrumb` โดยส่ง prop `items` เป็น array ของ
+  `{ href?, label }`; `module-header.jsx` รับผิดชอบเฉพาะการแปลง route เป็น items;
+  ข้อความ breadcrumb ทุกระดับใช้ขนาด 15px
 
 ## แบบแผน UI (ตกลงกับ user แล้ว — ต้องทำตาม)
 

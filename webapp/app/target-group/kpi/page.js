@@ -1,11 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   Building2,
-  ChevronRight,
   FileSpreadsheet,
   HeartPulse,
   RefreshCw,
@@ -14,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
+import TopicBullet from "@/components/topic-bullet";
 
 function formatNumber(value) {
   return Number(value || 0).toLocaleString("th-TH");
@@ -117,13 +116,7 @@ export default function TargetGroupKpiIndexPage() {
         <ModuleHeader subtitle="ทะเบียนกลุ่มเป้าหมายตามตัวชี้วัด" />
 
         <ul className="moduleTopicList">
-          <li>
-            <Link href="/target-group/kpi/dm-ht" className="moduleTopicLink">
-              <span className="moduleTopicBullet" aria-hidden="true" />
-              <span className="moduleTopicText">จำนวนผู้ป่วย DM/HT</span>
-              <ChevronRight className="standardMenuArrow" aria-hidden="true" />
-            </Link>
-          </li>
+          <TopicBullet href="/target-group/kpi/dm-ht" topic="จำนวนผู้ป่วย DM/HT" />
         </ul>
       </section>
     </div>

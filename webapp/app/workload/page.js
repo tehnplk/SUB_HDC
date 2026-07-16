@@ -1,6 +1,5 @@
-import Link from "next/link";
-import { ChevronRight } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
+import TopicBullet from "@/components/topic-bullet";
 
 const workloadItems = [
   {
@@ -20,13 +19,7 @@ export default function WorkloadPage() {
         <ModuleHeader subtitle="ศูนย์รวมผลงานบริการสุขภาพรายหน่วยบริการ" />
         <ul className="moduleTopicList">
           {workloadItems.map(({ href, topic }) => (
-            <li key={href}>
-              <Link href={href} className="moduleTopicLink">
-                <span className="moduleTopicBullet" aria-hidden="true" />
-                <span className="moduleTopicText">{topic}</span>
-                <ChevronRight className="standardMenuArrow" aria-hidden="true" />
-              </Link>
-            </li>
+            <TopicBullet key={href} href={href} topic={topic} />
           ))}
         </ul>
       </section>

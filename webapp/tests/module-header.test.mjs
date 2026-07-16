@@ -10,6 +10,8 @@ const typeareaSource = readFileSync(new URL("../app/dashboard/person-target/page
 const pyramidSource = readFileSync(new URL("../app/standard/person-pyramid/page.js", import.meta.url), "utf8");
 const standardIndexSource = readFileSync(new URL("../app/standard/index/page.js", import.meta.url), "utf8");
 const targetGroupIndexSource = readFileSync(new URL("../app/target-group/index/page.js", import.meta.url), "utf8");
+const topicBulletSource = readFileSync(new URL("../components/topic-bullet.jsx", import.meta.url), "utf8");
+const breadcrumbSource = readFileSync(new URL("../components/breadcrumb.jsx", import.meta.url), "utf8");
 const updateLogSource = readFileSync(new URL("../app/update-log/page.js", import.meta.url), "utf8");
 const globalCss = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
 
@@ -24,8 +26,10 @@ test("ModuleHeader owns the shared title and main navigation without a redundant
   assert.match(headerSource, /href="\/upload"/);
   assert.match(headerSource, /UploadCloud/);
   assert.doesNotMatch(headerSource, /ACTIONS|selectedAction|action =/);
-  assert.match(headerSource, /moduleBreadcrumb/);
-  assert.match(headerSource, /aria-label="Breadcrumb"/);
+  assert.match(headerSource, /import Breadcrumb from "@\/components\/breadcrumb"/);
+  assert.match(headerSource, /<Breadcrumb items=\{breadcrumbItems\} \/>/);
+  assert.match(breadcrumbSource, /className="moduleBreadcrumb"/);
+  assert.match(breadcrumbSource, /aria-label="Breadcrumb"/);
   assert.match(pageTitleSource, /className="headerSubline"/);
   assert.match(globalCss, /\.pageHeaderTitle \{[\s\S]*?flex-wrap: wrap/);
   assert.match(globalCss, /\.pageHeaderTitle \.headerSubline \{[\s\S]*?order: 2/);
@@ -36,6 +40,10 @@ test("shared module header separates main navigation from breadcrumbs with a das
   assert.match(globalCss, /\.moduleHeaderCore\s*\{[\s\S]*?border-bottom:\s*1px dashed var\(--border\)/);
   assert.match(globalCss, /\.tabsContainer \{[\s\S]*?margin: 0 0 12px/);
   assert.match(globalCss, /\.moduleBreadcrumb/);
+  assert.match(globalCss, /\.moduleBreadcrumb li\s*\{[\s\S]*?font-size:\s*15px;/);
+  assert.match(breadcrumbSource, /function Breadcrumb\(\{ items \}\)/);
+  assert.match(breadcrumbSource, /items\.map/);
+  assert.match(breadcrumbSource, /ChevronRight/);
 });
 
 test("standard submodules use the shared header rather than a second tab bar", () => {
@@ -61,6 +69,7 @@ test("target-group is a main-tab module with an index menu of its child topics",
   assert.match(headerSource, /prefix: "\/target-group"/);
   assert.match(targetGroupIndexSource, /ModuleHeader/);
   assert.match(targetGroupIndexSource, /moduleTopicList/);
+  assert.match(targetGroupIndexSource, /TopicBullet/);
   assert.match(targetGroupIndexSource, /กลุ่มเป้าหมายตามตัวชี้วัด/);
   assert.match(targetGroupIndexSource, /href: "\/target-group\/kpi"/);
   assert.doesNotMatch(targetGroupIndexSource, /description:|<small>|standardMenuText/);
@@ -74,7 +83,10 @@ test("target-group is a main-tab module with an index menu of its child topics",
   assert.doesNotMatch(targetGroupKpiSource, /<small>/);
   assert.doesNotMatch(targetGroupKpiSource, /moduleTopicListSmall/);
   assert.match(targetGroupIndexSource, /กลุ่มเป้าหมายการจัดเก็บรายได้/);
-  assert.match(headerSource, /"\/target-group\/kpi\/dm-ht": "จำนวนผู้ป่วย DM\/HT"/);
+  assert.match(headerSource, /"\/target-group\/kpi\/dm-ht": \[/);
+  assert.match(headerSource, /href: "\/target-group\/kpi", label: "กลุ่มเป้าหมายตามตัวชี้วัด"/);
+  assert.match(headerSource, /label: "จำนวนผู้ป่วย DM\/HT"/);
+  assert.match(headerSource, /const currentPages = Array\.isArray\(currentPage\)/);
 });
 
 test("rapid is a right-aligned main-tab module with a title-only topic list", () => {
@@ -92,11 +104,12 @@ test("rapid is a right-aligned main-tab module with a title-only topic list", ()
   assert.match(headerSource, /RAPID_BREADCRUMB/);
   assert.match(rapidIndexSource, /ModuleHeader/);
   assert.match(rapidIndexSource, /moduleTopicList/);
+  assert.match(rapidIndexSource, /TopicBullet/);
   // ชื่อหัวข้อมาจาก config (RAPID_MENU) — ใช้ชื่อเดียวกับ report.name
   assert.match(rapidIndexSource, /RAPID_MENU/);
   // bullet เป็นข้อความบรรทัดเดียว — ไม่มี description ใต้หัวข้อ
   assert.doesNotMatch(rapidIndexSource, /<small>/);
-  assert.match(rapidIndexSource, /moduleTopicText/);
+  assert.match(rapidIndexSource, /TopicBullet/);
 });
 
 test("all portal topic menus use one topic-only line", () => {
@@ -112,13 +125,17 @@ test("all portal topic menus use one topic-only line", () => {
 
   for (const portalSource of portalSources) {
     assert.match(portalSource, /moduleTopicList/);
-    assert.match(portalSource, /moduleTopicBullet/);
-    assert.match(portalSource, /moduleTopicText/);
+    assert.match(portalSource, /TopicBullet/);
     assert.doesNotMatch(portalSource, /description:|<small>|standardMenuText/);
   }
 
+  assert.match(topicBulletSource, /function TopicBullet\(\{ href, topic \}\)/);
+  assert.match(topicBulletSource, /moduleTopicBullet/);
+  assert.match(topicBulletSource, /moduleTopicText/);
+  assert.match(topicBulletSource, /ChevronRight/);
   assert.match(globalCss, /\.moduleTopicText\s*\{[\s\S]*?white-space:\s*nowrap;/);
-  assert.match(globalCss, /\.moduleTopicText\s*\{[\s\S]*?font-size:\s*15px;/);
+  assert.match(globalCss, /\.moduleTopicText\s*\{[\s\S]*?font-size:\s*14px;/);
+  assert.match(globalCss, /\.moduleTopicText\s*\{[\s\S]*?font-weight:\s*400;/);
   assert.doesNotMatch(globalCss, /moduleTopicList(?:Compact|Small) \.moduleTopicText/);
 });
 

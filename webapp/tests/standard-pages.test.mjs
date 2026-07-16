@@ -20,7 +20,7 @@ test("standard index offers the requested population menus", () => {
   assert.match(nextConfigSource, /source: "\/standard\/dm-ht-count"[\s\S]*?destination: "\/target-group\/kpi\/dm-ht"/);
   assert.match(nextConfigSource, /source: "\/target-group\/kpi\/dm-ht-count"[\s\S]*?destination: "\/target-group\/kpi\/dm-ht"/);
   assert.match(indexSource, /moduleTopicList/);
-  assert.match(indexSource, /moduleTopicBullet/);
+  assert.match(indexSource, /TopicBullet/);
   assert.doesNotMatch(indexSource, /standardIntro|standardMenuCard/);
 });
 

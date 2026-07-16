@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, UploadCloud } from "lucide-react";
+import { UploadCloud } from "lucide-react";
 import { usePathname } from "next/navigation";
 import DashboardHeaderImage from "@/components/dashboard-header-image";
 import DashboardPageTitle from "@/components/dashboard-page-title";
 import MainTab from "@/components/main-tab";
 import FloatingUserMenu from "@/components/floating-user-menu";
+import Breadcrumb from "@/components/breadcrumb";
 import { useUserSession } from "@/components/user-session-context";
 // แต่ละ module เป็นเจ้าของ breadcrumb entry ของตัวเองใน _lib — ที่นี่แค่ import มาต่อ
 import { RAPID_BREADCRUMB } from "@/app/rapid/_lib/rapid-reports.mjs";
@@ -51,10 +52,13 @@ const BREADCRUMB_MODULES = [
   {
     prefix: "/target-group",
     href: "/target-group/index",
-    label: "ทะเบียนกลุ่มเป้าหมาย",
+    label: "กลุ่มเป้าหมาย",
     pages: {
       "/target-group/kpi": "กลุ่มเป้าหมายตามตัวชี้วัด",
-      "/target-group/kpi/dm-ht": "จำนวนผู้ป่วย DM/HT",
+      "/target-group/kpi/dm-ht": [
+        { href: "/target-group/kpi", label: "กลุ่มเป้าหมายตามตัวชี้วัด" },
+        { label: "จำนวนผู้ป่วย DM/HT" },
+      ],
     },
   },
   RAPID_BREADCRUMB,
@@ -73,6 +77,12 @@ export default function ModuleHeader() {
   const userSession = useUserSession();
   const currentModule = BREADCRUMB_MODULES.find((item) => pathname.startsWith(item.prefix));
   const currentPage = currentModule?.pages?.[pathname];
+  const currentPages = Array.isArray(currentPage)
+    ? currentPage
+    : currentPage ? [{ label: currentPage }] : [];
+  const breadcrumbItems = currentModule
+    ? [{ href: currentModule.href, label: currentModule.label }, ...currentPages]
+    : [];
 
   return (
     <header className="moduleHeader">
@@ -94,16 +104,7 @@ export default function ModuleHeader() {
         </div>
         <MainTab />
       </div>
-      {currentModule ? (
-        <nav className="moduleBreadcrumb" aria-label="Breadcrumb">
-          <ol>
-            <li><Link href={currentModule.href}>{currentModule.label}</Link></li>
-            {currentPage ? (
-              <li aria-current="page"><ChevronRight aria-hidden="true" /><span>{currentPage}</span></li>
-            ) : null}
-          </ol>
-        </nav>
-      ) : null}
+      {breadcrumbItems.length ? <Breadcrumb items={breadcrumbItems} /> : null}
     </header>
   );
 }

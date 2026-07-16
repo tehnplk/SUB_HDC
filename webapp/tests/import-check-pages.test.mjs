@@ -19,7 +19,7 @@ test("Import Check index offers the requested child modules", () => {
   assert.match(indexSource, /\/import-check\/files-count/);
   assert.match(indexSource, /\/import-check\/compare-hdc-person/);
   assert.match(indexSource, /moduleTopicList/);
-  assert.match(indexSource, /moduleTopicBullet/);
+  assert.match(indexSource, /TopicBullet/);
   assert.doesNotMatch(indexSource, /standardIntro|standardEyebrow|standardMenuCard|IMPORT CHECK/);
 });
 

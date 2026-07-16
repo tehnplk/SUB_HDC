@@ -1,6 +1,5 @@
-import Link from "next/link";
-import { ChevronRight } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
+import TopicBullet from "@/components/topic-bullet";
 
 const menuItems = [
   {
@@ -21,13 +20,7 @@ export default function TargetGroupIndexPage() {
 
         <ul className="moduleTopicList">
           {menuItems.map(({ href, topic }) => (
-            <li key={topic}>
-              <Link href={href} className="moduleTopicLink">
-                <span className="moduleTopicBullet" aria-hidden="true" />
-                <span className="moduleTopicText">{topic}</span>
-                <ChevronRight className="standardMenuArrow" aria-hidden="true" />
-              </Link>
-            </li>
+            <TopicBullet key={topic} href={href} topic={topic} />
           ))}
         </ul>
       </section>
