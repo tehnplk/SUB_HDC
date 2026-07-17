@@ -2956,6 +2956,32 @@ button:disabled {
   text-align: center;
 }
 
+.specialppErrorTable {
+  width: max-content;
+  min-width: 720px;
+  table-layout: auto;
+}
+
+.specialppErrorTable .specialppAffiliationCol {
+  width: 150px;
+}
+
+.specialppErrorTable .specialppYearCol {
+  width: 80px;
+}
+
+.specialppErrorTable .specialppCountCol {
+  width: 130px;
+}
+
+.specialppErrorTable .specialppActionCol,
+.specialppErrorTable .exportCol {
+  width: 150px;
+  min-width: 150px;
+  padding-inline: 10px;
+  text-align: center;
+}
+
 .dataSourceLabel {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -2985,6 +3011,12 @@ button:disabled {
 .reportResultWrap {
   max-height: 560px;
   overflow: auto;
+}
+
+.reportResultWrap .fileTable,
+.reportResultWrap .fileTable th,
+.reportResultWrap .fileTable td {
+  font-size: 13px;
 }
 
 .reportResultWrap .fileTable {

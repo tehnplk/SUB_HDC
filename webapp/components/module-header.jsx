@@ -48,6 +48,7 @@ const BREADCRUMB_MODULES = [
     pages: {
       "/quality/person-dup": "ประเภทการอยู่อาศัยซ้ำกันข้ามหน่วยบริการ (PERSON - TYPEAREA)",
       "/quality/service-instype-err": "รายการบริการที่ให้รหัสสิทธิรักษาที่ไม่มีในระบบ (SERVICE - INSTYPE)",
+      "/quality/specialpp-error": "บันทึกรหัสคัดกรอง SPECIAL PP ที่ไม่ตรงรหัสมาตรฐานหรือยกเลิกไปแล้ว (SPECIALPP - PPSPECIAL)",
     },
   },
   {

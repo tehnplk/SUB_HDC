@@ -49,6 +49,13 @@
     "schema": "hospcode,fiscal_year,pid,seq,date_serve,instype"
   },
   {
+    "transform_table": "t_specialpp_error",
+    "sql_file": "t_specialpp_error.sql",
+    "source_tables": ["specialpp", "c_specialpp_ppspecial"],
+    "stored_data": "รายการ SPECIALPP ปีงบประมาณ 2569 ที่รหัส PPSPECIAL ไม่ตรงรหัสมาตรฐาน (not_standard = ไม่พบใน c_specialpp_ppspecial) หรือยกเลิกแล้ว (cancelled = is_active=0)",
+    "schema": "hospcode,fiscal_year,pid,seq,date_serve,ppspecial,ppspecial_name,error_type"
+  },
+  {
     "transform_table": "t_person_dm_ht",
     "sql_file": "t_person_dm_ht.sql",
     "source_tables": ["person", "diagnosis_opd", "diagnosis_ipd", "chronic"],

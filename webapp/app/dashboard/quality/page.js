@@ -12,6 +12,7 @@ export default function QualityPortal() {
         <ul className="moduleTopicList">
           <TopicBullet href="/quality/person-dup" topic="ประเภทการอยู่อาศัยซ้ำกันข้ามหน่วยบริการ (PERSON - TYPEAREA)" />
           <TopicBullet href="/quality/service-instype-err" topic="รายการบริการที่ให้รหัสสิทธิรักษาที่ไม่มีในระบบ (SERVICE - INSTYPE)" />
+          <TopicBullet href="/quality/specialpp-error" topic="บันทึกรหัสคัดกรอง SPECIAL PP ที่ไม่ตรงรหัสมาตรฐานหรือยกเลิกไปแล้ว (SPECIALPP - PPSPECIAL)" />
         </ul>
       </section>
     </div>
