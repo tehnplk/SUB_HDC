@@ -52,7 +52,8 @@ function computeSummary(rows) {
     result,
     control,
     screenPercent: target > 0 ? (control / target) * 100 : 0,
-    controlPercent: control > 0 ? (result / control) * 100 : 0,
+    // % คุมได้ = คุมได้ดี * 100 / ผู้ป่วยทั้งหมด (target) ไม่ใช่เฉพาะผู้ได้รับการตรวจ
+    controlPercent: target > 0 ? (result / target) * 100 : 0,
     unexamined: target - control,
     percent: target > 0 ? (result / target) * 100 : 0,
     deficit: target - result,
@@ -121,7 +122,7 @@ export async function loadRapidReport(id, { affiliation = "" } = {}) {
           result: acc.result,
           control: acc.control,
           screenPercent: acc.target > 0 ? (acc.control / acc.target) * 100 : 0,
-          controlPercent: acc.control > 0 ? (acc.result / acc.control) * 100 : 0,
+          controlPercent: acc.target > 0 ? (acc.result / acc.target) * 100 : 0,
           unexamined: acc.target - acc.control,
           percent: acc.target > 0 ? (acc.result / acc.target) * 100 : 0,
           deficit: acc.target - acc.result,

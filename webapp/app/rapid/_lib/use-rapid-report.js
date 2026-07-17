@@ -68,7 +68,7 @@ export function useRapidReport(reportId) {
       result,
       control,
       screenPercent: target > 0 ? (control / target) * 100 : 0,
-      controlPercent: control > 0 ? (result / control) * 100 : 0,
+      controlPercent: target > 0 ? (result / target) * 100 : 0,
       unexamined: target - control,
       percent: target > 0 ? (result / target) * 100 : 0,
       deficit: target - result,
