@@ -1,7 +1,10 @@
 -- Source: MOPH LABFU code master, 125.รหัสการตรวจทางห้องปฎิบัติการ2016 (แฟ้ม LABFU) 27Feb67.xlsx
+-- Renamed from c_labfu_code to match the c_{table}_{field} lookup convention
 SET NAMES utf8mb3;
 
-CREATE TABLE IF NOT EXISTS `c_labfu_code` (
+DROP TABLE IF EXISTS `c_labfu_code`;
+
+CREATE TABLE IF NOT EXISTS `c_labfu_labtest` (
   `code` varchar(7) NOT NULL,
   `lab_name_en` varchar(255) NOT NULL,
   `lab_name_th` varchar(255) NOT NULL,
@@ -10,10 +13,10 @@ CREATE TABLE IF NOT EXISTS `c_labfu_code` (
 
 START TRANSACTION;
 
-DELETE FROM `c_labfu_code`;
+DELETE FROM `c_labfu_labtest`;
 
-INSERT INTO `c_labfu_code` (`code`, `lab_name_en`, `lab_name_th`) VALUES
-+  ('0290201', 'Chromosome analysis, breakage study, whole blood', 'การวิเคราะห์โครโมโซมเพื่อศึกษาความแตกแยก  จากเลือด'),
+INSERT INTO `c_labfu_labtest` (`code`, `lab_name_en`, `lab_name_th`) VALUES
+  ('0290201', 'Chromosome analysis, breakage study, whole blood', 'การวิเคราะห์โครโมโซมเพื่อศึกษาความแตกแยก  จากเลือด'),
   ('0290401', 'Chromosome analysis, cultured with mitogenic stimulation, whole blood', 'การวิเคราะห์โครโมโซมโดยการเพาะเลี้ยงและการกระตุ้นการทำให้เกิด กระบวนการไมโทซิสในเซลล์  จากเลือด'),
   ('0290601', 'Chromosome analysis, cultured without mitogenic stimulation, whole blood', 'การวิเคราะห์โครโมโซมการเพาะเลี้ยงโดยไม่กระตุ้นการทำให้เกิดกระบวนการ ไมโทซิสในเซลล์  จากเลือด'),
   ('0290805', 'Chromosome analysis, cultured, amniotic fluid', 'การวิเคราะห์โครโมโซมโดยการเพาะเลี้ยงเซลล์  จากน้ำคร่ำ'),
@@ -113,7 +116,7 @@ INSERT INTO `c_labfu_code` (`code`, `lab_name_en`, `lab_name_th`) VALUES
   ('0426281', 'Point mutation analysis, nucleic acid solution', 'การวิเคราะห์หาตำแหน่งกลายพันธุ์ จากสารละลายกรดนิวคลีอิก'),
   ('0426481', 'Other mutation analysis, nucleic acid solution', 'การวิเคราะห์การกลายพันธุ์อื่น ๆ จากสารละลายกรดนิวคลีอิก'),
   ('0427281', 'Linkage analysis - Level 1, nucleic acid solution', 'การวิเคราะห์ความเชื่อมโยงทางพันธุกรรม - ระดับ 1 จากสารละลายกรดนิวคลีอิก'),
-+  ('0427481', 'Linkage analysis - Level 2, nucleic acid solution', 'การวิเคราะห์ความเชื่อมโยงทางพันธุกรรม - ระดับ 2 จากสารละลายกรดนิวคลีอิก'),
+  ('0427481', 'Linkage analysis - Level 2, nucleic acid solution', 'การวิเคราะห์ความเชื่อมโยงทางพันธุกรรม - ระดับ 2 จากสารละลายกรดนิวคลีอิก'),
   ('0427681', 'Linkage analysis - Level 3, nucleic acid solution', 'การวิเคราะห์ความเชื่อมโยงทางพันธุกรรม - ระดับ 3 จากสารละลายกรดนิวคลีอิก'),
   ('0427881', 'Linkage analysis NOS, nucleic acid solution', 'การวิเคราะห์ความเชื่อมโยงทางพันธุกรรมอื่นๆ จากสารละลายกรดนิวคลีอิก'),
   ('0428201', 'Preparation of protein solution (crude or pure), whole blood', 'การเตรียมสารละลายโปรตีน (ดิบหรือบริสุทธิ์) จากเลือด'),
@@ -213,7 +216,7 @@ INSERT INTO `c_labfu_code` (`code`, `lab_name_en`, `lab_name_th`) VALUES
   ('0444202', 'Reticulin, serum/plasma', 'การตรวจเร็ตติคูลินในซีรั่ม / พลาสม่า'),
   ('0444402', 'Retinol binding protein, serum/plasma', 'การตรวจ retinol binding protein  ในซีรั่ม / พลาสม่า'),
   ('0444602', 'Transcobalamin, serum/plasma', 'การตรวจ transcobalamin  ในซีรั่ม / พลาสม่า'),
-+  ('0444802', 'Transferrin, serum/plasma', 'การตรวจ transferrin  ในซีรั่ม / พลาสม่า'),
+  ('0444802', 'Transferrin, serum/plasma', 'การตรวจ transferrin  ในซีรั่ม / พลาสม่า'),
   ('0450202', 'Complement C1 assay, serum/plasma', 'การวิเคราะห์ complement C1  ในซีรั่ม / พลาสม่า'),
   ('0450202', 'Complement C2 assay, serum/plasma', 'การวิเคราะห์ complement C2  ในซีรั่ม / พลาสม่า'),
   ('0450602', 'Complement C3 assay, serum/plasma', 'การวิเคราะห์ complement C3  ในซีรั่ม / พลาสม่า'),
@@ -313,7 +316,7 @@ INSERT INTO `c_labfu_code` (`code`, `lab_name_en`, `lab_name_th`) VALUES
   ('0482050', 'Arylsulfatase NOS, tissue NEC', 'การตรวจ arylsulfatase อื่นๆที่มิได้ระบุ  ในเนื้อเยื่ออื่นๆ มิได้จำแนก'),
   ('0482202', 'Beta-fructofuranosidase, serum/plasma', 'การตรวจเอ็นไซม์ beta-fructofuranosidase ใน ซีรั่ม / พลาสม่า'),
   ('0482216', 'Beta-fructofuranosidase, WBC', 'การตรวจเอ็นไซม์ beta-fructofuranosidase ในเซลล์เม็ดเลือดขาว'),
-+  ('0482402', 'Beta-galactosidase, serum/plasma', 'การตรวจเอ็นไซม์ beta - galactosidase  ในซีรั่ม / พลาสม่า'),
+  ('0482402', 'Beta-galactosidase, serum/plasma', 'การตรวจเอ็นไซม์ beta - galactosidase  ในซีรั่ม / พลาสม่า'),
   ('0482402', 'Beta-galactosidase, WBC', 'การตรวจเอ็นไซม์ beta - galactosidase  ในเซลล์เม็ดเลือดขาว'),
   ('0482450', 'Beta-galactosidase, tissue NEC', 'การตรวจเอ็นไซม์ beta - galactosidase ในเนื้อเยื่ออื่นๆ มิได้จำแนก'),
   ('0482650', 'Beta-glucocerebrosidase, tissue NEC', 'การตรวจ beta glucocerebrosidase  ในเนื้อเยื่ออื่นๆ มิได้จำแนก'),
@@ -413,7 +416,7 @@ INSERT INTO `c_labfu_code` (`code`, `lab_name_en`, `lab_name_th`) VALUES
   ('0511602', 'Sodium, serum/plasma', 'การตรวจหาสาร  ในซีรั่ม / พลาสม่า'),
   ('0511603', 'Sodium, urine', 'การตรวจหาสารโซเดียม  ในปัสสาวะ'),
   ('0511615', 'Sodium, other fluid NEC', 'การตรวจหาสารโซเดียม ในของเหลวอื่นๆ  มิได้จำแนก'),
-+  ('0520201', 'Chromium, whole blood', 'การตรวจหาธาตุโครเมียมในเลือด'),
+  ('0520201', 'Chromium, whole blood', 'การตรวจหาธาตุโครเมียมในเลือด'),
   ('0520202', 'Chromium, serum/plasma', 'การตรวจหาธาตุโครเมี่ยม  ในซีรั่ม / พลาสม่า'),
   ('0520203', 'Chromium, urine', 'การตรวจหาธาตุโครเมียม  ในปัสสาวะ'),
   ('0520215', 'Chromium, other fluid NEC', 'การตรวจหาธาตุโครเมียม  ในของเหลวอื่นๆ  มิได้จำแนก'),
@@ -513,7 +516,7 @@ INSERT INTO `c_labfu_code` (`code`, `lab_name_en`, `lab_name_th`) VALUES
   ('0544402', 'Lipoprotein electrophoresis/phenotyping, serum/plasma', 'การตรวจหา Lipoprotein electrophoresis / phenotyping  ในซีรั่ม / พลาสม่า'),
   ('0545202', 'Palmitate, serum/plasma', 'การตรวจหา Palmitate  ในซีรั่ม / พลาสม่า'),
   ('0545402', 'Phospholipids, serum/plasma', 'การตรวจหา phospholipids  ในซีรั่ม / พลาสม่า'),
-+  ('0545602', 'Phytanate, serum/plasma', 'การตรวจหา Phytanate  ในซีรั่ม / พลาสม่า'),
+  ('0545602', 'Phytanate, serum/plasma', 'การตรวจหา Phytanate  ในซีรั่ม / พลาสม่า'),
   ('0545802', 'Propionate, serum/plasma', 'การตรวจหา propionate  ในซีรั่ม / พลาสม่า'),
   ('0545803', 'Propionate, urine', 'การตรวจหา propionate  ในปัสสาวะ'),
   ('0546002', 'Prostaglandins, serum/plasma', 'การตรวจหา prostaglandins  ในซีรั่ม / พลาสม่า'),
@@ -613,7 +616,7 @@ INSERT INTO `c_labfu_code` (`code`, `lab_name_en`, `lab_name_th`) VALUES
   ('0581602', 'Carotene, whole blood', 'การตรวจหาแคโรทีน  ในเลือด'),
   ('0581702', 'Carotene, serum/plasma', 'การตรวจหาแคโรทีน  ในซีรั่ม / พลาสม่า'),
   ('0581703', 'Citrate, serum/plasma', 'การตรวจหา citrate  ในซีรั่ม / พลาสม่า'),
-+  ('0581802', 'Citrate, urine', 'การตรวจหา citrate  ในปัสสาวะ'),
+  ('0581802', 'Citrate, urine', 'การตรวจหา citrate  ในปัสสาวะ'),
   ('0581803', 'Creatine, serum/plasma', 'การตรวจหา creatine  ในซีรั่ม / พลาสม่า'),
   ('0581817', 'Creatine, RBC', 'การตรวจหา creatine  ในเม็ดเลือดแดง'),
   ('0581902', 'Creatinine, serum/plasma', 'การตรวจหา creatinine  ในซีรั่ม / พลาสม่า'),
@@ -713,7 +716,7 @@ INSERT INTO `c_labfu_code` (`code`, `lab_name_en`, `lab_name_th`) VALUES
   ('0610702', 'Aldosterone, serum/plasma', 'การตรวจหา aldosterone ในซีรั่ม / พลาสม่า'),
   ('0610902', 'Androstanediol glucuronide, serum/plasma', 'การตรวจหา androstanediol glucuronide ในซีรั่ม / พลาสม่า'),
   ('0611102', 'Androstenedione, serum/plasma', 'การตรวจหา androstenediol ในซีรั่ม / พลาสม่า'),
-+  ('0611202', 'Androsterone, serum/plasma', 'การตรวจหา androsterone ในซีรั่ม / พลาสม่า'),
+  ('0611202', 'Androsterone, serum/plasma', 'การตรวจหา androsterone ในซีรั่ม / พลาสม่า'),
   ('0611302', 'Angiotensin, serum/plasma', 'การตรวจหา angiotensin ในซีรั่ม / พลาสม่า'),
   ('0611402', 'Antidiuretic hormone, serum/plasma', 'การตรวจหา antidiuretic hormone ในซีรั่ม / พลาสม่า'),
   ('0611501', 'Atrial natriuretic polypeptide, whole blood', 'ารตรวจหา atrial natriuretic polypeptide ในเลือด'),
@@ -813,7 +816,7 @@ INSERT INTO `c_labfu_code` (`code`, `lab_name_en`, `lab_name_th`) VALUES
   ('0636001', 'Unstable hemoglobin, whole blood', 'การตรวจหา unstable hemoglobin ในเลือด'),
   ('0636201', 'Viscosity, whole blood', 'การตรวจหาความหนืดในเลือด'),
   ('0636202', 'Viscosity, serum/plasma', 'การตรวจหาความหนืดในซีรั่ม / พลาสม่า'),
-+  ('0640202', 'Factor II activity, plasma', 'การวัดความสามารถในการเกิดปฏิกิริยาเคมีของ factor II ในพลาสม่า'),
+  ('0640202', 'Factor II activity, plasma', 'การวัดความสามารถในการเกิดปฏิกิริยาเคมีของ factor II ในพลาสม่า'),
   ('0640402', 'Factor II antigen assay, plasma', 'การตรวจวิเคราะห์หา factor II antigen ในพลาสม่า'),
   ('0640602', 'Factor V activity, plasma', 'การวัดความสามารถในการเกิดปฏิกิริยาเคมีของ factor V ในพลาสม่า'),
   ('0640802', 'Factor V antigen assay, plasma', 'การตรวจวิเคราะห์หา factor V antigen ในพลาสม่า'),
@@ -913,7 +916,7 @@ INSERT INTO `c_labfu_code` (`code`, `lab_name_en`, `lab_name_th`) VALUES
   ('0680417', 'Blood group typing - Rh Phenotype, RBC', 'การตรวจหมู่เลือด Rh Phenotype ในเม็ดเลือดแดง'),
   ('0680617', 'Blood group typing - Rh(D), RBC', 'การตรวจหมู่เลือด Rh(D), RBC ในเม็ดเลือดแดง'),
   ('0680817', 'Blood group typing - RBC antigens other than ABO and Rh, RBC', 'การจัดหมู่เลือด RBC antigens อื่น ๆ มากกว่า ABO และ Rh ในเม็ดเลือดแดง'),
-+  ('0681017', 'Antiglobulin test - direct, serum/plasma', 'การทดสอบ Antiglobulin โดยตรงในซีรั่ม / พลาสม่า'),
+  ('0681017', 'Antiglobulin test - direct, serum/plasma', 'การทดสอบ Antiglobulin โดยตรงในซีรั่ม / พลาสม่า'),
   ('0681202', 'Antiglobulin test - indirect, serum/plasma', 'การทดสอบ Antiglobulin ทางอ้อมในซีรั่ม / พลาสม่า'),
   ('0681402', 'Antibody detection (screen), serum/plasma', 'การตรวจหาแอนติบอดี (คัดกรอง) ในซีรั่ม / พลาสม่า'),
   ('0681602', 'Antibody identification, serum/plasma', 'การระบุแอนติบอดีในซีรั่ม / พลาสม่า'),
@@ -1013,7 +1016,7 @@ INSERT INTO `c_labfu_code` (`code`, `lab_name_en`, `lab_name_th`) VALUES
   ('0713302', 'Lung basement membrane antibody, serum/plasma', 'การตรวจหา lung basement membrane antibody ในซีรั่ม / พลาสม่า'),
   ('0713402', 'Microsomal antibody, serum/plasma', 'การตรวจหา microsomal antibody ในซีรั่ม / พลาสม่า'),
   ('0713502', 'Mitochondrial antibody, serum/plasma', 'การตรวจหา mitochondrial antibody ในซีรั่ม / พลาสม่า'),
-+  ('0713602', 'Monocyte antibody, serum/plasma', 'การตรวจหา monocyte antibody ในซีรั่ม / พลาสม่า'),
+  ('0713602', 'Monocyte antibody, serum/plasma', 'การตรวจหา monocyte antibody ในซีรั่ม / พลาสม่า'),
   ('0713616', 'Monocyte antibody, WBC', 'การตรวจหา monocyte antibody ในเม็ดเลือดขาว'),
   ('0713627', 'Monocyte antibody, bone marrow', 'การตรวจหา monocyte antibody ในไขกระดูก'),
   ('0713628', 'Monocyte antibody, lymph node', 'การตรวจหา monocyte antibody ในต่อมน้ำเหลือง'),
@@ -1113,7 +1116,7 @@ INSERT INTO `c_labfu_code` (`code`, `lab_name_en`, `lab_name_th`) VALUES
   ('0760251', 'Bacterial culture, genital (swab)', 'การเพาะเลี้ยงเชื้อแบคทีเรียในสิ่งส่งตรวจที่ป้ายจากอวัยวะเพศ'),
   ('0760252', 'Bacterial culture, ear/eye/mouth  (swab)', 'การเพาะเลี้ยงเชื้อแบคทีเรียในสิ่งส่งตรวจที่ป้ายจาก หู / ตา / ปาก'),
   ('0760253', 'Bacterial culture, superficial wound (swab)', 'การเพาะเลี้ยงเชื้อแบคทีเรียในสิ่งส่งตรวจที่ป้ายจากแผลตื้นๆ'),
-+  ('0760254', 'Bacterial culture, deep wound  (swab)', 'การเพาะเลี้ยงเชื้อแบคทีเรียในสิ่งส่งตรวจที่ป้ายจากบาดแผลลึก'),
+  ('0760254', 'Bacterial culture, deep wound  (swab)', 'การเพาะเลี้ยงเชื้อแบคทีเรียในสิ่งส่งตรวจที่ป้ายจากบาดแผลลึก'),
   ('0760255', 'Bacterial culture, nose  (swab)', 'การเพาะเลี้ยงเชื้อแบคทีเรียในสิ่งส่งตรวจที่ป้ายจากจมูก'),
   ('0760256', 'Bacterial culture, throat (swab)', 'การเพาะเลี้ยงเชื้อแบคทีเรียในสิ่งส่งตรวจที่ป้ายจากคอ'),
   ('0760266', 'Bacterial culture, stool', 'การเพาะเลี้ยงเชื้อแบคทีเรียในอุจจาระ'),
@@ -1213,7 +1216,7 @@ INSERT INTO `c_labfu_code` (`code`, `lab_name_en`, `lab_name_th`) VALUES
   ('0837699', 'Bacterial count, any specimen type', 'การตรวจนับเชื้อแบคทีเรียในสิ่งส่งตรวจชนิดต่างๆ'),
   ('0840202', 'Acetaminophen, serum/plasma', 'การตรวจหายา acetaminophen ในซีรั่ม / พลาสม่า'),
   ('0840402', 'Amikacin, serum/plasma', 'การตรวจหายา amikacin ในซีรั่ม / พลาสม่า'),
-+  ('0840415', 'Amikacin, other fluid NEC', 'การตรวจหายา amikacin ในของเหลวอื่นๆ มิได้จำแนก'),
+  ('0840415', 'Amikacin, other fluid NEC', 'การตรวจหายา amikacin ในของเหลวอื่นๆ มิได้จำแนก'),
   ('0840602', 'Carbamazepine, free, serum/plasma', 'การตรวจหายา carbamazepine อิสระในซีรั่ม / พลาสม่า'),
   ('0840802', 'Carbamazepine, total, serum/plasma', 'การตรวจหายา carbamazepine ทั้งหมดในซีรั่ม / พลาสม่า'),
   ('0841002', 'Chloramphenicol, serum/plasma', 'การตรวจหายา chloramphenicol ในซีรั่ม / พลาสม่า'),
@@ -1313,7 +1316,7 @@ INSERT INTO `c_labfu_code` (`code`, `lab_name_en`, `lab_name_th`) VALUES
   ('0861003', 'Caffeine, urine', 'การตรวจหาคาเฟอีนในปัสสาวะ'),
   ('0861202', 'Cannabis/cannabinoid, serum/plasma', 'การตรวจหา cannabis/cannabinoid ในซีรั่ม / พลาสม่า'),
   ('0861203', 'Cannabis/cannabinoid, urine', 'การตรวจหา cannabis/cannabinoid ในปัสสาวะ'),
-+  ('0861215', 'Cannabis/cannabinoid, other fluid NEC', 'การตรวจหา cannabis/cannabinoid ในของเหลวอื่นๆ มิได้จำแนก'),
+  ('0861215', 'Cannabis/cannabinoid, other fluid NEC', 'การตรวจหา cannabis/cannabinoid ในของเหลวอื่นๆ มิได้จำแนก'),
   ('0861403', 'Cocaine(metabolites), urine', 'การตรวจหาโคเคน (ผลิตผลของกระบวนการสันดาป) ในปัสสาวะ'),
   ('0861415', 'Cocaine(metabolites), other fluid NEC', 'การตรวจหาโคเคน (ผลิตผลของกระบวนการสันดาป) ในของเหลวอื่น ๆ มิได้จำแนก'),
   ('0861602', 'Codeine, serum/plasma', 'การตรวจหา codeine ในซีรั่ม / พลาสม่า'),
@@ -1413,7 +1416,7 @@ INSERT INTO `c_labfu_code` (`code`, `lab_name_en`, `lab_name_th`) VALUES
   ('0881615', 'Ethanol, other fluid NEC', 'การตรวจหาเอทานอลในของเหลวอื่น ๆ มิได้จำแนก'),
   ('0881801', 'Ethylene glycol, whole blood', 'การตรวจหาเอทิลีนไกลคอลในเลือด'),
   ('0881802', 'Ethylene glycol, serum/plasma', 'การตรวจหาเอทิลีนไกลคอลในซีรั่ม / พลาสม่า'),
-+  ('0881815', 'Ethylene glycol, other fluid NEC', 'การตรวจหาเอทิลีนไกลคอลในของเหลวอื่น ๆ มิได้จำแนก'),
+  ('0881815', 'Ethylene glycol, other fluid NEC', 'การตรวจหาเอทิลีนไกลคอลในของเหลวอื่น ๆ มิได้จำแนก'),
   ('0882001', 'Formaldehyde, whole blood', 'การตรวจหา formaldehyde ในเลือด'),
   ('0882002', 'Formaldehyde, serum/plasma', 'การตรวจหา formaldehyde ในซีรั่ม / พลาสม่า'),
   ('0882003', 'Formaldehyde, urine', 'การตรวจหา formaldehyde ในปัสสาวะ'),

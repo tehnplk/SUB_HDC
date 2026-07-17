@@ -3,13 +3,14 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
 
-test("c_labfu_code preserves the official LABFU code master", async () => {
+test("c_labfu_labtest preserves the official LABFU code master", async () => {
   const sql = await readFile(
-    path.resolve(process.cwd(), "table", "lookup", "c_labfu_code.sql"),
+    path.resolve(process.cwd(), "table", "lookup", "c_labfu_labtest.sql"),
     "utf8"
   );
 
-  assert.match(sql, /CREATE TABLE IF NOT EXISTS `c_labfu_code`/i);
+  assert.match(sql, /DROP TABLE IF EXISTS `c_labfu_code`/i);
+  assert.match(sql, /CREATE TABLE IF NOT EXISTS `c_labfu_labtest`/i);
   assert.match(sql, /`code` varchar\(7\) NOT NULL/i);
   assert.match(sql, /`lab_name_en` varchar\(255\) NOT NULL/i);
   assert.match(sql, /`lab_name_th` varchar\(255\) NOT NULL/i);

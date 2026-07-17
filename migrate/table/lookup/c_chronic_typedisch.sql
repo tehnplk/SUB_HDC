@@ -1,9 +1,12 @@
 -- Source: https://docs.google.com/spreadsheets/d/1Oq53sTcAOLzkORQZkq-CC6dseklnwDCu/edit?gid=1104972917
 -- File: 33.รหัสประเภทการจำหน่าย (แฟ้ม CHRONIC).xls
 -- Sheet: รหัสประเภทการจำหน่าย
+-- Renamed from c_chronic_discharge to match the c_{table}_{field} lookup convention
 SET NAMES utf8mb3;
 
-CREATE TABLE IF NOT EXISTS `c_chronic_discharge` (
+DROP TABLE IF EXISTS `c_chronic_discharge`;
+
+CREATE TABLE IF NOT EXISTS `c_chronic_typedisch` (
   `code` varchar(2) NOT NULL,
   `chronic_discharge_name` varchar(255) NOT NULL,
   PRIMARY KEY (`code`)
@@ -11,9 +14,9 @@ CREATE TABLE IF NOT EXISTS `c_chronic_discharge` (
 
 START TRANSACTION;
 
-DELETE FROM `c_chronic_discharge`;
+DELETE FROM `c_chronic_typedisch`;
 
-INSERT INTO `c_chronic_discharge` (`code`, `chronic_discharge_name`) VALUES
+INSERT INTO `c_chronic_typedisch` (`code`, `chronic_discharge_name`) VALUES
   ('01', 'หาย'),
   ('02', 'ตาย'),
   ('03', 'ยังรักษาอยู่'),
