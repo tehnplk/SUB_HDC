@@ -37,6 +37,12 @@ function duplicateType(person) {
   return person.entries.map((entry) => entry.type).sort().join("-");
 }
 
+function formatAge(years, months, days) {
+  const values = [years, months, days];
+  if (values.every((value) => value === null || value === undefined || value === "")) return "-";
+  return `${years || 0} ปี ${months || 0} เดือน ${days || 0} วัน`;
+}
+
 export default function QualityPersonDupPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -126,6 +132,8 @@ export default function QualityPersonDupPage() {
                 <th className="numCol">TYPE</th>
                 <th>เพศ</th>
                 <th>วันเกิด</th>
+                <th>อายุ ณ วันเริ่มปีงบประมาณ</th>
+                <th>อายุปัจจุบัน</th>
                 <th>ปรับปรุงล่าสุด</th>
               </tr>
             </thead>
@@ -185,6 +193,16 @@ export default function QualityPersonDupPage() {
                     </td>
                     <td>
                       {person.entries.map((e, i) => (
+                        <span key={i} className="dupLine">{formatAge(e.age_y_fiscal, e.age_m_fiscal, e.age_d_fiscal)}</span>
+                      ))}
+                    </td>
+                    <td>
+                      {person.entries.map((e, i) => (
+                        <span key={i} className="dupLine">{formatAge(e.age_y_current, e.age_m_current, e.age_d_current)}</span>
+                      ))}
+                    </td>
+                    <td>
+                      {person.entries.map((e, i) => (
                         <span
                           key={i}
                           className={`dupLine${i === latestIndex ? " dupLatest" : ""}`}
@@ -198,7 +216,7 @@ export default function QualityPersonDupPage() {
                 })
               ) : (
                 <tr>
-                  <td className="emptyCell" colSpan={8}>
+                  <td className="emptyCell" colSpan={10}>
                     {loading ? "กำลังโหลดข้อมูล..." : "ไม่พบประชากรที่ซ้ำข้ามหน่วยบริการ"}
                   </td>
                 </tr>

@@ -17,7 +17,7 @@
     "transform_table": "s_person_pyramid",
     "sql_file": "s_person_pyramid.sql",
     "source_tables": ["t_person_type_1_3"],
-    "stored_data": "สรุปประชากร Typearea 1 หรือ 3 จาก t_person_type_1_3 ของปีงบประมาณ 2569 แยกตามหน่วยบริการ ช่วงอายุ 5 ปี และเพศชาย/หญิง โดยใช้ค่า hos, sex และ age_y ที่เรียงตำแหน่งตรงกัน",
+    "stored_data": "สรุปประชากร Typearea 1 หรือ 3 จาก t_person_type_1_3 ของปีงบประมาณ 2569 แยกตามหน่วยบริการ ช่วงอายุ 5 ปี และเพศชาย/หญิง โดยใช้ค่า hos, sex และ age_y_fiscal ที่เรียงตำแหน่งตรงกัน",
     "schema": "hospcode,age_range,male,female"
   },
   {
@@ -59,7 +59,7 @@
     "transform_table": "t_person_type_1_3",
     "sql_file": "t_person_type_1_3.sql",
     "source_tables": ["person", "card", "home"],
-    "stored_data": "เก็บประชากร Typearea 1 หรือ 3 ที่ยังไม่จำหน่าย แยกตามหน่วยบริการและ PID โดยรวมข้อมูลของ CID เดียวกันเป็นค่า CSV พร้อมชื่อ วันปรับปรุงข้อมูลจาก person (d_update) อายุ ณ วันแรกของปีงบประมาณ 2569 สิทธิการรักษาจากแฟ้ม card และรหัสหมู่บ้าน 8 หลักจากแฟ้ม home",
-    "schema": "fiscal_year,cid,name,hn,hos,pid,type,sex,nation,bdate,age_y,age_m,age_d,inscl,village_id,d_update"
+    "stored_data": "เก็บประชากร Typearea 1 หรือ 3 ที่ยังไม่จำหน่าย แยกตามหน่วยบริการและ PID โดยรวมข้อมูลของ CID เดียวกันเป็นค่า CSV พร้อมชื่อ วันปรับปรุงข้อมูลจาก person (d_update) อายุเต็มปี/เดือน/วัน ณ วันแรกของปีงบประมาณ 2569 (age_y_fiscal/age_m_fiscal/age_d_fiscal) และ ณ วันปัจจุบัน (age_y_current/age_m_current/age_d_current) สิทธิการรักษาจากแฟ้ม card และรหัสหมู่บ้าน 8 หลักจากแฟ้ม home",
+    "schema": "fiscal_year,cid,name,hn,hos,pid,type,sex,nation,bdate,age_y_fiscal,age_m_fiscal,age_d_fiscal,age_y_current,age_m_current,age_d_current,inscl,village_id,d_update"
   }
 ]

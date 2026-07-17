@@ -13,9 +13,12 @@ CREATE TABLE IF NOT EXISTS `t_person_type_1_3` (
   `sex` text DEFAULT NULL,
   `nation` text DEFAULT NULL,
   `bdate` text DEFAULT NULL,
-  `age_y` text DEFAULT NULL,
-  `age_m` text DEFAULT NULL,
-  `age_d` text DEFAULT NULL,
+  `age_y_fiscal` text DEFAULT NULL,
+  `age_m_fiscal` text DEFAULT NULL,
+  `age_d_fiscal` text DEFAULT NULL,
+  `age_y_current` text DEFAULT NULL,
+  `age_m_current` text DEFAULT NULL,
+  `age_d_current` text DEFAULT NULL,
   `inscl` text DEFAULT NULL,
   `village_id` text DEFAULT NULL,
   `d_update` text DEFAULT NULL,
@@ -45,6 +48,114 @@ END;
 PREPARE align_d_update_statement FROM @align_d_update_sql;
 EXECUTE align_d_update_statement;
 DEALLOCATE PREPARE align_d_update_statement;
+
+-- Existing installations predate the explicit fiscal/current age columns.
+-- Keep the fields ordered next to bdate.
+SET @age_y_fiscal_column_state := (
+  SELECT CASE WHEN COUNT(*) = 0 THEN 'missing' ELSE 'present' END
+  FROM information_schema.columns
+  WHERE table_schema = DATABASE()
+    AND table_name = 't_person_type_1_3'
+    AND column_name = 'age_y_fiscal'
+);
+SET @align_age_y_fiscal_sql := CASE @age_y_fiscal_column_state
+  WHEN 'missing' THEN 'ALTER TABLE `t_person_type_1_3` ADD COLUMN `age_y_fiscal` text DEFAULT NULL AFTER `bdate`'
+  ELSE 'SELECT 1'
+END;
+PREPARE align_age_y_fiscal_statement FROM @align_age_y_fiscal_sql;
+EXECUTE align_age_y_fiscal_statement;
+DEALLOCATE PREPARE align_age_y_fiscal_statement;
+
+SET @age_m_fiscal_column_state := (
+  SELECT CASE WHEN COUNT(*) = 0 THEN 'missing' ELSE 'present' END
+  FROM information_schema.columns
+  WHERE table_schema = DATABASE()
+    AND table_name = 't_person_type_1_3'
+    AND column_name = 'age_m_fiscal'
+);
+SET @align_age_m_fiscal_sql := CASE @age_m_fiscal_column_state
+  WHEN 'missing' THEN 'ALTER TABLE `t_person_type_1_3` ADD COLUMN `age_m_fiscal` text DEFAULT NULL AFTER `age_y_fiscal`'
+  ELSE 'SELECT 1'
+END;
+PREPARE align_age_m_fiscal_statement FROM @align_age_m_fiscal_sql;
+EXECUTE align_age_m_fiscal_statement;
+DEALLOCATE PREPARE align_age_m_fiscal_statement;
+
+SET @age_d_fiscal_column_state := (
+  SELECT CASE WHEN COUNT(*) = 0 THEN 'missing' ELSE 'present' END
+  FROM information_schema.columns
+  WHERE table_schema = DATABASE()
+    AND table_name = 't_person_type_1_3'
+    AND column_name = 'age_d_fiscal'
+);
+SET @align_age_d_fiscal_sql := CASE @age_d_fiscal_column_state
+  WHEN 'missing' THEN 'ALTER TABLE `t_person_type_1_3` ADD COLUMN `age_d_fiscal` text DEFAULT NULL AFTER `age_m_fiscal`'
+  ELSE 'SELECT 1'
+END;
+PREPARE align_age_d_fiscal_statement FROM @align_age_d_fiscal_sql;
+EXECUTE align_age_d_fiscal_statement;
+DEALLOCATE PREPARE align_age_d_fiscal_statement;
+
+SET @age_y_current_column_state := (
+  SELECT CASE WHEN COUNT(*) = 0 THEN 'missing' ELSE 'present' END
+  FROM information_schema.columns
+  WHERE table_schema = DATABASE()
+    AND table_name = 't_person_type_1_3'
+    AND column_name = 'age_y_current'
+);
+SET @align_age_y_current_sql := CASE @age_y_current_column_state
+  WHEN 'missing' THEN 'ALTER TABLE `t_person_type_1_3` ADD COLUMN `age_y_current` text DEFAULT NULL AFTER `age_d_fiscal`'
+  ELSE 'SELECT 1'
+END;
+PREPARE align_age_y_current_statement FROM @align_age_y_current_sql;
+EXECUTE align_age_y_current_statement;
+DEALLOCATE PREPARE align_age_y_current_statement;
+
+SET @age_m_current_column_state := (
+  SELECT CASE WHEN COUNT(*) = 0 THEN 'missing' ELSE 'present' END
+  FROM information_schema.columns
+  WHERE table_schema = DATABASE()
+    AND table_name = 't_person_type_1_3'
+    AND column_name = 'age_m_current'
+);
+SET @align_age_m_current_sql := CASE @age_m_current_column_state
+  WHEN 'missing' THEN 'ALTER TABLE `t_person_type_1_3` ADD COLUMN `age_m_current` text DEFAULT NULL AFTER `age_y_current`'
+  ELSE 'SELECT 1'
+END;
+PREPARE align_age_m_current_statement FROM @align_age_m_current_sql;
+EXECUTE align_age_m_current_statement;
+DEALLOCATE PREPARE align_age_m_current_statement;
+
+SET @age_d_current_column_state := (
+  SELECT CASE WHEN COUNT(*) = 0 THEN 'missing' ELSE 'present' END
+  FROM information_schema.columns
+  WHERE table_schema = DATABASE()
+    AND table_name = 't_person_type_1_3'
+    AND column_name = 'age_d_current'
+);
+SET @align_age_d_current_sql := CASE @age_d_current_column_state
+  WHEN 'missing' THEN 'ALTER TABLE `t_person_type_1_3` ADD COLUMN `age_d_current` text DEFAULT NULL AFTER `age_m_current`'
+  ELSE 'SELECT 1'
+END;
+PREPARE align_age_d_current_statement FROM @align_age_d_current_sql;
+EXECUTE align_age_d_current_statement;
+DEALLOCATE PREPARE align_age_d_current_statement;
+
+-- Replace legacy, ambiguous age fields on installations created before the
+-- fiscal/current names were introduced.
+SET @drop_legacy_age_sql := (
+  SELECT CASE WHEN COUNT(*) > 0
+    THEN CONCAT('ALTER TABLE `t_person_type_1_3` ', GROUP_CONCAT(CONCAT('DROP COLUMN `', column_name, '`') ORDER BY ordinal_position SEPARATOR ', '))
+    ELSE 'SELECT 1'
+  END
+  FROM information_schema.columns
+  WHERE table_schema = DATABASE()
+    AND table_name = 't_person_type_1_3'
+    AND column_name IN ('age_y', 'age_m', 'age_d')
+);
+PREPARE drop_legacy_age_statement FROM @drop_legacy_age_sql;
+EXECUTE drop_legacy_age_statement;
+DEALLOCATE PREPARE drop_legacy_age_statement;
 
 SET @fiscal_year := 2569;
 SET @fiscal_start := STR_TO_DATE('20251001', '%Y%m%d');
@@ -79,7 +190,7 @@ SELECT
       AND STR_TO_DATE(p.`birth`, '%Y%m%d') <= @fiscal_start
     THEN TIMESTAMPDIFF(YEAR, STR_TO_DATE(p.`birth`, '%Y%m%d'), @fiscal_start)
     ELSE NULL
-  END AS `age_y`,
+  END AS `age_y_fiscal`,
   p.`hid`,
   NULLIF(p.`d_update`, '') AS `d_update`
 FROM `person` p
@@ -136,29 +247,70 @@ SELECT
   p.`sex`,
   p.`nation`,
   p.`bdate`,
-  p.`age_y`,
+  p.`age_y_fiscal`,
   CASE
-    WHEN p.`age_y` IS NULL THEN NULL
+    WHEN p.`age_y_fiscal` IS NULL THEN NULL
     ELSE TIMESTAMPDIFF(
       MONTH,
-      DATE_ADD(STR_TO_DATE(p.`bdate`, '%Y%m%d'), INTERVAL p.`age_y` YEAR),
+      DATE_ADD(STR_TO_DATE(p.`bdate`, '%Y%m%d'), INTERVAL p.`age_y_fiscal` YEAR),
       @fiscal_start
     )
-  END AS `age_m`,
+  END AS `age_m_fiscal`,
   CASE
-    WHEN p.`age_y` IS NULL THEN NULL
+    WHEN p.`age_y_fiscal` IS NULL THEN NULL
     ELSE DATEDIFF(
       @fiscal_start,
       DATE_ADD(
-        DATE_ADD(STR_TO_DATE(p.`bdate`, '%Y%m%d'), INTERVAL p.`age_y` YEAR),
+        DATE_ADD(STR_TO_DATE(p.`bdate`, '%Y%m%d'), INTERVAL p.`age_y_fiscal` YEAR),
         INTERVAL TIMESTAMPDIFF(
           MONTH,
-          DATE_ADD(STR_TO_DATE(p.`bdate`, '%Y%m%d'), INTERVAL p.`age_y` YEAR),
+          DATE_ADD(STR_TO_DATE(p.`bdate`, '%Y%m%d'), INTERVAL p.`age_y_fiscal` YEAR),
           @fiscal_start
         ) MONTH
       )
     )
-  END AS `age_d`,
+  END AS `age_d_fiscal`,
+  CASE
+    WHEN p.`bdate` IS NOT NULL
+      AND STR_TO_DATE(p.`bdate`, '%Y%m%d') <= CURDATE()
+    THEN TIMESTAMPDIFF(YEAR, STR_TO_DATE(p.`bdate`, '%Y%m%d'), CURDATE())
+    ELSE NULL
+  END AS `age_y_current`,
+  CASE
+    WHEN p.`bdate` IS NULL
+      OR STR_TO_DATE(p.`bdate`, '%Y%m%d') > CURDATE()
+    THEN NULL
+    ELSE TIMESTAMPDIFF(
+      MONTH,
+      DATE_ADD(
+        STR_TO_DATE(p.`bdate`, '%Y%m%d'),
+        INTERVAL TIMESTAMPDIFF(YEAR, STR_TO_DATE(p.`bdate`, '%Y%m%d'), CURDATE()) YEAR
+      ),
+      CURDATE()
+    )
+  END AS `age_m_current`,
+  CASE
+    WHEN p.`bdate` IS NULL
+      OR STR_TO_DATE(p.`bdate`, '%Y%m%d') > CURDATE()
+    THEN NULL
+    ELSE DATEDIFF(
+      CURDATE(),
+      DATE_ADD(
+        DATE_ADD(
+          STR_TO_DATE(p.`bdate`, '%Y%m%d'),
+          INTERVAL TIMESTAMPDIFF(YEAR, STR_TO_DATE(p.`bdate`, '%Y%m%d'), CURDATE()) YEAR
+        ),
+        INTERVAL TIMESTAMPDIFF(
+          MONTH,
+          DATE_ADD(
+            STR_TO_DATE(p.`bdate`, '%Y%m%d'),
+            INTERVAL TIMESTAMPDIFF(YEAR, STR_TO_DATE(p.`bdate`, '%Y%m%d'), CURDATE()) YEAR
+          ),
+          CURDATE()
+        ) MONTH
+      )
+    )
+  END AS `age_d_current`,
   c.`instype_new` AS `inscl`,
   CASE
     WHEN h.`changwat` REGEXP '^[0-9]{2}$'
@@ -175,7 +327,7 @@ LEFT JOIN `tmp_person_type_1_3_card` c
 LEFT JOIN `home` h ON h.`hospcode` = p.`hos` AND h.`hid` = p.`hid`;
 
 INSERT INTO `t_person_type_1_3`
-  (`fiscal_year`, `cid`, `name`, `hn`, `hos`, `pid`, `type`, `sex`, `nation`, `bdate`, `age_y`, `age_m`, `age_d`, `inscl`, `village_id`, `d_update`)
+  (`fiscal_year`, `cid`, `name`, `hn`, `hos`, `pid`, `type`, `sex`, `nation`, `bdate`, `age_y_fiscal`, `age_m_fiscal`, `age_d_fiscal`, `age_y_current`, `age_m_current`, `age_d_current`, `inscl`, `village_id`, `d_update`)
 SELECT
   `fiscal_year`,
   `cid`,
@@ -187,9 +339,12 @@ SELECT
   GROUP_CONCAT(IFNULL(`sex`, '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `sex`,
   GROUP_CONCAT(IFNULL(`nation`, '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `nation`,
   GROUP_CONCAT(IFNULL(`bdate`, '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `bdate`,
-  GROUP_CONCAT(IFNULL(CAST(`age_y` AS CHAR), '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `age_y`,
-  GROUP_CONCAT(IFNULL(CAST(`age_m` AS CHAR), '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `age_m`,
-  GROUP_CONCAT(IFNULL(CAST(`age_d` AS CHAR), '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `age_d`,
+  GROUP_CONCAT(IFNULL(CAST(`age_y_fiscal` AS CHAR), '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `age_y_fiscal`,
+  GROUP_CONCAT(IFNULL(CAST(`age_m_fiscal` AS CHAR), '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `age_m_fiscal`,
+  GROUP_CONCAT(IFNULL(CAST(`age_d_fiscal` AS CHAR), '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `age_d_fiscal`,
+  GROUP_CONCAT(IFNULL(CAST(`age_y_current` AS CHAR), '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `age_y_current`,
+  GROUP_CONCAT(IFNULL(CAST(`age_m_current` AS CHAR), '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `age_m_current`,
+  GROUP_CONCAT(IFNULL(CAST(`age_d_current` AS CHAR), '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `age_d_current`,
   GROUP_CONCAT(IFNULL(`inscl`, '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `inscl`,
   GROUP_CONCAT(IFNULL(`village_id`, '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `village_id`,
   GROUP_CONCAT(IFNULL(`d_update`, '') ORDER BY `hos`, `pid` SEPARATOR ',') AS `d_update`

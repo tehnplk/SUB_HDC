@@ -7,7 +7,12 @@ export const runtime = "nodejs";
 // ประชากร TYPE 1/3 ที่เลขบัตร 13 หลัก (cid) เดียวกันถูกขึ้นทะเบียนซ้ำมากกว่า 1 หน่วยบริการ
 // อ่านจากตารางสรุป t_person_type_1_3 (1 cid = 1 แถว, ค่าเป็น CSV เรียงตำแหน่งตรงกันตาม hos)
 // แถวที่ hos มีมากกว่า 1 ค่า (มี ',') คือคนที่ซ้ำข้ามหน่วยบริการ
-const CSV_COLUMNS = ["name", "bdate", "sex", "hos", "pid", "hn", "type", "d_update"];
+const CSV_COLUMNS = [
+  "name", "bdate", "sex", "hos", "pid", "hn", "type",
+  "age_y_fiscal", "age_m_fiscal", "age_d_fiscal",
+  "age_y_current", "age_m_current", "age_d_current",
+  "d_update",
+];
 
 function splitCsv(value) {
   return value === null || value === undefined ? [] : String(value).split(",");
@@ -24,7 +29,10 @@ export async function GET(request) {
     conn = await createDbConnection();
 
     const [rawRows] = await conn.query(`
-      SELECT cid, name, bdate, sex, hos, pid, hn, type, d_update
+      SELECT cid, name, bdate, sex, hos, pid, hn, type,
+             age_y_fiscal, age_m_fiscal, age_d_fiscal,
+             age_y_current, age_m_current, age_d_current,
+             d_update
       FROM \`t_person_type_1_3\`
       WHERE hos LIKE '%,%'
       ORDER BY cid
@@ -67,6 +75,12 @@ export async function GET(request) {
           pid: columns.pid[i] || "",
           hn: columns.hn[i] || "",
           type: columns.type[i] || "",
+          age_y_fiscal: columns.age_y_fiscal[i] || "",
+          age_m_fiscal: columns.age_m_fiscal[i] || "",
+          age_d_fiscal: columns.age_d_fiscal[i] || "",
+          age_y_current: columns.age_y_current[i] || "",
+          age_m_current: columns.age_m_current[i] || "",
+          age_d_current: columns.age_d_current[i] || "",
           d_update: columns.d_update[i] || "",
         });
       }

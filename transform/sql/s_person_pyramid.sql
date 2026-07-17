@@ -37,7 +37,7 @@ FROM (
     '$[*]' COLUMNS (`row_no` FOR ORDINALITY, `sex` varchar(1) PATH '$')
   ) AS sex_values ON sex_values.`row_no` = hos_values.`row_no`
   JOIN JSON_TABLE(
-    CONCAT('["', REPLACE(p.`age_y`, ',', '","'), '"]'),
+    CONCAT('["', REPLACE(p.`age_y_fiscal`, ',', '","'), '"]'),
     '$[*]' COLUMNS (`row_no` FOR ORDINALITY, `age_years` varchar(3) PATH '$')
   ) AS age_values ON age_values.`row_no` = hos_values.`row_no`
   WHERE p.`fiscal_year` = 2569

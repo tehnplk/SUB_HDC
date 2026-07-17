@@ -37,6 +37,17 @@ test("t_person_type_1_3 calculates age on the first day of fiscal year 2569", as
   assert.match(sql, /DATEDIFF\([\s\S]*?@fiscal_start/i);
 });
 
+test("t_person_type_1_3 stores fiscal-start and current age in years, months, and days", async () => {
+  const sql = await readFile(sqlPath, "utf8");
+
+  for (const field of ["age_y_fiscal", "age_m_fiscal", "age_d_fiscal", "age_y_current", "age_m_current", "age_d_current"]) {
+    assert.match(sql, new RegExp("`" + field + "` text DEFAULT NULL", "i"));
+    assert.match(sql, new RegExp("AS `" + field + "`", "i"));
+  }
+  assert.match(sql, /TIMESTAMPDIFF\(YEAR,[\s\S]*?CURDATE\(\)\)/i);
+  assert.match(sql, /TIMESTAMPDIFF\([\s\S]*?MONTH,[\s\S]*?CURDATE\(\)/i);
+});
+
 test("t_person_type_1_3 selects fiscal-start insurance and builds an eight-digit village ID", async () => {
   const sql = await readFile(sqlPath, "utf8");
 
@@ -54,7 +65,7 @@ test("t_person_type_1_3 selects fiscal-start insurance and builds an eight-digit
 test("all non-key fields are position-aligned CSV values", async () => {
   const sql = await readFile(sqlPath, "utf8");
 
-  for (const field of ["name", "hn", "hos", "pid", "type", "sex", "nation", "d_update", "bdate", "age_y", "age_m", "age_d", "inscl", "village_id"]) {
+  for (const field of ["name", "hn", "hos", "pid", "type", "sex", "nation", "d_update", "bdate", "age_y_fiscal", "age_m_fiscal", "age_d_fiscal", "age_y_current", "age_m_current", "age_d_current", "inscl", "village_id"]) {
     assert.match(
       sql,
       new RegExp("GROUP_CONCAT\\(IFNULL\\([\\s\\S]*?ORDER BY `hos`, `pid` SEPARATOR ','\\) AS `" + field + "`", "i")
@@ -78,5 +89,5 @@ test("transform dictionary documents t_person_type_1_3", async () => {
   assert.ok(entry);
   assert.equal(entry.sql_file, "t_person_type_1_3.sql");
   assert.deepEqual(entry.source_tables, ["person", "card", "home"]);
-  assert.equal(entry.schema, "fiscal_year,cid,name,hn,hos,pid,type,sex,nation,bdate,age_y,age_m,age_d,inscl,village_id,d_update");
+  assert.equal(entry.schema, "fiscal_year,cid,name,hn,hos,pid,type,sex,nation,bdate,age_y_fiscal,age_m_fiscal,age_d_fiscal,age_y_current,age_m_current,age_d_current,inscl,village_id,d_update");
 });

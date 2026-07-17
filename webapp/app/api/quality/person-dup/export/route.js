@@ -8,8 +8,13 @@ export const runtime = "nodejs";
 
 // ส่งออกประชากร TYPE 1/3 ที่เลขบัตรซ้ำข้ามหน่วยบริการ จาก t_person_type_1_3
 // 1 แถว = 1 ทะเบียนต่อหน่วยบริการ (แตก CSV ที่เรียงตำแหน่งตรงกัน) — ไม่ส่งออก cid
-const CSV_COLUMNS = ["name", "bdate", "sex", "hos", "pid", "hn", "type", "d_update"];
-const HEADER = ["ชื่อ", "หน่วยบริการ", "ชื่อหน่วยบริการ", "PID", "HN", "TYPE", "เพศ", "วันเกิด", "ปรับปรุงล่าสุด"];
+const CSV_COLUMNS = [
+  "name", "bdate", "sex", "hos", "pid", "hn", "type",
+  "age_y_fiscal", "age_m_fiscal", "age_d_fiscal",
+  "age_y_current", "age_m_current", "age_d_current",
+  "d_update",
+];
+const HEADER = ["ชื่อ", "หน่วยบริการ", "ชื่อหน่วยบริการ", "PID", "HN", "TYPE", "เพศ", "วันเกิด", "อายุ ณ วันเริ่มปีงบประมาณ", "อายุปัจจุบัน", "ปรับปรุงล่าสุด"];
 
 function splitCsv(value) {
   return value === null || value === undefined ? [] : String(value).split(",");
@@ -30,6 +35,12 @@ function formatDUpdate(value) {
   if (!value || !/^\d{8}/.test(value)) return value || "";
   const date = `${value.slice(6, 8)}/${value.slice(4, 6)}/${Number(value.slice(0, 4)) + 543}`;
   return value.length >= 12 ? `${date} ${value.slice(8, 10)}:${value.slice(10, 12)}` : date;
+}
+
+function formatAge(years, months, days) {
+  const values = [years, months, days];
+  if (values.every((value) => value === null || value === undefined || value === "")) return "";
+  return `${years || 0} ปี ${months || 0} เดือน ${days || 0} วัน`;
 }
 
 export async function GET(request) {
@@ -88,6 +99,8 @@ export async function GET(request) {
           "TYPE": columns.type[i] || "",
           "เพศ": formatSex(columns.sex[i]),
           "วันเกิด": formatBirth(columns.bdate[i]),
+          "อายุ ณ วันเริ่มปีงบประมาณ": formatAge(columns.age_y_fiscal[i], columns.age_m_fiscal[i], columns.age_d_fiscal[i]),
+          "อายุปัจจุบัน": formatAge(columns.age_y_current[i], columns.age_m_current[i], columns.age_d_current[i]),
           "ปรับปรุงล่าสุด": formatDUpdate(columns.d_update[i]),
         });
       }

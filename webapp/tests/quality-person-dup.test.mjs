@@ -16,6 +16,9 @@ test("person-dup API reads the transform summary, not raw person, and never expo
   // groupId แทน cid — ไม่ส่งเลขบัตร (cid) ออกไปฝั่ง client
   assert.match(apiSource, /groupId/);
   assert.doesNotMatch(apiSource, /cid:/);
+  for (const field of ["age_y_fiscal", "age_m_fiscal", "age_d_fiscal", "age_y_current", "age_m_current", "age_d_current"]) {
+    assert.match(apiSource, new RegExp(field));
+  }
 });
 
 test("person-dup export requires login, redirects browser links to /error/msg, and omits cid", () => {
@@ -25,6 +28,8 @@ test("person-dup export requires login, redirects browser links to /error/msg, a
   // ไม่ส่งออกคอลัมน์ cid (ordering by cid ยังทำได้ แต่ห้ามเป็น key/header ผลลัพธ์)
   assert.doesNotMatch(exportSource, /["']cid["']/);
   assert.match(exportSource, /FIND_IN_SET\(\?, hos\)/);
+  assert.match(exportSource, /อายุ ณ วันเริ่มปีงบประมาณ/);
+  assert.match(exportSource, /อายุปัจจุบัน/);
 });
 
 test("person-dup page has an xlsx export link that carries the selected hospcode", () => {
@@ -39,6 +44,9 @@ test("person-dup page shows the required columns with a hospcode filter and no v
   assert.match(pageSource, /\/api\/quality\/person-dup/);
   assert.match(pageSource, /srOnly/);
   for (const header of ["ชื่อ", "วันเกิด", "เพศ", "หน่วยบริการ", "PID", "TYPE", "ปรับปรุงล่าสุด"]) {
+    assert.match(pageSource, new RegExp(header));
+  }
+  for (const header of ["อายุ ณ วันเริ่มปีงบประมาณ", "อายุปัจจุบัน"]) {
     assert.match(pageSource, new RegExp(header));
   }
   assert.match(pageSource, /selectedHospcode/);
