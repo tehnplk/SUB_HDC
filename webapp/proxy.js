@@ -1,7 +1,17 @@
 import { NextResponse } from "next/server";
 import { auth } from "./auth";
 
-const PROTECTED_PAGE_PREFIXES = ["/person", "/ai", "/dashboard/report", "/report", "/quality", "/admin"];
+// /quality (portal) เปิดให้เห็น topic list ได้ — ป้องกันเฉพาะหน้าข้อมูลย่อยแทน
+const PROTECTED_PAGE_PREFIXES = [
+  "/person",
+  "/ai",
+  "/dashboard/report",
+  "/report",
+  "/quality/person-dup",
+  "/quality/service-instype-err",
+  "/quality/specialpp-error",
+  "/admin",
+];
 const GUEST_PROTECTED_MESSAGE = "กรุณาติดต่อผู้ดูแลระบบประจำอำเภอของท่าน\nเพื่อขอสิทธิระดับ User ขึ้นไปในการเข้าถึงข้อมูลนี้";
 // /api/quality/* ป้องกันตัวเองใน route (requireApiJwt) — export เปิดตรงจาก browser
 // จึง redirect ไป /error/msg ไม่ได้ถ้าถูก proxy ตอบ 401 ตัดหน้า
