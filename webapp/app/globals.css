@@ -4403,6 +4403,40 @@ button:disabled {
   animation: botThinkingSpin 1s linear infinite;
 }
 
+.chatThinking {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  color: var(--muted);
+}
+
+.chatThinkingDots span {
+  display: inline-block;
+  font-weight: 700;
+  transform-origin: bottom;
+  animation: chatDotStretch 1.2s ease-in-out infinite;
+}
+
+.chatThinkingDots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.chatThinkingDots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes chatDotStretch {
+  0%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 1;
+  }
+}
+
 .chatBubble {
   width: fit-content;
   /* กว้างขึ้นตาม layout ใหม่ — คำตอบ AI มีตาราง/SQL/กราฟ ได้พื้นที่เต็มที่

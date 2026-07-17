@@ -75,7 +75,7 @@ function splitTableRow(line) {
 }
 
 function isTableSeparator(line) {
-  return /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
+  return /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?\s*$/.test(line);
 }
 
 function isTableStart(lines, index) {
@@ -476,22 +476,69 @@ export default function AiChatPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: nextMessages }),
       });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "AI chat failed");
 
-      setMessages((current) => [
-        ...current,
-        {
-          role: "assistant",
-          content: payload.answer,
-          model: payload.model,
-          toolCalls: payload.toolCalls || [],
-          chart: payload.chart || null,
-          excelExports: payload.excelExports || [],
-        },
-      ]);
+      const contentType = response.headers.get("content-type") || "";
+      if (!response.ok || !contentType.includes("text/event-stream")) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || "AI chat failed");
+      }
+
+      // live assistant bubble, updated as server-sent events arrive
+      setMessages((current) => [...current, { role: "assistant", content: "", streaming: true, toolCalls: [] }]);
+      const updateStreaming = (updater) =>
+        setMessages((current) => {
+          const index = current.findLastIndex((message) => message.streaming);
+          if (index === -1) return current;
+          const next = [...current];
+          next[index] = updater(next[index]);
+          return next;
+        });
+
+      let finished = false;
+      const handleEvent = (event) => {
+        if (event.type === "delta") {
+          updateStreaming((message) => ({ ...message, content: message.content + event.text }));
+        } else if (event.type === "reset") {
+          updateStreaming((message) => ({ ...message, content: "" }));
+        } else if (event.type === "tool") {
+          updateStreaming((message) => ({ ...message, toolCalls: [...(message.toolCalls || []), event.tool] }));
+        } else if (event.type === "done") {
+          finished = true;
+          updateStreaming(() => ({
+            role: "assistant",
+            content: event.answer,
+            model: event.model,
+            toolCalls: event.toolCalls || [],
+            chart: event.chart || null,
+            excelExports: event.excelExports || [],
+          }));
+        } else if (event.type === "error") {
+          throw new Error(event.error || "AI chat failed");
+        }
+      };
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let separator;
+        while ((separator = buffer.indexOf("\n\n")) !== -1) {
+          const line = buffer.slice(0, separator).trim();
+          buffer = buffer.slice(separator + 2);
+          if (line.startsWith("data:")) handleEvent(JSON.parse(line.slice(5).trim()));
+        }
+      }
+      if (!finished) throw new Error("การเชื่อมต่อถูกตัดก่อนได้รับคำตอบ");
     } catch (err) {
       setError(err.message);
+      setMessages((current) =>
+        current
+          .map((message) => (message.streaming ? { ...message, streaming: false } : message))
+          .filter((message) => message.role !== "assistant" || message.content || message.toolCalls?.length)
+      );
     } finally {
       setLoading(false);
     }
@@ -522,7 +569,7 @@ export default function AiChatPage() {
         <ModuleHeader subtitle="สนทนาและวิเคราะห์ข้อมูลด้วย AI" />
 
         <div ref={chatBoxRef} className="chatBox" aria-live="polite">
-          {messages.map((message, index) => (
+          {messages.filter((message) => !message.streaming || message.content || message.toolCalls?.length).map((message, index) => (
             <article key={`${message.role}-${index}`} className={`chatMessage ${message.role}`}>
               <span className="chatAvatar">
                 {message.role === "user" ? <UserRound aria-hidden="true" /> : <Bot aria-hidden="true" />}
@@ -553,13 +600,20 @@ export default function AiChatPage() {
               </div>
             </article>
           ))}
-          {loading ? (
+          {loading && !messages.some((message) => message.streaming && (message.content || message.toolCalls?.length)) ? (
             <article className="chatMessage assistant">
               <span className="chatAvatar chatAvatarThinking">
                 <Bot aria-hidden="true" />
               </span>
               <div className="chatBubble">
-                <p>Thinking...</p>
+                <p className="chatThinking">
+                  กำลังคิด
+                  <span className="chatThinkingDots" aria-hidden="true">
+                    <span>.</span>
+                    <span>.</span>
+                    <span>.</span>
+                  </span>
+                </p>
               </div>
             </article>
           ) : null}

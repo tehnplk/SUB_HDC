@@ -22,3 +22,29 @@ export function createDbConnection(options = {}) {
     ...options,
   });
 }
+
+// Shared pool for short-lived API queries (AI tools) — avoids paying TCP +
+// auth handshake per query. Kept on globalThis so Next.js dev hot reload
+// reuses the same pool instead of leaking one per reload.
+export function getDbPool() {
+  if (!globalThis.__subHdcDbPool) {
+    globalThis.__subHdcDbPool = mysql.createPool({
+      ...getDbConfig(),
+      waitForConnections: true,
+      connectionLimit: 5,
+      queueLimit: 50,
+      enableKeepAlive: true,
+    });
+  }
+  return globalThis.__subHdcDbPool;
+}
+
+// Pool-backed drop-in for createDbConnection: same query/end interface,
+// but end() releases back to the pool instead of closing the socket.
+export async function getPooledDbConnection() {
+  const conn = await getDbPool().getConnection();
+  return {
+    query: (...args) => conn.query(...args),
+    end: async () => conn.release(),
+  };
+}

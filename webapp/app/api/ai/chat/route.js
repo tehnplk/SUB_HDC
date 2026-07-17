@@ -1,6 +1,10 @@
+import { readFileSync, statSync } from "node:fs";
+import path from "node:path";
 import OpenAI from "openai";
 import { buildChartFromDbResult, userRequestedChart } from "@/lib/ai-chart.mjs";
+import { getDbCatalog } from "@/lib/ai-db-catalog.mjs";
 import { DB_QUERY_TOOL, DB_QUERY_TOOL_NAME, runDbQueryTool } from "@/lib/db-query-tool.mjs";
+import { HDC_API_TOOL, HDC_API_TOOL_NAME, runHdcApiTool, userMentionedHdc } from "@/lib/hdc-api-tool.mjs";
 import {
   EXCEL_EXPORT_TOOL,
   EXCEL_EXPORT_TOOL_NAME,
@@ -11,44 +15,42 @@ import { requireAppAuth, requireExcelExportAccess } from "../../../../lib/auth-g
 
 export const runtime = "nodejs";
 
+// Provider-neutral LLM config: any OpenAI-compatible endpoint works via
+// LLM_API_KEY / LLM_BASE_URL / LLM_MODEL (legacy DEEPSEEK_* names still read
+// as fallback for sites whose .env has not been migrated).
 const DEFAULT_BASE_URL = "https://api.deepseek.com";
 const DEFAULT_MODEL = "deepseek-v4-flash";
+
+function getLlmConfig() {
+  return {
+    apiKey: process.env.LLM_API_KEY || process.env.DEEPSEEK_API_KEY,
+    baseURL: process.env.LLM_BASE_URL || process.env.DEEPSEEK_BASE_URL || DEFAULT_BASE_URL,
+    model: process.env.LLM_MODEL || process.env.DEEPSEEK_MODEL || DEFAULT_MODEL,
+  };
+}
 const MAX_MESSAGES = 20;
 const MAX_CONTENT_LENGTH = 8000;
-const MAX_TOOL_ROUNDS = 6;
-const SYSTEM_PROMPT = `You are a concise assistant for SUB HDC data work.
-Answer in the same language as the user's question. If the user writes Thai, answer in Thai only. Never mix in Chinese.
-Use the ${DB_QUERY_TOOL_NAME} tool when a user asks questions that need live database data or schema.
-Use the ${EXCEL_EXPORT_TOOL_NAME} tool only when the latest user message explicitly asks to generate, export, download, or create Excel/XLSX/spreadsheet output from database data.
-Only request read-only SQL. Never request INSERT, UPDATE, DELETE, DROP, TRUNCATE, ALTER, CREATE, REPLACE, or other mutation SQL.
-Prefer short aggregate queries and limit result sets. Use c_file to discover imported F43 table names when needed.
-c_file columns are file_name, type, and note. Never query c_file.name.
-For population/person questions, use the person table. The person.sex field uses 1 for male and 2 for female.
-For disease ranking questions such as "โรคที่พบมากสุด", use primary diagnosis rows from diagnosis_opd and diagnosis_ipd.
-diagnosis_opd has date_serv, diagtype, and diagcode. diagnosis_ipd has datetime_admit, diagtype, and diagcode.
-Use diagtype = '1' for primary diagnosis unless the user explicitly asks for all diagnosis types.
-For Thai Buddhist fiscal years, convert to AD fiscal year: 2569 means dates >= '20251001' and < '20261001'.
-Use LEFT(datetime_admit, 8) for IPD date filtering. There is no ICD name lookup table in this database, so answer with diagcode when names are unavailable.
-For common disease-ranking prompts, run the aggregate query directly; do not spend tool calls describing diagnosis tables, searching c_file, or searching for ICD name tables.
-For "โรคที่พบมากสุด 10 อันดับ ปี 2569", use this SQL shape:
-SELECT diagcode, COUNT(*) AS cnt FROM (
-  SELECT diagcode FROM diagnosis_opd WHERE diagtype = '1' AND date_serv >= '20251001' AND date_serv < '20261001'
-  UNION ALL
-  SELECT diagcode FROM diagnosis_ipd WHERE diagtype = '1' AND LEFT(datetime_admit, 8) >= '20251001' AND LEFT(datetime_admit, 8) < '20261001'
-) AS all_dx GROUP BY diagcode ORDER BY cnt DESC LIMIT 10
-Do not speculate that a fiscal year is complete, incomplete, newly started, or nearly finished. Do not write phrases like "เพิ่งเริ่มต้น" unless the user asks about completeness. Say only that the answer is based on records currently in the database for the requested date range.
-Do not combine SHOW statements with OR. Use one valid SQL statement at a time.
-After a tool result, answer clearly and mention important limits or assumptions.
-Use clear visual formatting whenever it improves clarity:
-- Use a compact GitHub-flavored markdown table for rankings, counts by group, comparisons, totals by category, schema lists, or any answer with 2+ comparable rows.
-- Keep table headers human-readable and include units in the header when useful.
-- Use bullets or short paragraphs for explanation-only answers where a table would add noise.
-- Do not use raw HTML, Mermaid, or fenced code blocks for result tables.
-- Only mention or prepare chart-oriented output when the user explicitly asks for a chart, graph, plot, กราฟ, or แผนภูมิ.
-- Supported chart prompts are bar chart, column chart, line chart, multiline chart, pie chart, and radar chart. Column chart renders as a vertical bar chart. If the user asks for a chart without a specific type, the UI defaults to a bar chart.
-- When the user asks for a chart, do not draw an ASCII/text chart or fenced code chart. Give a short summary or markdown table; the UI will render the actual chart.
-When the user asks for Excel export, call ${EXCEL_EXPORT_TOOL_NAME} with the same read-only aggregate SQL you would use for the answer, then mention that the Excel file is ready. Do not invent a download URL yourself.
-Keep any intro to one short sentence.`;
+const MAX_TOOL_ROUNDS = 8;
+const SYSTEM_PROMPT_FILE = "ai_system_prompt.json";
+const promptCache = { mtimeMs: 0, text: null };
+
+function loadSystemPrompt() {
+  const filePath = path.join(process.cwd(), SYSTEM_PROMPT_FILE);
+  const { mtimeMs } = statSync(filePath);
+  if (promptCache.text && promptCache.mtimeMs === mtimeMs) return promptCache.text;
+
+  const raw = readFileSync(filePath, "utf8");
+  const lines = JSON.parse(raw)?.system_prompt;
+  if (!Array.isArray(lines) || !lines.length) {
+    throw new Error(`${SYSTEM_PROMPT_FILE} must contain a non-empty system_prompt array`);
+  }
+  promptCache.text = lines
+    .join("\n")
+    .replaceAll("{DB_QUERY_TOOL_NAME}", DB_QUERY_TOOL_NAME)
+    .replaceAll("{EXCEL_EXPORT_TOOL_NAME}", EXCEL_EXPORT_TOOL_NAME);
+  promptCache.mtimeMs = mtimeMs;
+  return promptCache.text;
+}
 
 function normalizeMessages(input) {
   const source = Array.isArray(input?.messages)
@@ -70,16 +72,13 @@ function normalizeMessages(input) {
     }));
 }
 
-function getDeepSeekClient() {
-  const apiKey = process.env.DEEPSEEK_API_KEY;
+function getLlmClient() {
+  const { apiKey, baseURL } = getLlmConfig();
   if (!apiKey) {
-    throw new Error("DEEPSEEK_API_KEY is not configured");
+    throw new Error("LLM_API_KEY is not configured");
   }
 
-  return new OpenAI({
-    apiKey,
-    baseURL: process.env.DEEPSEEK_BASE_URL || DEFAULT_BASE_URL,
-  });
+  return new OpenAI({ apiKey, baseURL });
 }
 
 function parseToolArguments(toolCall) {
@@ -98,36 +97,111 @@ function toolResultMessage(toolCall, content) {
   };
 }
 
-async function forceFinalAnswer(client, messages) {
-  const completion = await client.chat.completions.create({
-    model: process.env.DEEPSEEK_MODEL || DEFAULT_MODEL,
-    messages: [
-      ...messages,
-      {
-        role: "system",
-        content:
-          "Do not call tools again. Answer now using only the tool results already provided. Use a compact markdown table for comparable rows. If disease names are unavailable, show diagcode.",
-      },
-    ],
-    temperature: 0.3,
-    max_tokens: 1200,
-  });
-
-  return {
-    answer: completion.choices?.[0]?.message?.content?.trim() || "",
-    completion,
-  };
+// The model must never see the export file path, or it will echo it into the
+// conversation text. The UI gets the real downloadUrl via the toolCalls /
+// excelExports payload instead.
+function sanitizeToolResultForModel(result) {
+  if (!result || typeof result !== "object" || !("downloadUrl" in result)) return result;
+  const { downloadUrl, ...safe } = result;
+  return { ...safe, note: "Excel file is ready. The UI shows the download button; do not write any link or path." };
 }
 
-async function runChatAgent(client, inputMessages) {
+const CHAT_MODEL_PARAMS = { temperature: 0.3, max_tokens: 2000 };
+
+// Stream one completion round. Content deltas are forwarded to the client as
+// they arrive; if the round turns out to be a tool round, a reset event clears
+// any partial text already shown.
+async function streamCompletion(client, request, emit) {
+  const stream = await client.chat.completions.create({
+    ...request,
+    ...CHAT_MODEL_PARAMS,
+    stream: true,
+    stream_options: { include_usage: true },
+  });
+
+  let content = "";
+  let emittedChars = 0;
+  let sawToolCall = false;
+  const toolCalls = [];
+  let usage = null;
+  let model = null;
+
+  for await (const chunk of stream) {
+    model = chunk.model || model;
+    if (chunk.usage) usage = chunk.usage;
+    const delta = chunk.choices?.[0]?.delta || {};
+
+    for (const toolDelta of delta.tool_calls || []) {
+      const index = toolDelta.index ?? 0;
+      if (!sawToolCall) {
+        sawToolCall = true;
+        if (emittedChars) emit({ type: "reset" });
+      }
+      toolCalls[index] ||= { id: "", type: "function", function: { name: "", arguments: "" } };
+      if (toolDelta.id) toolCalls[index].id = toolDelta.id;
+      if (toolDelta.function?.name) toolCalls[index].function.name += toolDelta.function.name;
+      if (toolDelta.function?.arguments) toolCalls[index].function.arguments += toolDelta.function.arguments;
+    }
+
+    if (delta.content) {
+      content += delta.content;
+      if (!sawToolCall) {
+        emit({ type: "delta", text: delta.content });
+        emittedChars += delta.content.length;
+      }
+    }
+  }
+
+  return { content, toolCalls: toolCalls.filter(Boolean), usage, model };
+}
+
+// tool_choice "none" keeps the provider from emitting raw tool-call markup as
+// text when it still wants to call a tool on the wrap-up round.
+async function forceFinalAnswer(client, messages, tools, emit) {
+  return streamCompletion(
+    client,
+    {
+      model: getLlmConfig().model,
+      messages: [
+        ...messages,
+        {
+          role: "system",
+          content:
+            "Do not call tools again. Answer now using only the tool results already provided. Use a compact markdown table for comparable rows. If disease names are unavailable, show diagcode.",
+        },
+      ],
+      tools,
+      tool_choice: "none",
+    },
+    emit
+  );
+}
+
+// Strip any provider-internal tool-call markup that leaks into answer text
+// (seen with DeepSeek DSML tags when it wants a tool it cannot call).
+function stripToolMarkup(text) {
+  return String(text || "")
+    .replace(/<[｜|][^>]*[｜|]>[^]*?<\/[｜|][^>]*[｜|]>/g, "")
+    .replace(/^.*[｜|]DSML[｜|].*$/gm, "")
+    .trim();
+}
+
+async function runChatAgent(client, inputMessages, emit = () => {}) {
   const shouldReturnChart = userRequestedChart(inputMessages);
   const shouldExportExcel = userRequestedExcelExport(inputMessages);
-  const availableTools = shouldExportExcel ? [DB_QUERY_TOOL, EXCEL_EXPORT_TOOL] : [DB_QUERY_TOOL];
+  const shouldOfferHdcApi = userMentionedHdc(inputMessages);
+  const availableTools = [
+    DB_QUERY_TOOL,
+    ...(shouldExportExcel ? [EXCEL_EXPORT_TOOL] : []),
+    ...(shouldOfferHdcApi ? [HDC_API_TOOL] : []),
+  ];
+  const dbCatalog = await getDbCatalog().catch(() => "");
   const messages = [
     {
       role: "system",
-      content: SYSTEM_PROMPT,
+      content: loadSystemPrompt(),
     },
+    ...(dbCatalog ? [{ role: "system", content: dbCatalog }] : []),
     ...(shouldReturnChart
       ? [
           {
@@ -151,28 +225,26 @@ async function runChatAgent(client, inputMessages) {
   const toolCalls = [];
   const excelExports = [];
   let chart = null;
-  let finalCompletion = null;
+  let lastRound = null;
 
   for (let round = 0; round <= MAX_TOOL_ROUNDS; round += 1) {
-    const completion = await client.chat.completions.create({
-      model: process.env.DEEPSEEK_MODEL || DEFAULT_MODEL,
-      messages,
-      tools: availableTools,
-      tool_choice: "auto",
-      temperature: 0.3,
-      max_tokens: 1200,
-    });
-    finalCompletion = completion;
+    const completionRound = await streamCompletion(
+      client,
+      {
+        model: getLlmConfig().model,
+        messages,
+        tools: availableTools,
+        tool_choice: "auto",
+      },
+      emit
+    );
+    lastRound = completionRound;
 
-    const message = completion.choices?.[0]?.message;
-    if (!message) {
-      throw new Error("DeepSeek returned an empty message");
-    }
-
-    if (!message.tool_calls?.length) {
+    if (!completionRound.toolCalls.length) {
       return {
-        answer: message.content?.trim() || "",
-        completion,
+        answer: stripToolMarkup(completionRound.content),
+        model: completionRound.model,
+        usage: completionRound.usage,
         toolCalls,
         chart,
         excelExports,
@@ -180,9 +252,11 @@ async function runChatAgent(client, inputMessages) {
     }
 
     if (round >= MAX_TOOL_ROUNDS) {
-      const forced = await forceFinalAnswer(client, messages);
+      const forced = await forceFinalAnswer(client, messages, availableTools, emit);
       return {
-        ...forced,
+        answer: stripToolMarkup(forced.content),
+        model: forced.model,
+        usage: forced.usage,
         toolCalls,
         chart,
         excelExports,
@@ -191,29 +265,38 @@ async function runChatAgent(client, inputMessages) {
 
     messages.push({
       role: "assistant",
-      content: message.content || null,
-      tool_calls: message.tool_calls,
+      content: completionRound.content || null,
+      tool_calls: completionRound.toolCalls,
     });
 
-    for (const toolCall of message.tool_calls) {
-      const toolName = toolCall.function?.name;
-      let result;
-
-      try {
-        if (toolName !== DB_QUERY_TOOL_NAME) {
-          if (toolName !== EXCEL_EXPORT_TOOL_NAME) {
-            throw new Error(`Unsupported tool: ${toolName || "unknown"}`);
+    // Tools are independent read-only queries — run the round's calls in
+    // parallel and consume the results in the model's original order.
+    const results = await Promise.all(
+      completionRound.toolCalls.map(async (toolCall) => {
+        const toolName = toolCall.function?.name;
+        try {
+          if (toolName === DB_QUERY_TOOL_NAME) {
+            return await runDbQueryTool(parseToolArguments(toolCall));
           }
-          result = await runExcelExportTool(parseToolArguments(toolCall));
-        } else {
-          result = await runDbQueryTool(parseToolArguments(toolCall));
+          if (toolName === EXCEL_EXPORT_TOOL_NAME) {
+            return await runExcelExportTool(parseToolArguments(toolCall));
+          }
+          if (toolName === HDC_API_TOOL_NAME) {
+            return await runHdcApiTool(parseToolArguments(toolCall));
+          }
+          throw new Error(`Unsupported tool: ${toolName || "unknown"}`);
+        } catch (error) {
+          return {
+            ok: false,
+            error: error.message,
+          };
         }
-      } catch (error) {
-        result = {
-          ok: false,
-          error: error.message,
-        };
-      }
+      })
+    );
+
+    for (const [callIndex, toolCall] of completionRound.toolCalls.entries()) {
+      const toolName = toolCall.function?.name;
+      const result = results[callIndex];
 
       const resultChart = shouldReturnChart ? buildChartFromDbResult(result, inputMessages) : null;
       if (resultChart) {
@@ -228,7 +311,7 @@ async function runChatAgent(client, inputMessages) {
         });
       }
 
-      toolCalls.push({
+      const toolEntry = {
         name: toolName || "unknown",
         sql: result.sql || null,
         ok: result.ok,
@@ -237,14 +320,17 @@ async function runChatAgent(client, inputMessages) {
         error: result.error || null,
         downloadUrl: result.downloadUrl || null,
         filename: result.filename || null,
-      });
-      messages.push(toolResultMessage(toolCall, result));
+      };
+      toolCalls.push(toolEntry);
+      emit({ type: "tool", tool: toolEntry });
+      messages.push(toolResultMessage(toolCall, sanitizeToolResultForModel(result)));
     }
   }
 
   return {
-    answer: finalCompletion?.choices?.[0]?.message?.content?.trim() || "",
-    completion: finalCompletion,
+    answer: lastRound?.content?.trim() || "",
+    model: lastRound?.model,
+    usage: lastRound?.usage,
     toolCalls,
     chart,
     excelExports,
@@ -274,20 +360,43 @@ export async function POST(request) {
       if (exportDenied) return exportDenied;
     }
 
-    const client = getDeepSeekClient();
-    const { answer, completion, toolCalls, chart, excelExports } = await runChatAgent(client, messages);
+    const client = getLlmClient();
 
-    if (!answer) {
-      return Response.json({ error: "DeepSeek returned an empty response" }, { status: 502 });
-    }
+    // Server-sent events: content deltas and tool progress stream to the UI
+    // while the agent works; a final `done` event carries the full payload.
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        const emit = (event) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+        try {
+          const result = await runChatAgent(client, messages, emit);
+          if (!result.answer) {
+            emit({ type: "error", error: "LLM returned an empty response" });
+          } else {
+            emit({
+              type: "done",
+              answer: result.answer,
+              model: result.model || null,
+              usage: result.usage || null,
+              toolCalls: result.toolCalls,
+              chart: result.chart,
+              excelExports: result.excelExports,
+            });
+          }
+        } catch (error) {
+          const status = error.status || error.response?.status || 500;
+          emit({ type: "error", error: status === 500 ? "AI chat request failed" : error.message });
+        }
+        controller.close();
+      },
+    });
 
-    return Response.json({
-      answer,
-      model: completion.model,
-      usage: completion.usage || null,
-      toolCalls,
-      chart,
-      excelExports,
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-store",
+        Connection: "keep-alive",
+      },
     });
   } catch (error) {
     const status = error.status || error.response?.status || 500;

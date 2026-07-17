@@ -105,3 +105,48 @@ test("userRequestedChart only enables charts for explicit chart requests", () =>
   assert.equal(userRequestedChart([{ role: "user", content: "show column จำนวน visit แยกรายเดือน" }]), true);
   assert.equal(userRequestedChart([{ role: "user", content: "show table only, no chart" }]), false);
 });
+
+test("formatChartLabel converts period keys to Thai month + Buddhist year like the table", async () => {
+  const { formatChartLabel } = await import("../lib/ai-chart.mjs");
+  assert.equal(formatChartLabel("202610"), "ต.ค. 2569");
+  assert.equal(formatChartLabel("202601"), "ม.ค. 2569");
+  assert.equal(formatChartLabel("20251001"), "1 ต.ค. 2568");
+  // non-period values pass through unchanged
+  assert.equal(formatChartLabel("E11.9"), "E11.9");
+  assert.equal(formatChartLabel("รพ.สต.วัดจันทร์"), "รพ.สต.วัดจันทร์");
+  // 6 digits with invalid month is not a period
+  assert.equal(formatChartLabel("202613"), "202613");
+});
+
+test("buildChartFromDbResult renders YYYYMM labels as Thai month-year", async () => {
+  const { buildChartFromDbResult } = await import("../lib/ai-chart.mjs");
+  const chart = buildChartFromDbResult(
+    {
+      ok: true,
+      columns: ["ym", "cnt"],
+      rows: [
+        { ym: "202610", cnt: 100 },
+        { ym: "202611", cnt: 200 },
+      ],
+    },
+    [{ role: "user", content: "ขอกราฟ" }]
+  );
+  assert.deepEqual(chart.labels, ["ต.ค. 2569", "พ.ย. 2569"]);
+});
+
+test("multi-series chart excludes period/sort key columns from datasets", async () => {
+  const { buildChartFromDbResult } = await import("../lib/ai-chart.mjs");
+  const chart = buildChartFromDbResult(
+    {
+      ok: true,
+      columns: ["month_name", "month_sort", "total_persons", "total_visits"],
+      rows: [
+        { month_name: "ต.ค. 68", month_sort: 202510, total_persons: 100, total_visits: 150 },
+        { month_name: "พ.ย. 68", month_sort: 202511, total_persons: 200, total_visits: 250 },
+      ],
+    },
+    [{ role: "user", content: "กราฟเส้นหลายเส้น" }]
+  );
+  assert.deepEqual(chart.seriesFields, ["total_persons", "total_visits"]);
+  assert.deepEqual(chart.labels, ["ต.ค. 68", "พ.ย. 68"]);
+});

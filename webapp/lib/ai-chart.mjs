@@ -88,8 +88,14 @@ function pickLabelField(columns, valueField) {
   return columns.find((field) => field !== valueField) || null;
 }
 
+// Period keys and sort helpers (ym, month_sort, ...) are numeric but are axis
+// metadata, not measures — charting them as a series draws a meaningless line.
+const NON_MEASURE_FIELD_PATTERN = /(^|_)(ym|yearmonth|year|month|fiscal_year|sort|order|seq|no|id|code)($|_)/i;
+
 function pickNumericFields(rows, columns) {
-  return columns.filter((field) => rows.some((row) => toNumber(row?.[field]) !== null));
+  const numeric = columns.filter((field) => rows.some((row) => toNumber(row?.[field]) !== null));
+  const measures = numeric.filter((field) => !NON_MEASURE_FIELD_PATTERN.test(field));
+  return measures.length ? measures : numeric;
 }
 
 function pickPreferredLabelField(rows, columns, numericFields) {
@@ -128,6 +134,33 @@ function formatMultiSeriesTitle(labelField) {
   return `Metrics by ${formatFieldLabel(labelField)}`;
 }
 
+const THAI_MONTH_ABBR = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+
+// Chart labels must read like the answer table: raw period keys such as
+// 202610 (YYYYMM, AD) become "ต.ค. 2569" (Thai month + Buddhist year).
+export function formatChartLabel(value, index = 0) {
+  const raw = String(value ?? index + 1).trim();
+
+  const yearMonth = raw.match(/^(\d{4})(\d{2})$/);
+  if (yearMonth) {
+    const month = Number(yearMonth[2]);
+    if (month >= 1 && month <= 12) {
+      return `${THAI_MONTH_ABBR[month - 1]} ${Number(yearMonth[1]) + 543}`;
+    }
+  }
+
+  const yearMonthDay = raw.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (yearMonthDay) {
+    const month = Number(yearMonthDay[2]);
+    const day = Number(yearMonthDay[3]);
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      return `${day} ${THAI_MONTH_ABBR[month - 1]} ${Number(yearMonthDay[1]) + 543}`;
+    }
+  }
+
+  return raw.slice(0, 90);
+}
+
 function formatFieldLabel(field) {
   const normalized = String(field || "").trim();
   if (!normalized) return "";
@@ -153,7 +186,7 @@ export function buildChartFromDbResult(result, messages = []) {
 
   if ((chartType === "line" || chartType === "radar") && numericFields.length >= 2 && labelFieldForSeries) {
     const chartRows = rows.slice(0, MAX_AI_CHART_ROWS);
-    const labels = chartRows.map((row, index) => String(row?.[labelFieldForSeries] ?? index + 1).slice(0, 90));
+    const labels = chartRows.map((row, index) => formatChartLabel(row?.[labelFieldForSeries], index));
     const datasets = numericFields.map((field) => ({
       label: formatFieldLabel(field),
       values: chartRows.map((row) => toNumber(row?.[field])),
@@ -184,7 +217,7 @@ export function buildChartFromDbResult(result, messages = []) {
   const chartRows = rows
     .slice(0, MAX_AI_CHART_ROWS)
     .map((row, index) => ({
-      label: String(row?.[labelField] ?? index + 1).slice(0, 90),
+      label: formatChartLabel(row?.[labelField], index),
       value: toNumber(row?.[valueField]),
     }))
     .filter((row) => row.label && row.value !== null);

@@ -1,8 +1,8 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readdir, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
 import * as XLSX from "xlsx";
-import { createDbConnection } from "./db.js";
+import { getPooledDbConnection } from "./db.js";
 import { normalizeDbQuerySql } from "./db-query-tool.mjs";
 
 export const EXCEL_EXPORT_TOOL_NAME = "ExcelExport";
@@ -104,6 +104,23 @@ function getExportRoot(root = process.cwd()) {
   return path.join(root, "tmp", "ai-exports");
 }
 
+export const EXPORT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+// Exports are one-shot downloads; sweep files older than a day so the
+// directory does not grow forever. Best effort — failures are ignored.
+export async function cleanupOldExports(exportRoot, maxAgeMs = EXPORT_MAX_AGE_MS, now = Date.now()) {
+  let removed = 0;
+  const entries = await readdir(exportRoot).catch(() => []);
+  for (const entry of entries) {
+    const filePath = path.join(exportRoot, entry);
+    const info = await stat(filePath).catch(() => null);
+    if (info?.isFile() && now - info.mtimeMs > maxAgeMs) {
+      await unlink(filePath).then(() => { removed += 1; }).catch(() => {});
+    }
+  }
+  return removed;
+}
+
 function buildWorkbook(rows, columns, sheetName) {
   const workbook = XLSX.utils.book_new();
   const worksheet = rows.length
@@ -114,7 +131,7 @@ function buildWorkbook(rows, columns, sheetName) {
   return XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
 }
 
-export async function runExcelExportTool(args, connectionFactory = createDbConnection, options = {}) {
+export async function runExcelExportTool(args, connectionFactory = getPooledDbConnection, options = {}) {
   const sql = normalizeDbQuerySql(args?.sql);
   const limitedSql = applyExcelExportLimit(sql);
   let conn;
@@ -137,6 +154,7 @@ export async function runExcelExportTool(args, connectionFactory = createDbConne
 
     await mkdir(exportRoot, { recursive: true });
     await writeFile(filePath, buffer);
+    cleanupOldExports(exportRoot).catch(() => {});
 
     return {
       ok: true,
