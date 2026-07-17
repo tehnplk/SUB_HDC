@@ -135,7 +135,7 @@ test("all portal topic menus use one topic-only line", () => {
   assert.match(topicBulletSource, /ChevronRight/);
   assert.match(globalCss, /\.moduleTopicText\s*\{[\s\S]*?white-space:\s*nowrap;/);
   assert.match(globalCss, /\.moduleTopicText\s*\{[\s\S]*?font-size:\s*14px;/);
-  assert.match(globalCss, /\.moduleTopicText\s*\{[\s\S]*?font-weight:\s*400;/);
+  assert.match(globalCss, /\.moduleTopicText\s*\{[\s\S]*?font-weight:\s*700;/);
   assert.doesNotMatch(globalCss, /moduleTopicList(?:Compact|Small) \.moduleTopicText/);
 });
 
