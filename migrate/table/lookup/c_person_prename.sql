@@ -9,8 +9,12 @@ CREATE TABLE IF NOT EXISTS `c_person_prename` (
   `prename` varchar(255) NOT NULL,
   `prename_full` varchar(255) NOT NULL,
   `sex` varchar(1) NOT NULL DEFAULT '',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+
+ALTER TABLE `c_person_prename`
+  ADD COLUMN IF NOT EXISTS `is_active` tinyint(1) NOT NULL DEFAULT 1;
 
 START TRANSACTION;
 

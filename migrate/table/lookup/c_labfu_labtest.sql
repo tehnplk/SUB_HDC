@@ -8,8 +8,12 @@ CREATE TABLE IF NOT EXISTS `c_labfu_labtest` (
   `code` varchar(7) NOT NULL,
   `lab_name_en` varchar(255) NOT NULL,
   `lab_name_th` varchar(255) NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`code`, `lab_name_en`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+
+ALTER TABLE `c_labfu_labtest`
+  ADD COLUMN IF NOT EXISTS `is_active` tinyint(1) NOT NULL DEFAULT 1;
 
 START TRANSACTION;
 

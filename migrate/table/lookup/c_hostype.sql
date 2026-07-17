@@ -8,8 +8,12 @@ CREATE TABLE IF NOT EXISTS `c_hostype` (
   `dep_short` varchar(255) NULL,
   `hostype` varchar(255) NULL,
   `hostype_list` varchar(255) NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+
+ALTER TABLE `c_hostype`
+  ADD COLUMN IF NOT EXISTS `is_active` tinyint(1) NOT NULL DEFAULT 1;
 
 ALTER TABLE `c_hostype`
   ADD COLUMN IF NOT EXISTS `dep_short` varchar(255) DEFAULT NULL AFTER `dep_name`;

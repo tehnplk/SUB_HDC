@@ -6,8 +6,12 @@ SET NAMES utf8mb3;
 CREATE TABLE IF NOT EXISTS `c_person_labor` (
   `code` varchar(2) NOT NULL,
   `labor_name` varchar(1000) NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+
+ALTER TABLE `c_person_labor`
+  ADD COLUMN IF NOT EXISTS `is_active` tinyint(1) NOT NULL DEFAULT 1;
 
 START TRANSACTION;
 

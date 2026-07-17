@@ -9,6 +9,7 @@ CREATE TABLE `c_instype` (
   `instype_name` varchar(255) NOT NULL,
   `note` varchar(255) DEFAULT NULL,
   `insc_group` tinyint UNSIGNED DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 

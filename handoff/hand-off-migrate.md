@@ -44,6 +44,23 @@ SQL **ไม่ได้ฝังใน image** — mount สดจาก host (
 - **lookup dumps** (`table/lookup/*.sql`): id ผูก content hash — แก้ไฟล์แล้ว
   hash เปลี่ยน → โหลดซ้ำเองรอบถัดไป (dump เป็น DROP+CREATE+INSERT รันซ้ำ
   ปลอดภัย) ครอบไซต์เก่าที่ initdb ของ MariaDB ไม่รันซ้ำ
+
+### Spec ตาราง lookup/master (`c_*`)
+
+- **ทุกตาราง master ต้องมีคอลัมน์ `is_active` tinyint(1) NOT NULL DEFAULT 1**
+  (`1` = ใช้งาน, `0` = ยกเลิก/เลิกใช้ เช่นรหัสเก่าที่ backfill มาจาก HOSxP
+  เพื่อให้ join ข้อมูลดิบย้อนหลังได้) — test บังคับ spec:
+  `tests/lookup-is-active.test.mjs`
+- **แก้ schema ของ lookup ที่มีอยู่แล้ว** ต้องกันกรณี prod มีตารางเดิมอยู่
+  (CREATE TABLE IF NOT EXISTS เป็น no-op ไม่เพิ่มคอลัมน์ให้ → INSERT พังด้วย
+  Unknown column):
+  - **เปลี่ยนชื่อตาราง** → `DROP TABLE IF EXISTS <ชื่อเก่า>;` ก่อน CREATE ชื่อใหม่
+    (ตัวอย่าง: `c_specialpp_ppspecial.sql` DROP `c_specialpp_code`)
+  - **เพิ่มคอลัมน์** → เพิ่มทั้งใน CREATE TABLE และ
+    `ALTER TABLE ... ADD COLUMN IF NOT EXISTS ...;` คู่กันเสมอ
+    (ตัวอย่าง: `c_hostype.sql` เพิ่ม `dep_short`)
+  - ไฟล์สไตล์ `DROP TABLE` + `CREATE TABLE` (สร้างใหม่ทุกครั้ง เช่น
+    `c_hospital.sql`) แก้ใน CREATE อย่างเดียวพอ ไม่ต้องมี ALTER
 - `table/lookup/c_instype.sql` เก็บรหัสสิทธิการรักษาพยาบาล 4 หลักจากชีต
   `gid=1423146080`: `code`, `instype_name`, `note`, `insc_group` รวม 110 รหัส
   โดยเก็บ `code` เป็น `varchar(4)` เพื่อรักษาเลขศูนย์นำหน้า; `insc_group`

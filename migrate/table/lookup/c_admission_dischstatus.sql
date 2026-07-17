@@ -8,8 +8,12 @@ CREATE TABLE IF NOT EXISTS `c_admission_dischstatus` (
   `code` varchar(1) NOT NULL,
   `dischstatus_name` varchar(255) NOT NULL,
   `dischstatus_name_en` varchar(255) NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+
+ALTER TABLE `c_admission_dischstatus`
+  ADD COLUMN IF NOT EXISTS `is_active` tinyint(1) NOT NULL DEFAULT 1;
 
 START TRANSACTION;
 

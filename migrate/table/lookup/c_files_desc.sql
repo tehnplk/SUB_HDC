@@ -4,8 +4,12 @@ SET NAMES utf8mb3;
 CREATE TABLE IF NOT EXISTS `c_files_desc` (
   `table_name` varchar(50) NOT NULL,
   `description` text NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`table_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+
+ALTER TABLE `c_files_desc`
+  ADD COLUMN IF NOT EXISTS `is_active` tinyint(1) NOT NULL DEFAULT 1;
 
 START TRANSACTION;
 
