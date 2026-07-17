@@ -127,7 +127,10 @@ export default function ServiceInstypeErrorPage() {
                 <h2 id="service-instype-details-title">{detailState.hospital?.hospcode} {detailState.hospital?.hospname}</h2>
                 <p>{detailState.loading ? "กำลังโหลดข้อมูล..." : `${detailState.rows.length.toLocaleString("th-TH")} รายการ`}</p>
               </div>
-              <button type="button" className="reportModalClose" onClick={closeDetails} aria-label="ปิด">×</button>
+              <div className="reportModalActions">
+                {detailState.hospital ? <ExcelExportButton href={exportHrefFor(detailState.hospital.hospcode)} /> : null}
+                <button type="button" className="reportModalClose" onClick={closeDetails} aria-label="ปิด">×</button>
+              </div>
             </div>
             {detailState.error ? <div className="error">{detailState.error}</div> : null}
             <div className="tableWrap reportResultWrap">

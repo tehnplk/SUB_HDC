@@ -75,7 +75,7 @@ export async function GET(request) {
         `SELECT hospcode, fiscal_year, pid, seq, date_serve, instype
          FROM \`t_service_intype_error\`
          WHERE ${where.join(" AND ")}
-         ORDER BY date_serve, pid, seq`,
+         ORDER BY date_serve DESC, pid, seq`,
         values
       );
       const rows = rawRows.map((row) => ({
