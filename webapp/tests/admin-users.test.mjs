@@ -108,3 +108,15 @@ test("new ProviderID users are guests and protected routes deny guest access", (
   assert.match(proxySource, /กรุณาติดต่อผู้ดูแลระบบประจำอำเภอของท่าน\\nเพื่อขอสิทธิระดับ User ขึ้นไปในการเข้าถึงข้อมูลนี้/);
   assert.match(guestErrorSource, /showLogin=\{false\}/);
 });
+
+test("proxy reserves /admin and /api/admin for admin role only", () => {
+  assert.match(proxySource, /ADMIN_ONLY_PAGE_PREFIXES = \["\/admin"\]/);
+  assert.match(proxySource, /ADMIN_ONLY_API_PREFIXES = \["\/api\/admin"\]/);
+  // admin = configured account หรือ roleId 1 (ตรงกับ isAdminSession)
+  assert.match(proxySource, /request\.auth\.user\.isConfiguredUser === true/);
+  assert.match(proxySource, /Number\(request\.auth\.user\.roleId\) === 1/);
+  // non-admin ที่ล็อกอินแล้ว: API ตอบ 403, page redirect ไป /err
+  assert.match(proxySource, /matchesPrefix\(pathname, ADMIN_ONLY_API_PREFIXES\)/);
+  assert.match(proxySource, /matchesPrefix\(pathname, ADMIN_ONLY_PAGE_PREFIXES\)/);
+  assert.match(proxySource, /ADMIN_PROTECTED_MESSAGE/);
+});
