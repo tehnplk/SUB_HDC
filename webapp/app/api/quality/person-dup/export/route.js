@@ -58,7 +58,10 @@ export async function GET(request) {
   if (exportDenied) return exportDenied;
 
   const hospcode = new URL(request.url).searchParams.get("hospcode") || "";
-  if (hospcode && !/^\w{1,10}$/.test(hospcode)) {
+  if (!hospcode) {
+    return Response.json({ error: "กรุณาเลือกหน่วยบริการก่อนส่งออก" }, { status: 400 });
+  }
+  if (!/^\w{1,10}$/.test(hospcode)) {
     return Response.json({ error: "hospcode ไม่ถูกต้อง" }, { status: 400 });
   }
 
@@ -66,20 +69,13 @@ export async function GET(request) {
   try {
     conn = await createDbConnection();
 
-    const [rawRows] = hospcode
-      ? await conn.query(
-          `SELECT ${CSV_COLUMNS.join(", ")}
-           FROM \`t_person_type_1_3\`
-           WHERE hos LIKE '%,%' AND FIND_IN_SET(?, hos)
-           ORDER BY cid`,
-          [hospcode]
-        )
-      : await conn.query(
-          `SELECT ${CSV_COLUMNS.join(", ")}
-           FROM \`t_person_type_1_3\`
-           WHERE hos LIKE '%,%'
-           ORDER BY cid`
-        );
+    const [rawRows] = await conn.query(
+      `SELECT ${CSV_COLUMNS.join(", ")}
+       FROM \`t_person_type_1_3\`
+       WHERE hos LIKE '%,%' AND FIND_IN_SET(?, hos)
+       ORDER BY cid`,
+      [hospcode]
+    );
 
     const hospNames = await getHospNameMap(conn);
 

@@ -21,22 +21,26 @@ test("person-dup API reads the transform summary, not raw person, and never expo
   }
 });
 
-test("person-dup export requires login, redirects browser links to /error/msg, and omits cid", () => {
+test("person-dup export requires login, requires hospcode, redirects browser links to /error/msg, and omits cid", () => {
   assert.match(exportSource, /requireApiJwt/);
   assert.match(exportSource, /\/error\/msg\?msg=/);
   assert.match(exportSource, /t_person_type_1_3/);
   // ไม่ส่งออกคอลัมน์ cid (ordering by cid ยังทำได้ แต่ห้ามเป็น key/header ผลลัพธ์)
   assert.doesNotMatch(exportSource, /["']cid["']/);
+  // บังคับต้องกรองหน่วยบริการก่อนจึงส่งออกได้ (ทั้งฝั่ง UI และ API)
+  assert.match(exportSource, /if \(!hospcode\)/);
+  assert.match(exportSource, /กรุณาเลือกหน่วยบริการก่อนส่งออก/);
   assert.match(exportSource, /FIND_IN_SET\(\?, hos\)/);
   assert.match(exportSource, /อายุ ณ วันเริ่มปีงบประมาณ/);
   assert.match(exportSource, /อายุปัจจุบัน/);
 });
 
-test("person-dup page has an xlsx export link that carries the selected hospcode", () => {
+test("person-dup page has an xlsx export link that only enables once a hospcode is selected", () => {
   assert.match(pageSource, /exportXlsxLink/);
   assert.match(pageSource, /FileSpreadsheet/);
   assert.match(pageSource, /\/api\/quality\/person-dup\/export/);
-  assert.match(pageSource, /selectedHospcode \? `\?hospcode=/);
+  assert.match(pageSource, /href=\{selectedHospcode \? `\/api\/quality\/person-dup\/export\?hospcode=/);
+  assert.match(pageSource, /disabled=\{!selectedHospcode\}/);
 });
 
 test("person-dup page shows the required columns with a hospcode filter and no visible label", () => {

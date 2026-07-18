@@ -112,8 +112,9 @@ export default function QualityPersonDupPage() {
             ทั้งหมด {filteredPersons.length.toLocaleString("th-TH")} คน
             <ExcelExportButton
               className="exportXlsxLink"
-              href={`/api/quality/person-dup/export${selectedHospcode ? `?hospcode=${encodeURIComponent(selectedHospcode)}` : ""}`}
-              title="ส่งออกรายชื่อแบบปกปิดเป็น Excel"
+              href={selectedHospcode ? `/api/quality/person-dup/export?hospcode=${encodeURIComponent(selectedHospcode)}` : undefined}
+              disabled={!selectedHospcode}
+              title={selectedHospcode ? "ส่งออกรายชื่อแบบปกปิดเป็น Excel" : "กรุณาเลือกหน่วยบริการก่อนส่งออก"}
             >
               <FileSpreadsheet aria-hidden="true" />
               <span className="srOnly">ส่งออก Excel</span>
