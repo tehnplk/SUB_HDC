@@ -2,7 +2,7 @@
 - Health Data Center  , Dashboard and Health Data Analysis
 - Get raw  data from  `ข้อมูล 43 แฟ้มตามมาตรฐานโครงสร้างกระทรวงสาธารณสุข`
 
-## dataset  schema  and its master data
+## dataset  schema  and its master data of  43 filse standard structure
 - 43 files schema  at directory @43tables_schema
 - use `nlm` cli to retieve its lookup from book  id `a61caa4a-17dd-457f-ab23-f3a65f51ed53`
 - use `db-cli` to get live master data from c_{master_table_name}
