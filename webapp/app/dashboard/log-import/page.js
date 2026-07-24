@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   AlertTriangle,
   CalendarClock,
@@ -85,8 +86,10 @@ function statusBadgeLabel(row) {
 }
 
 export default function LogImportDashboard() {
+  const pathname = usePathname();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [cleanupComplete, setCleanupComplete] = useState(false);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   // ค้นหาแบบ debounce — พิมพ์หยุด 400ms ค่อยยิง fetch (server-side filter)
@@ -126,11 +129,34 @@ export default function LogImportDashboard() {
   }, [page, activeStatusTab, debouncedSearch]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    if (pathname !== "/import-check/log-import") {
+      setCleanupComplete(true);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setCleanupComplete(false);
+    fetch("/api/log-import/cleanup", { method: "POST" })
+      .catch(() => null)
+      .finally(() => {
+        if (!cancelled) setCleanupComplete(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!cleanupComplete) return undefined;
     const controller = new AbortController();
     loadData(controller.signal);
 
     return () => controller.abort();
-  }, [loadData]);
+  }, [cleanupComplete, loadData]);
 
   const rows = data?.rows || [];
   const counts = data?.counts || { success: 0, failed: 0, pending: 0 };

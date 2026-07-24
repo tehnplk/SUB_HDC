@@ -5,6 +5,7 @@ import test from "node:test";
 
 const pagePath = path.resolve(process.cwd(), "app", "dashboard", "log-import", "page.js");
 const routePath = path.resolve(process.cwd(), "app", "api", "dashboard", "route.js");
+const cleanupRoutePath = path.resolve(process.cwd(), "app", "api", "log-import", "cleanup", "route.js");
 const cssPath = path.resolve(process.cwd(), "app", "globals.css");
 
 test("log import page hides not_complete_msg column and reveals it from not_complate status", async () => {
@@ -153,6 +154,20 @@ test("log import page hides the total history label row", async () => {
 
   assert.doesNotMatch(pageSource, /รายการประวัติการนำเข้าทั้งหมด/);
   assert.doesNotMatch(pageSource, /className="tableMeta metaLine"/);
+});
+
+test("import-check log page cleans expired failed rows before its first data load", async () => {
+  const pageSource = await readFile(pagePath, "utf8");
+  const cleanupRouteSource = await readFile(cleanupRoutePath, "utf8");
+
+  assert.match(pageSource, /usePathname/);
+  assert.match(pageSource, /pathname !== "\/import-check\/log-import"/);
+  assert.match(pageSource, /fetch\("\/api\/log-import\/cleanup", \{ method: "POST" \}\)/);
+  assert.match(pageSource, /if \(!cleanupComplete\) return undefined;[\s\S]*loadData\(controller\.signal\)/);
+  assert.match(cleanupRouteSource, /export async function POST\(\)/);
+  assert.doesNotMatch(cleanupRouteSource, /export async function GET\(\)/);
+  assert.match(cleanupRouteSource, /deleteExpiredFailedLogImports\(conn\)/);
+  assert.match(cleanupRouteSource, /if \(conn\) await conn\.end\(\)/);
 });
 
 test("log import status tabs show icons", async () => {

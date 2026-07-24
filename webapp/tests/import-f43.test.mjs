@@ -4,6 +4,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
+import { Readable } from "node:stream";
 import test from "node:test";
 
 import AdmZip from "adm-zip";
@@ -267,7 +268,8 @@ test("load-data import writes log_import_id metadata instead of source file colu
       }
       throw new Error(`Unexpected execute: ${sql} ${values}`);
     },
-    async query(sql) {
+    async query(request) {
+      const sql = typeof request === "string" ? request : request.sql;
       // importFile ตั้ง net_read/write_timeout ต่อ session ก่อน LOAD DATA
       // กัน connection แขวนตอน network สะดุด — ข้าม statement นั้นในการตรวจ
       if (/^SET SESSION/i.test(sql.trim())) {
@@ -302,6 +304,250 @@ test("load-data import writes log_import_id metadata instead of source file colu
   assert.equal(loadedSource, "11251|1|20260101|42\n");
 });
 
+test("load-data meter preserves every byte when mysql2 attaches its consumer later", async () => {
+  const loader = require("../lib/import_f43_load_data.js");
+  let loadedSource = "";
+  const connection = {
+    async execute(sql) {
+      if (/^SHOW COLUMNS/i.test(sql)) {
+        return [[{ Field: "hospcode" }, { Field: "log_import_id" }]];
+      }
+      throw new Error(`Unexpected execute: ${sql}`);
+    },
+    async query(request) {
+      const sql = typeof request === "string" ? request : request.sql;
+      if (/^SET SESSION/i.test(sql.trim())) return [{}];
+
+      const sourcePath = sql.match(/LOAD DATA LOCAL INFILE '([^']+)'/)?.[1];
+      const meteredSource = request.infileStreamFactory(sourcePath);
+      await new Promise((resolve) => setTimeout(resolve, 25));
+      for await (const chunk of meteredSource) {
+        loadedSource += chunk.toString("utf8");
+      }
+      return [{ affectedRows: 1 }];
+    },
+    destroy() {
+      throw new Error("healthy delayed consumer must not destroy its connection");
+    },
+  };
+
+  await withTempZip({}, async (zipPath) => {
+    await loader.importFile(
+      connection,
+      {
+        tableName: "service",
+        fileName: "delayed-consumer.txt",
+        columns: ["hospcode"],
+        rows: [["11251"]],
+      },
+      500,
+      "replace",
+      undefined,
+      42,
+      {
+        tmpDir: path.dirname(zipPath),
+        inactivityTimeoutMs: 100,
+      }
+    );
+  });
+
+  assert.equal(loadedSource, "11251|42\n");
+});
+
+test("load-data inactivity timeout allows a long import while stream bytes stay active", async () => {
+  const loader = require("../lib/import_f43_load_data.js");
+  let destroyed = 0;
+  let chunkIndex = 0;
+  const connection = {
+    async execute(sql) {
+      if (/^SHOW COLUMNS/i.test(sql)) {
+        return [[{ Field: "hospcode" }, { Field: "log_import_id" }]];
+      }
+      throw new Error(`Unexpected execute: ${sql}`);
+    },
+    async query(request) {
+      const sql = typeof request === "string" ? request : request.sql;
+      if (/^SET SESSION/i.test(sql.trim())) return [{}];
+
+      const sourcePath = sql.match(/LOAD DATA LOCAL INFILE '([^']+)'/)?.[1];
+      const source = request.infileStreamFactory(sourcePath);
+      await new Promise((resolve, reject) => {
+        source.once("end", resolve);
+        source.once("error", reject);
+        source.resume();
+      });
+      return [{ affectedRows: 1 }];
+    },
+    destroy() {
+      destroyed += 1;
+    },
+  };
+
+  await withTempZip({}, async (zipPath) => {
+    const result = await loader.importFile(
+      connection,
+      {
+        tableName: "service",
+        fileName: "active-source.txt",
+        columns: ["hospcode"],
+        rows: [["11251"]],
+      },
+      500,
+      "replace",
+      undefined,
+      42,
+      {
+        tmpDir: path.dirname(zipPath),
+        inactivityTimeoutMs: 40,
+        createReadStream() {
+          return new Readable({
+            read() {
+              if (this.pendingChunk) return;
+              this.pendingChunk = true;
+              setTimeout(() => {
+                this.pendingChunk = false;
+                if (chunkIndex >= 6) {
+                  this.push(null);
+                  return;
+                }
+                chunkIndex += 1;
+                this.push(Buffer.from("x"));
+              }, 15);
+            },
+          });
+        },
+      }
+    );
+
+    assert.equal(result.rows, 1);
+  });
+
+  assert.equal(chunkIndex, 6);
+  await new Promise((resolve) => setTimeout(resolve, 60));
+  assert.equal(destroyed, 0);
+});
+
+test("load-data no-data stall destroys only its connection and preserves cleanup context", async () => {
+  const loader = require("../lib/import_f43_load_data.js");
+  let destroyed = 0;
+  let tempPath;
+  const connection = {
+    async execute(sql) {
+      if (/^SHOW COLUMNS/i.test(sql)) {
+        return [[{ Field: "hospcode" }, { Field: "log_import_id" }]];
+      }
+      throw new Error(`Unexpected execute: ${sql}`);
+    },
+    async query(request) {
+      const sql = typeof request === "string" ? request : request.sql;
+      if (/^SET SESSION/i.test(sql.trim())) return [{}];
+
+      tempPath = sql.match(/LOAD DATA LOCAL INFILE '([^']+)'/)?.[1];
+      const source = request.infileStreamFactory(tempPath);
+      source.resume();
+      return new Promise(() => {});
+    },
+    destroy() {
+      destroyed += 1;
+    },
+  };
+
+  await withTempZip({}, async (zipPath) => {
+    await assert.rejects(
+      () => loader.importFile(
+        connection,
+        {
+          tableName: "chronic",
+          fileName: "stalled-source.txt",
+          columns: ["hospcode"],
+          rows: [["11251"]],
+        },
+        500,
+        "replace",
+        undefined,
+        42,
+        {
+          tmpDir: path.dirname(zipPath),
+          inactivityTimeoutMs: 25,
+          createReadStream() {
+            return new Readable({
+              read() {},
+            });
+          },
+        }
+      ),
+      (error) => {
+        assert.equal(error.code, "ETIMEDOUT");
+        assert.equal(error.transient, true);
+        assert.equal(error.inactivityTimeoutMs, 25);
+        assert.equal(error.bytesRead, 0);
+        assert.match(error.message, /LOAD DATA stream ETIMEDOUT/);
+        assert.match(error.message, /file=stalled-source\.txt/);
+        assert.match(error.message, /table=chronic/);
+        return true;
+      }
+    );
+
+    await assert.rejects(readFile(tempPath), { code: "ENOENT" });
+  });
+
+  assert.equal(destroyed, 1);
+});
+
+test("load-data query rejection destroys source and meter before removing the temp file", async () => {
+  const loader = require("../lib/import_f43_load_data.js");
+  let source;
+  let meter;
+  let tempPath;
+  const connection = {
+    async execute(sql) {
+      if (/^SHOW COLUMNS/i.test(sql)) {
+        return [[{ Field: "hospcode" }, { Field: "log_import_id" }]];
+      }
+      throw new Error(`Unexpected execute: ${sql}`);
+    },
+    async query(request) {
+      const sql = typeof request === "string" ? request : request.sql;
+      if (/^SET SESSION/i.test(sql.trim())) return [{}];
+
+      tempPath = sql.match(/LOAD DATA LOCAL INFILE '([^']+)'/)?.[1];
+      meter = request.infileStreamFactory(tempPath);
+      throw new Error("synthetic query rejection");
+    },
+  };
+
+  await withTempZip({}, async (zipPath) => {
+    await assert.rejects(
+      () => loader.importFile(
+        connection,
+        {
+          tableName: "chronic",
+          fileName: "query-rejected.txt",
+          columns: ["hospcode"],
+          rows: [["11251"]],
+        },
+        500,
+        "replace",
+        undefined,
+        42,
+        {
+          tmpDir: path.dirname(zipPath),
+          inactivityTimeoutMs: 100,
+          createReadStream() {
+            source = new Readable({ read() {} });
+            return source;
+          },
+        }
+      ),
+      /synthetic query rejection.*file=query-rejected\.txt, table=chronic/
+    );
+
+    assert.equal(source.destroyed, true);
+    assert.equal(meter.destroyed, true);
+    await assert.rejects(readFile(tempPath), { code: "ENOENT" });
+  });
+});
+
 test("load-data import adds table column context to MySQL errors", async () => {
   const loader = require("../lib/import_f43_load_data.js");
   const connection = {
@@ -317,7 +563,8 @@ test("load-data import adds table column context to MySQL errors", async () => {
       }
       throw new Error(`Unexpected execute: ${sql}`);
     },
-    async query(sql) {
+    async query(request) {
+      const sql = typeof request === "string" ? request : request.sql;
       if (/^SET SESSION/i.test(sql.trim())) {
         return [{}];
       }

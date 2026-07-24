@@ -197,6 +197,7 @@ test("isTransientImportFailure separates network errors from data errors", () =>
   assert.equal(isTransientImportFailure("Connection lost: The server closed the connection."), true);
   assert.equal(isTransientImportFailure("Can't add new command when connection is in closed state"), true);
   assert.equal(isTransientImportFailure("read ECONNRESET"), true);
+  assert.equal(isTransientImportFailure("LOAD DATA stream ETIMEDOUT after 900000ms"), true);
 
   // data errors → fail จริง (ห้าม re-queue — retry ไปก็พังซ้ำ)
   assert.equal(isTransientImportFailure("Data too long for column 'house' at row 1"), false);

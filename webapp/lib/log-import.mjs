@@ -21,6 +21,16 @@ export async function createPendingLogImportFile(connection, fileName, fileSize 
   return result.insertId;
 }
 
+export async function deleteExpiredFailedLogImports(connection) {
+  const [result] = await connection.execute(
+    `DELETE FROM \`log_import_file\`
+     WHERE \`status\` IN (?, ?)
+       AND \`import_date_time\` < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 5 DAY)`,
+    ["not_complate", "no_complete"]
+  );
+  return result.affectedRows;
+}
+
 // Marks a single import as not_complate if the import process died before
 // finishing. Guarded so it never overwrites a record the importer already
 // finalized itself.
