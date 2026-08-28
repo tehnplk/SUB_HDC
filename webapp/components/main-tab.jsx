@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, AlarmClock, ClipboardList, Database, FileText, ShieldCheck, Sparkles, Target } from "lucide-react";
+import { Activity, ClipboardList, Database, FileText, Map, ShieldCheck, Target } from "lucide-react";
 import AddonTab from "@/components/addon-tab";
 
 const TABS = [
@@ -13,19 +12,14 @@ const TABS = [
   { href: "/target-group/index", label: "กลุ่มเป้าหมาย", Icon: Target },
   { href: "/workload", label: "Work Load", Icon: Activity },
   { href: "/report/index", label: "รายงาน", Icon: ClipboardList },
-  { href: "/ai/chat", label: "Ask AI", Icon: Sparkles },
 ];
 
-// กลุ่มขวาของ tab bar — ชิดขอบขวา; badge = จำนวนหัวข้อที่ต้องเร่งรัด
-// (ยังเป็นค่าคงที่ตามหัวข้อใน /rapid/index — มีระบบนับจริงค่อยเปลี่ยนเป็น fetch)
+// กลุ่มขวาของ tab bar — ชิดขอบขวา
 const TABS_END = [
-  { href: "/rapid/index", label: "เร่งรัดติดตาม", Icon: AlarmClock, badge: 4 },
+  { href: "/gis", label: "GIS", Icon: Map },
 ];
 
-const BADGE_BLINK_KEY = "tabBadgeBlinked";
-const BADGE_BLINK_MS = 10000;
-
-function renderTab(tab, pathname, badgeBlink, extraClass = "") {
+function renderTab(tab, pathname, extraClass = "") {
   const Icon = tab.Icon;
   const isActive = pathname === tab.href
     || (tab.href === "/quality" && pathname.startsWith("/quality/"))
@@ -33,7 +27,7 @@ function renderTab(tab, pathname, badgeBlink, extraClass = "") {
     || (tab.href === "/import-check/index" && pathname.startsWith("/import-check/"))
     || (tab.href === "/target-group/index" && pathname.startsWith("/target-group/"))
     || (tab.href === "/workload" && pathname.startsWith("/workload"))
-    || (tab.href === "/rapid/index" && pathname.startsWith("/rapid/"))
+    || (tab.href === "/gis" && pathname.startsWith("/gis/"))
     || (tab.href === "/report/index" && pathname.startsWith("/report/"));
 
   return (
@@ -44,32 +38,17 @@ function renderTab(tab, pathname, badgeBlink, extraClass = "") {
     >
       <Icon aria-hidden="true" />
       {tab.label}
-      {tab.badge ? (
-        <span className={`tabBadgeDanger${badgeBlink ? " tabBadgeBlink" : ""}`}>{tab.badge}</span>
-      ) : null}
     </Link>
   );
 }
 
 export default function MainTab() {
   const pathname = usePathname();
-  // กระพริบแบบ fade 5 วิเฉพาะครั้งแรกของ session — จำผ่าน sessionStorage
-  // ไม่ให้กระพริบซ้ำทุกครั้งที่เปลี่ยนหน้า
-  const [badgeBlink, setBadgeBlink] = useState(false);
-
-  useEffect(() => {
-    if (sessionStorage.getItem(BADGE_BLINK_KEY)) return;
-    sessionStorage.setItem(BADGE_BLINK_KEY, "1");
-    setBadgeBlink(true);
-    const timer = setTimeout(() => setBadgeBlink(false), BADGE_BLINK_MS);
-    return () => clearTimeout(timer);
-  }, []);
 
   return (
     <nav className="tabsContainer" aria-label="เมนูหลัก">
-      {/* กระพริบเฉพาะ badge ของกลุ่มขวา (งานเร่งรัดติดตาม) — กลุ่มซ้ายไม่กระพริบ */}
-      {TABS.map((tab) => renderTab(tab, pathname, false))}
-      {TABS_END.map((tab, index) => renderTab(tab, pathname, badgeBlink, index === 0 ? " tabButtonEnd" : ""))}
+      {TABS.map((tab) => renderTab(tab, pathname))}
+      {TABS_END.map((tab, index) => renderTab(tab, pathname, index === 0 ? " tabButtonEnd" : ""))}
       <AddonTab />
     </nav>
   );

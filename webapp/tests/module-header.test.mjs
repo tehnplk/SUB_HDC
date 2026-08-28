@@ -89,27 +89,23 @@ test("target-group is a main-tab module with an index menu of its child topics",
   assert.match(headerSource, /const currentPages = Array\.isArray\(currentPage\)/);
 });
 
-test("rapid is a right-aligned main-tab module with a title-only topic list", () => {
-  const rapidIndexSource = readFileSync(
-    new URL("../app/rapid/index/page.js", import.meta.url),
-    "utf8"
-  );
+test("gis is the right-aligned main-tab module", () => {
+  const gisSource = readFileSync(new URL("../app/gis/page.js", import.meta.url), "utf8");
 
   assert.match(mainTabSource, /TABS_END/);
   assert.match(mainTabSource, /tabButtonEnd/);
-  assert.match(mainTabSource, /\/rapid\/index/);
-  assert.match(mainTabSource, /href: "\/rapid\/index", label: "เร่งรัดติดตาม"/);
-  assert.match(mainTabSource, /pathname\.startsWith\("\/rapid\/"\)/);
-  // breadcrumb entry ของ rapid ย้ายไปอยู่ใน _lib ของ module แล้ว — header แค่ import มาต่อ
-  assert.match(headerSource, /RAPID_BREADCRUMB/);
-  assert.match(rapidIndexSource, /ModuleHeader/);
-  assert.match(rapidIndexSource, /moduleTopicList/);
-  assert.match(rapidIndexSource, /TopicBullet/);
-  // ชื่อหัวข้อมาจาก config (RAPID_MENU) — ใช้ชื่อเดียวกับ report.name
-  assert.match(rapidIndexSource, /RAPID_MENU/);
-  // bullet เป็นข้อความบรรทัดเดียว — ไม่มี description ใต้หัวข้อ
-  assert.doesNotMatch(rapidIndexSource, /<small>/);
-  assert.match(rapidIndexSource, /TopicBullet/);
+  assert.match(mainTabSource, /href: "\/gis", label: "GIS"/);
+  assert.match(mainTabSource, /pathname\.startsWith\("\/gis\/"\)/);
+  // /gis ไม่มี breadcrumb — หน้าเป็นแผนที่เต็มพื้นที่ ไม่ต้องมีป้าย "GIS" ซ้ำกับ tab
+  assert.doesNotMatch(headerSource, /prefix: "\/gis"/);
+  assert.match(gisSource, /ModuleHeader/);
+  // กลุ่มขวา (GIS + Add-On) ชิดขอบขวาผ่าน tabButtonEnd — ต้องเป็น rule ระดับบนสุด
+  // ต่อจาก .tabsContainer ไม่ใช่อยู่ใน @media ไม่งั้นชิดขวาเฉพาะจอเล็ก
+  assert.match(
+    globalCss,
+    /\.tabsContainer \{\s*display: flex;[^}]*\}\s*(?:\/\*[^*]*\*\/\s*)?\.tabButton\.tabButtonEnd \{\s*margin-left: auto;/,
+  );
+  assert.doesNotMatch(globalCss, /\.addonTabWrap \{[^}]*margin-left: auto;/);
 });
 
 test("all portal topic menus use one topic-only line", () => {
@@ -120,7 +116,6 @@ test("all portal topic menus use one topic-only line", () => {
     "../app/target-group/index/page.js",
     "../app/target-group/kpi/page.js",
     "../app/workload/page.js",
-    "../app/rapid/index/page.js",
   ].map((path) => readFileSync(new URL(path, import.meta.url), "utf8"));
 
   for (const portalSource of portalSources) {

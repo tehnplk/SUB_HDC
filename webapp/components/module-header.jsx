@@ -9,8 +9,6 @@ import MainTab from "@/components/main-tab";
 import FloatingUserMenu from "@/components/floating-user-menu";
 import Breadcrumb from "@/components/breadcrumb";
 import { useUserSession } from "@/components/user-session-context";
-// แต่ละ module เป็นเจ้าของ breadcrumb entry ของตัวเองใน _lib — ที่นี่แค่ import มาต่อ
-import { RAPID_BREADCRUMB } from "@/app/rapid/_lib/rapid-reports.mjs";
 
 const BREADCRUMB_MODULES = [
   {
@@ -63,12 +61,10 @@ const BREADCRUMB_MODULES = [
       ],
     },
   },
-  RAPID_BREADCRUMB,
   { prefix: "/report", href: "/report/index", label: "รายงาน" },
   { prefix: "/dashboard/report", href: "/report/index", label: "รายงาน" },
   { prefix: "/ai/chat", href: "/ai/chat", label: "Ask AI" },
   { prefix: "/upload", href: "/upload", label: "นำเข้าไฟล์" },
-  { prefix: "/person", href: "/person", label: "ข้อมูลประชากร" },
   { prefix: "/update-log", href: "/update-log", label: "ประวัติการปรับปรุง" },
   { prefix: "/admin/addon", href: "/admin/addon", label: "จัดการระบบ Add-On" },
   { prefix: "/admin", href: "/admin", label: "User management" },

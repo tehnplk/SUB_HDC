@@ -10,10 +10,6 @@ test("grid Excel exports use the shared ExcelExportButton", async () => {
     "app/workload/visit-monthly/page.js",
     "app/workload/ncdscreen-workload/page.js",
     "app/quality/person-dup/page.js",
-    "app/rapid/dm-control/page.js",
-    "app/rapid/mmr2/page.js",
-    "app/rapid/screen-dm/page.js",
-    "app/rapid/screen-ht/page.js",
     "app/target-group/kpi/page.js",
     "app/dashboard/report/page.js",
   ];

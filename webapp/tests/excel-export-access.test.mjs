@@ -8,7 +8,6 @@ test("Excel exports deny Guest and unauthenticated users at every file endpoint"
   const guardSource = read("../lib/auth-guard.mjs");
   const dmHtExport = read("../app/api/dm-ht-count/export/route.js");
   const personDupExport = read("../app/api/quality/person-dup/export/route.js");
-  const rapidExport = read("../app/api/rapid/[id]/export/route.js");
   const aiExport = read("../app/api/ai/export/[filename]/route.js");
   const visitWorkloadExport = read("../app/api/visit-monthly-workload/export/route.js");
   const ncdWorkloadExport = read("../app/api/ncdscreen-workload/export/route.js");
@@ -20,7 +19,6 @@ test("Excel exports deny Guest and unauthenticated users at every file endpoint"
   for (const source of [
     dmHtExport,
     personDupExport,
-    rapidExport,
     aiExport,
     visitWorkloadExport,
     ncdWorkloadExport,

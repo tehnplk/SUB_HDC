@@ -26,6 +26,23 @@ test("docker compose runs database migrations in a one-shot migrate service", as
   assert.doesNotMatch(compose, /node lib\/run_migrations\.js && npm run start/);
 });
 
+test("docker compose includes a PostGIS service for the GIS module", async () => {
+  const compose = await readFile(composePath, "utf8");
+
+  assert.match(compose, /\n  postgis:/);
+  assert.match(compose, /container_name:\s*sub_hdc_postgis/);
+  assert.match(compose, /image:\s*postgis\/postgis:17-3\.5/);
+  assert.match(compose, /POSTGRES_DB:\s*sub_hdc_gis/);
+  // 5432/5433 ถูกใช้โดย postgres ตัวอื่นบนเครื่อง dev
+  assert.match(compose, /- "5434:5432"/);
+  assert.match(compose, /- sub_hdc_postgis_data:\/var\/lib\/postgresql\/data/);
+  assert.match(compose, /pg_isready -U postgres -d sub_hdc_gis/);
+  assert.match(compose, /volumes:[\s\S]*\n  sub_hdc_postgis_data:/);
+  // image สร้าง extension postgis เองตอน init — mount ทับโฟลเดอร์ initdb จะบัง
+  // script นั้น mount initdb จึงต้องมีที่เดียวคือของ mariadb
+  assert.equal((compose.match(/docker-entrypoint-initdb\.d/g) || []).length, 1);
+});
+
 test("docker compose includes hourly sync service mounted at /sync", async () => {
   const compose = await readFile(composePath, "utf8");
 

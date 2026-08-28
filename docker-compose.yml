@@ -48,6 +48,32 @@ services:
       retries: 20
       start_period: 5s
 
+  postgis:
+    image: postgis/postgis:17-3.5
+    container_name: sub_hdc_postgis
+    restart: unless-stopped
+    # ฐานข้อมูลเชิงพื้นที่ของโมดูล GIS — แยกจาก MariaDB (แฟ้มดิบ F43/ตารางสรุป
+    # ยังอยู่ที่ mariadb เหมือนเดิม). image สร้าง extension postgis /
+    # postgis_topology ให้ POSTGRES_DB เองตอน init ครั้งแรก — ห้าม mount ทับ
+    # โฟลเดอร์ initdb ของ image เพราะจะบัง script ที่สร้าง extension ให้
+    environment:
+      POSTGRES_DB: sub_hdc_gis
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "112233"
+      TZ: Asia/Bangkok
+      PGTZ: Asia/Bangkok
+    # host port 5434 — 5432/5433 ถูกใช้โดย postgres ตัวอื่นบนเครื่อง dev แล้ว
+    ports:
+      - "5434:5432"
+    volumes:
+      - sub_hdc_postgis_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sub_hdc_gis"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
   migrate:
     build:
       context: ./migrate
@@ -196,3 +222,4 @@ services:
 volumes:
   sub_hdc_mariadb_data:
   sub_hdc_redis_data:
+  sub_hdc_postgis_data:
