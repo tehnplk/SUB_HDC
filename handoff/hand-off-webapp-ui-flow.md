@@ -16,6 +16,9 @@
 - `/gis` (label `GIS`, lucide `Map`) occupies the right-aligned `TABS_END` group in
   `main-tab.jsx`; `.tabButton.tabButtonEnd { margin-left: auto }` pushes that group
   and the trailing Add-On tab to the right edge of the tab bar.
+- `/gis` is listed in `PROTECTED_PAGE_PREFIXES` in `webapp/proxy.js`, so anonymous
+  visitors are sent to login and `guest` (role ID 4) is denied; `user`, `superuser`,
+  and `admin` can access it. The read-only `/api/gis/*` endpoints remain public.
 - Breadcrumb entry: `{ prefix: "/gis", href: "/gis", label: "GIS" }` in
   `module-header.jsx`.
 - `webapp/app/gis/page.js` renders `ModuleHeader` + `<GisMap />`. `/gis` deliberately

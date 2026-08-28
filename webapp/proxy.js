@@ -5,6 +5,7 @@ import { auth } from "./auth";
 const PROTECTED_PAGE_PREFIXES = [
   "/person",
   "/ai",
+  "/gis",
   "/dashboard/report",
   "/report",
   "/quality/person-dup",

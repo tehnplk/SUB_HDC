@@ -6,6 +6,7 @@ const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 
 const mapSource = read("../components/gis-map.jsx");
 const pageSource = read("../app/gis/page.js");
+const proxySource = read("../proxy.js");
 const globalCss = read("../app/globals.css");
 const packageJson = JSON.parse(read("../package.json"));
 
@@ -13,6 +14,11 @@ test("/gis renders the leaflet map component", () => {
   assert.match(pageSource, /import GisMap from "@\/components\/gis-map"/);
   assert.match(pageSource, /<GisMap \/>/);
   assert.ok(packageJson.dependencies.leaflet);
+});
+
+test("/gis requires a User role or higher", () => {
+  assert.match(proxySource, /const PROTECTED_PAGE_PREFIXES = \[[\s\S]*?"\/gis"[\s\S]*?\];/);
+  assert.match(proxySource, /Number\(request\.auth\.user\.roleId\) === 4/);
 });
 
 test("the map loads leaflet on the client only and cleans itself up", () => {
