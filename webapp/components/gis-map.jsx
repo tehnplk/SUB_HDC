@@ -224,6 +224,7 @@ export default function GisMap() {
   const [ready, setReady] = useState(false);
   const [activeLayer, setActiveLayer] = useState(BASE_LAYERS[0].label);
   const [vulnerableTypes, setVulnerableTypes] = useState([]);
+  const [hospitals, setHospitals] = useState([]);
   const [activeDataLayers, setActiveDataLayers] = useState(() =>
     Object.fromEntries(BASE_DATA_PANEL.layers.map(({ id, defaultOn }) => [id, defaultOn === true]))
   );
@@ -309,6 +310,22 @@ export default function GisMap() {
       if (dataLayer && config.style) dataLayer.setStyle(dataLayerStyle(activeLayer, config));
     });
   }, [ready, activeLayer, dataLayers]);
+
+  // หน่วยบริการในอำเภอ ใช้เป็นตัวเลือกแรกของฟอร์มก่อนค้นรายชื่อ
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch("/api/gis/hospitals", { cache: "no-store" })
+      .then((res) => res.json())
+      .then(({ items }) => {
+        if (!cancelled) setHospitals(items ?? []);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // ดึงประเภทกลุ่มเปราะบางมาสร้าง checkbox — ไม่ผูกกับ leaflet ทำได้ตั้งแต่ mount
   useEffect(() => {
@@ -527,8 +544,9 @@ export default function GisMap() {
   useEffect(() => {
     if (!formOpen) return;
     // ต่ำกว่า 2 ตัวอักษรยังไม่ค้น — กว้างเกินไปและกวาดทั้งแฟ้ม person
+    // และต้องเลือกหน่วยบริการก่อน ไม่งั้นได้คนทั้งอำเภอมาปนกัน
     const query = personQuery.trim();
-    if (query.length < 2) {
+    if (!draftFields.hospcode || query.length < 2) {
       setPersonResults([]);
       setPersonError("");
       setPersonSearched(false);
@@ -538,7 +556,9 @@ export default function GisMap() {
 
     const timer = setTimeout(() => {
       setPersonSearching(true);
-      fetch(`/api/gis/person-search?q=${encodeURIComponent(query)}`, { cache: "no-store" })
+      const url = `/api/gis/person-search?q=${encodeURIComponent(query)}`
+        + `&hospcode=${encodeURIComponent(draftFields.hospcode)}`;
+      fetch(url, { cache: "no-store" })
         .then(async (res) => {
           const body = await res.json();
           // หน้าแผนที่เปิดสาธารณะ แต่การค้นรายชื่อต้อง login — บอกให้ตรงเหตุ
@@ -567,7 +587,7 @@ export default function GisMap() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [personQuery, formOpen]);
+  }, [personQuery, formOpen, draftFields.hospcode]);
 
   const setDraftField = (field) => (event) =>
     setDraftFields((current) => ({ ...current, [field]: event.target.value }));
@@ -582,6 +602,19 @@ export default function GisMap() {
           <p className="gisAddFormCoord">
             {draftPos.lat.toFixed(5)}, {draftPos.lng.toFixed(5)}
           </p>
+
+          {/* เลือกหน่วยบริการก่อน แล้วค่อยค้นรายชื่อ — การค้นถูกจำกัดตามหน่วยที่เลือก */}
+          <label>
+            <span className="srOnly">หน่วยบริการ</span>
+            <select value={draftFields.hospcode} onChange={setDraftField("hospcode")} required>
+              <option value="">เลือกหน่วยบริการ</option>
+              {hospitals.map(({ hospcode, hospname_short: name }) => (
+                <option key={hospcode} value={hospcode}>
+                  {hospcode} {name}
+                </option>
+              ))}
+            </select>
+          </label>
 
           <label>
             <span className="srOnly">กลุ่มเปราะบาง</span>
@@ -604,8 +637,9 @@ export default function GisMap() {
                   setDraftField("fullname")(event);
                   setPersonQuery(event.target.value);
                 }}
-                placeholder="ค้นชื่อ เว้นวรรคแล้วพิมพ์นามสกุล"
+                placeholder={draftFields.hospcode ? "ค้นชื่อ เว้นวรรคแล้วพิมพ์นามสกุล" : "เลือกหน่วยบริการก่อน"}
                 autoComplete="off"
+                disabled={!draftFields.hospcode}
               />
             </label>
             {personSearching ? <p className="gisPersonHint">กำลังค้นหา…</p> : null}
@@ -679,16 +713,10 @@ export default function GisMap() {
           </div>
 
           {/* หน่วยบริการ/PID เป็นคีย์ของระเบียน ปกติมาจากการเลือกรายชื่อ จึงอยู่ล่างสุด */}
-          <div className="gisAddFormRow">
-            <label>
-              <span className="srOnly">รหัสหน่วยบริการ</span>
-              <input value={draftFields.hospcode} onChange={setDraftField("hospcode")} placeholder="รหัสหน่วยบริการ" required />
-            </label>
-            <label>
-              <span className="srOnly">PID</span>
-              <input value={draftFields.pid} onChange={setDraftField("pid")} placeholder="PID" required />
-            </label>
-          </div>
+          <label>
+            <span className="srOnly">PID</span>
+            <input value={draftFields.pid} onChange={setDraftField("pid")} placeholder="PID" required />
+          </label>
 
           {saveError ? <p className="gisAddFormError">{saveError}</p> : null}
 

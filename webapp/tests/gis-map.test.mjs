@@ -109,8 +109,12 @@ test("the initial view fits the subdistrict boundary extent", () => {
   assert.match(mapSource, /async function fetchLayerGeoJson\(cache, id, url\)/);
   assert.match(mapSource, /if \(cache\[id\]\) return cache\[id\];/);
   assert.equal((mapSource.match(/fetchLayerGeoJson\(geoJsonCacheRef\.current/g) || []).length, 2);
-  // GeoJSON ถูกยิงจากที่เดียวคือ helper ตัวนี้ (fetch อื่นเป็น lookup/บันทึก)
-  assert.equal((mapSource.match(/fetch\(url,/g) || []).length, 1);
+  // GeoJSON ถูกยิงจากที่เดียวคือ helper ตัวนี้ (fetch อื่นเป็น lookup/ค้นชื่อ/บันทึก)
+  const helper = mapSource.slice(
+    mapSource.indexOf("async function fetchLayerGeoJson"),
+    mapSource.indexOf("export default function GisMap"),
+  );
+  assert.equal((helper.match(/fetch\(/g) || []).length, 1);
 });
 
 test("boundary lines stay visible when the imagery basemap is active", () => {
@@ -348,7 +352,7 @@ test("the draft form searches names from PERSON joined to HOME", () => {
   assert.match(searchSource, /FROM person p/);
   assert.match(searchSource, /LEFT JOIN home h ON h\.hospcode = p\.hospcode AND h\.hid = p\.hid/);
   // lname/house/cid เข้ารหัสไว้ กรองใน SQL ไม่ได้ ต้องถอดใน node แล้วค่อยกรอง
-  assert.match(searchSource, /WHERE p\.name LIKE \?/);
+  assert.match(searchSource, /AND p\.name LIKE \?/);
   // ค้นเฉพาะประชากรในเขต (typearea 1,3) ที่ยังไม่จำหน่าย (discharge 9)
   assert.match(searchSource, /AND p\.typearea IN \('1', '3'\)/);
   assert.match(searchSource, /AND p\.discharge = '9'/);
@@ -390,7 +394,7 @@ test("the name search needs only two characters and always shows feedback", () =
   const searchSource = read("../app/api/gis/person-search/route.js");
 
   assert.match(searchSource, /if \(query\.length < 2\) return Response\.json\(\{ items: \[\] \}\);/);
-  assert.match(mapSource, /if \(query\.length < 2\) \{/);
+  assert.match(mapSource, /if \(!draftFields\.hospcode \|\| query\.length < 2\) \{/);
   // ค้นแล้วไม่เจอ หรือ error ต้องมีข้อความบอก ไม่ใช่เงียบ
   assert.match(mapSource, /ไม่พบรายชื่อ/);
   assert.match(mapSource, /personSearched && personResults\.length === 0/);
@@ -403,16 +407,16 @@ test("the draft form orders keys last and forces a group choice", () => {
   const order = [...form.matchAll(/placeholder="([^"]+)"|<option value="">([^<]+)</g)]
     .map(([, placeholder, option]) => placeholder || option);
 
+  // หน่วยบริการมาก่อนสุด เพราะต้องเลือกก่อนถึงจะค้นรายชื่อได้
   assert.deepEqual(order, [
+    "เลือกหน่วยบริการ",
     "เลือกกลุ่ม",
-    "ค้นชื่อ เว้นวรรคแล้วพิมพ์นามสกุล",
     "เลขบัตรประชาชน",
     "ไม่ระบุเพศ",
     "บ้านเลขที่",
     "ถนน",
     "รหัสหมู่บ้าน",
     "ชื่อหมู่บ้าน",
-    "รหัสหน่วยบริการ",
     "PID",
   ]);
 
@@ -432,4 +436,28 @@ test("HOME address comes back with the person search, minus placeholder values",
   assert.match(searchSource, /village_name: cleanText\(row\.villaname\)/);
   // แฟ้ม HOME ใส่ "-" / "0" แทนค่าว่าง ต้องไม่เอามาเติมในฟอร์ม
   assert.match(searchSource, /return text === "-" \|\| text === "0" \? "" : text;/);
+});
+
+test("the pin form picks a facility in the district before searching a person", () => {
+  const hospitalsSource = read("../app/api/gis/hospitals/route.js");
+  const searchSource = read("../app/api/gis/person-search/route.js");
+
+  // รายชื่อหน่วยบริการมาจาก c_hospital ตามอำเภอใน .env AMP_CODE (จังหวัด2 + อำเภอ2)
+  assert.match(hospitalsSource, /FROM c_hospital/);
+  assert.match(hospitalsSource, /WHERE provcode = \? AND distcode = \? AND status = '1'/);
+  assert.match(hospitalsSource, /digits\.slice\(0, 2\), digits\.slice\(2, 4\)/);
+  assert.match(hospitalsSource, /if \(digits\.length !== 4\)/);
+
+  // ค้นรายชื่อต้องมี hospcode เสมอ ไม่งั้นได้คนทั้งอำเภอปนกัน
+  assert.match(searchSource, /if \(!hospcode\) return Response\.json\(\{ items: \[\] \}\);/);
+  assert.match(searchSource, /WHERE p\.hospcode = \?/);
+  assert.match(searchSource, /\[hospcode, `\$\{firstName\}%`, SCAN_LIMIT\]/);
+
+  // ฝั่งฟอร์ม: select หน่วยบริการ + ปิดช่องค้นชื่อจนกว่าจะเลือก
+  assert.match(mapSource, /fetch\("\/api\/gis\/hospitals", \{ cache: "no-store" \}\)/);
+  assert.match(mapSource, /<option value="">เลือกหน่วยบริการ<\/option>/);
+  assert.match(mapSource, /onChange=\{setDraftField\("hospcode"\)\} required/);
+  assert.match(mapSource, /disabled=\{!draftFields\.hospcode\}/);
+  assert.match(mapSource, /if \(!draftFields\.hospcode \|\| query\.length < 2\)/);
+  assert.match(mapSource, /&hospcode=\$\{encodeURIComponent\(draftFields\.hospcode\)\}/);
 });

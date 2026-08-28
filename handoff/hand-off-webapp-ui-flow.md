@@ -118,9 +118,13 @@
   needs two classes (`.gisMap.gisMapAdding`) to beat Leaflet's `.leaflet-grab`,
   which sets `cursor: grab` on the same element.
 - The draft form (`.gisAddForm`) posts to `POST /api/gis/vulnerable`. Field order is
-  กลุ่ม → ชื่อ-สกุล → เลขบัตร/เพศ → วันเกิด → บ้านเลขที่/ถนน → รหัสหมู่บ้าน/ชื่อหมู่บ้าน →
-  **หน่วยบริการ/PID last**, because those two are the record key and normally arrive
-  from picking a search result rather than being typed.
+  **หน่วยบริการ → กลุ่ม** → ชื่อ-สกุล → เลขบัตร/เพศ → วันเกิด → บ้านเลขที่/ถนน →
+  รหัสหมู่บ้าน/ชื่อหมู่บ้าน → PID last (PID is the record key and arrives from the
+  search rather than being typed).
+- หน่วยบริการ is a `required` `<select>` filled from
+  `GET /api/gis/hospitals`, which lists `c_hospital` rows for the district in
+  `AMP_CODE` (`provcode` = first 2 digits, `distcode` = last 2, `status = '1'`).
+  The name field stays **disabled** until a facility is picked.
 - The group `<select>` is `required` and starts on a `เลือกกลุ่ม` placeholder with
   `value=""` — no group is pre-selected, so the browser blocks the save until one is
   chosen.
@@ -134,8 +138,11 @@
   `10676`, 52k persons, 0 home rows) return people with no address at all, while
   units that did import it resolve ~70-90%. Blank address fields are that, not a
   broken join.
-- The search is limited to `typearea IN ('1','3')` (ประชากรในเขตรับผิดชอบ) and
-  `discharge = '9'` (ยังไม่จำหน่าย). On the current data that cuts a `สม%` search
+- The search is scoped to the chosen facility (`WHERE p.hospcode = ?`) and returns
+  nothing without one — searching a whole district at once gives far too many
+  same-name matches to pick from. It is further limited to
+  `typearea IN ('1','3')` (ประชากรในเขตรับผิดชอบ) and `discharge = '9'`
+  (ยังไม่จำหน่าย). On the current data that cuts a `สม%` search
   from 3,371 rows to 589, so the 300-row scan window holds only eligible people.
 - Only `person.name` is plaintext. `person.lname`, `person.cid_aes` and
   `home.house` are AES-256-GCM ciphertext written by the importer, so SQL filters

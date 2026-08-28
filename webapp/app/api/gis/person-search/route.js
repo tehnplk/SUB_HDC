@@ -38,7 +38,11 @@ export async function GET(request) {
   const unauthorized = await requireGisAuth();
   if (unauthorized) return unauthorized;
 
-  const query = (new URL(request.url).searchParams.get("q") || "").trim();
+  const params = new URL(request.url).searchParams;
+  const query = (params.get("q") || "").trim();
+  // บังคับเลือกหน่วยบริการก่อน — ค้นทั้งอำเภอทีเดียวได้ผลกว้างเกินจะเลือกถูกคน
+  const hospcode = (params.get("hospcode") || "").trim();
+  if (!hospcode) return Response.json({ items: [] });
   if (query.length < 2) return Response.json({ items: [] });
 
   const [firstName, ...rest] = query.split(/\s+/);
@@ -52,13 +56,14 @@ export async function GET(request) {
               h.house, h.road, h.villaname, h.village, h.tambon, h.ampur, h.changwat
          FROM person p
          LEFT JOIN home h ON h.hospcode = p.hospcode AND h.hid = p.hid
-        WHERE p.name LIKE ?
+        WHERE p.hospcode = ?
+          AND p.name LIKE ?
           -- เฉพาะประชากรในเขตรับผิดชอบ (typearea 1,3) ที่ยังไม่จำหน่าย (discharge 9)
           AND p.typearea IN ('1', '3')
           AND p.discharge = '9'
-        ORDER BY p.name, p.hospcode, p.pid
+        ORDER BY p.name, p.pid
         LIMIT ?`,
-      [`${firstName}%`, SCAN_LIMIT]
+      [hospcode, `${firstName}%`, SCAN_LIMIT]
     );
 
     const key = getAesKey();
