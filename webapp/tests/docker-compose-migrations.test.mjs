@@ -17,10 +17,10 @@ test("docker compose runs database migrations in a one-shot migrate service", as
   assert.match(compose, /migrate:[\s\S]*?restart:\s*"no"/);
   assert.match(compose, /- \.\/migrate\/table_update:\/migrate\/table_update:ro/);
   assert.match(compose, /- \.\/migrate\/table:\/docker-entrypoint-initdb\.d:ro/);
-  // webapp/importer/summarize/transform ต้องรอ migration จบสำเร็จก่อน start
+  // webapp รอทั้ง MariaDB/PostGIS; importer/summarize/transform รอ MariaDB
   assert.equal(
     (compose.match(/condition:\s*service_completed_successfully/g) || []).length,
-    4
+    5
   );
   // webapp ไม่รัน migration เองแล้ว — ใช้ CMD จาก Dockerfile ตรง ๆ
   assert.doesNotMatch(compose, /node lib\/run_migrations\.js && npm run start/);
@@ -41,6 +41,10 @@ test("docker compose includes a PostGIS service for the GIS module", async () =>
   // image สร้าง extension postgis เองตอน init — mount ทับโฟลเดอร์ initdb จะบัง
   // script นั้น mount initdb จึงต้องมีที่เดียวคือของ mariadb
   assert.equal((compose.match(/docker-entrypoint-initdb\.d/g) || []).length, 1);
+  assert.match(compose, /\n  postgis-migrate:/);
+  assert.match(compose, /container_name:\s*sub_hdc_postgis_migrate/);
+  assert.match(compose, /command:\s*\["node", "run_postgis_migrations\.js"\]/);
+  assert.match(compose, /- \.\/migrate\/postgis:\/migrate\/postgis:ro/);
 });
 
 test("docker compose includes hourly sync service mounted at /sync", async () => {

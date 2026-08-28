@@ -100,6 +100,26 @@ services:
       # mount สดจาก host แทนการ bake ใน image เพื่อให้แก้ SQL แล้วรันได้เลย
       - ./migrate/table/lookup:/migrate/table/lookup:ro
 
+  postgis-migrate:
+    build:
+      context: ./migrate
+      dockerfile: Dockerfile
+    image: sub-hdc-migrate
+    container_name: sub_hdc_postgis_migrate
+    command: ["node", "run_postgis_migrations.js"]
+    restart: "no"
+    depends_on:
+      postgis:
+        condition: service_healthy
+    env_file:
+      - ./webapp/.env
+    environment:
+      TZ: Asia/Bangkok
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./migrate/postgis:/migrate/postgis:ro
+
   webapp:
     build:
       context: ./webapp
@@ -109,6 +129,8 @@ services:
     restart: unless-stopped
     depends_on:
       migrate:
+        condition: service_completed_successfully
+      postgis-migrate:
         condition: service_completed_successfully
       redis:
         condition: service_healthy

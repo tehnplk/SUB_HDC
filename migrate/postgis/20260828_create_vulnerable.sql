@@ -1,7 +1,7 @@
 -- ทะเบียนกลุ่มเปราะบางรายคนพร้อมพิกัด + lookup ประเภทกลุ่มเปราะบาง
 -- ฐานนี้เป็น PostGIS (sub_hdc_postgis) คนละตัวกับ MariaDB ที่เก็บแฟ้มดิบ F43
 -- lookup อยู่ที่นี่ด้วยเพราะ API ของโมดูล GIS join ข้ามฐานไปหา c_* ของ MariaDB ไม่ได้
--- migrate container ไม่ได้รันไฟล์นี้ให้ ต้อง apply เองด้วย psql (ดู handoff)
+-- postgis-migrate รันไฟล์นี้อัตโนมัติระหว่าง docker compose up
 -- รันซ้ำได้ ไม่ทำลายข้อมูลเดิม
 
 -- lookup ประเภทกลุ่มเปราะบาง — is_active: 1 = ใช้งาน, 0 = ยกเลิก (สเปกเดียวกับ c_* ของ MariaDB)

@@ -194,8 +194,9 @@
   `postgis:5432`; `.env.local` overrides the host dev server to `localhost:5434`,
   the published port. `host.docker.internal` does **not** work from the host here
   — that address is firewalled for these ports.
-- `webapp` deliberately has no `depends_on: postgis`. The connection is lazy, so a
-  stopped PostGIS only breaks this one panel instead of holding back webapp start.
+- `webapp` waits for the one-shot `postgis-migrate` service. The API connection
+  itself remains lazy, but a deployment will not start the webapp if required
+  PostGIS schema/data migrations fail.
 
 - The map starts centred on Phitsanulok (`[16.82, 100.26]`, zoom 9). Sizing and the
   layer-control skin live in `.gisMap` / `.gisMap .leaflet-control-layers` in
@@ -214,7 +215,15 @@
   `POSTGRES_DB` on first init. Do **not** bind-mount over the image's initdb
   directory — that masks those scripts and the extensions never get created.
   Verified: PostgreSQL 17.5 / PostGIS 3.5.2 with GEOS and PROJ.
-- Nothing depends on it yet; `docker compose up -d postgis` starts it on its own.
+- One-shot service `postgis-migrate` uses the shared `sub-hdc-migrate` Node image,
+  waits for PostGIS health, then runs every top-level `migrate/postgis/*.sql` file
+  transactionally through `migrate/run_postgis_migrations.js`. Applied filenames
+  and SHA-256 checksums are stored in `postgis_schema_migrations`; an applied file
+  must never be edited, so add a new migration for later changes. The runner does
+  not recurse into `migrate/postgis/sample/`.
+- `webapp` depends on successful completion of both `migrate` (MariaDB) and
+  `postgis-migrate`. A normal `docker compose up -d --build` therefore creates the
+  GIS tables/data automatically on both fresh and existing volumes.
 - Focused test: `webapp/tests/docker-compose-migrations.test.mjs`.
 
 #### `vulnerable` and `c_vulnerable`
@@ -240,14 +249,8 @@
   the schema.
 - The lookup lives in PostGIS rather than beside the MariaDB `c_*` tables because
   the GIS API cannot join across the two databases.
-- DDL: `migrate/postgis/20260828_create_vulnerable.sql`. The `migrate` container
-  speaks MySQL only and does **not** run it — apply it by hand:
-
-```powershell
-docker exec -i sub_hdc_postgis psql -U postgres -d sub_hdc_gis -v ON_ERROR_STOP=1 --quiet < migrate/postgis/20260828_create_vulnerable.sql
-```
-
-  It is idempotent and non-destructive: `CREATE TABLE / INDEX IF NOT EXISTS`, an
+- DDL: `migrate/postgis/20260828_create_vulnerable.sql`, applied automatically by
+  `postgis-migrate`. It is idempotent and non-destructive: `CREATE TABLE / INDEX IF NOT EXISTS`, an
   `ON CONFLICT` seed, and a guarded `DO` block that renames the earlier
   `vulnerable_person` / `group_name` names forward without dropping anything.
 - The `vulnerable` table is created empty; no loader populates it yet. Demo rows for
@@ -273,18 +276,13 @@ docker exec -i sub_hdc_postgis psql -U postgres -d sub_hdc_gis -v ON_ERROR_STOP=
   `TH65`); codes are `TH65NN` for districts and `TH65NNNN` for subdistricts.
   Primary keys, the `code` unique indexes, the GiST geometry indexes, and the id
   sequences came across with the dump.
-- Re-run the import with:
-
-```powershell
-docker exec gis-postgis pg_dump -U gis -d gis --no-owner --no-privileges --no-comments --clean --if-exists -t public.district_boundary -t public.subdistrict_boundary > tmp/boundary_dump.sql
-docker exec -i sub_hdc_postgis psql -U postgres -d sub_hdc_gis -v ON_ERROR_STOP=1 --quiet < tmp/boundary_dump.sql
-```
-
-- The dump is replayable (`--clean --if-exists` drops before recreating), but it
-  is **not** in the repo — it is ~7.7 MB and currently lives only in the
-  gitignored `tmp/`. The source is another project's container, so it is not a
-  durable origin: commit the dump (or re-export the boundaries) before this data
-  is needed on another host such as อ.เมือง.
+- Durable migration `migrate/postgis/20260828_create_boundaries.sql` now carries
+  both schemas and all 102 canonical rows. It creates the tables/indexes when
+  absent and upserts by `code` without dropping site-specific extra rows. Geometry
+  must remain valid `MultiPolygon` with SRID 4326; guarded checks require at least
+  9 district and 93 subdistrict rows. This migration is applied automatically by
+  `postgis-migrate`, so a fresh host no longer depends on another project's
+  container or a manual `pg_dump` transfer.
 
 ## Ask AI menu
 
