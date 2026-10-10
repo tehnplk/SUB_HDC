@@ -42,7 +42,7 @@ if (denied) return denied;
 
 ```powershell
 cd webapp
-node --test tests\access.test.mjs tests\standard-pages.test.mjs
+node --test tests\access.test.mjs tests\quality-person-dup.test.mjs
 ```
 
 `access.test.mjs` ตรวจว่า export ที่ไม่ login ได้ 302 ไป `/error/msg?msg=...`

@@ -6,10 +6,6 @@ const headerSource = readFileSync(new URL("../components/module-header.jsx", imp
 const headerImageSource = readFileSync(new URL("../components/dashboard-header-image.jsx", import.meta.url), "utf8");
 const pageTitleSource = readFileSync(new URL("../components/dashboard-page-title.jsx", import.meta.url), "utf8");
 const mainTabSource = readFileSync(new URL("../components/main-tab.jsx", import.meta.url), "utf8");
-const typeareaSource = readFileSync(new URL("../app/dashboard/person-target/page.js", import.meta.url), "utf8");
-const pyramidSource = readFileSync(new URL("../app/standard/person-pyramid/page.js", import.meta.url), "utf8");
-const standardIndexSource = readFileSync(new URL("../app/standard/index/page.js", import.meta.url), "utf8");
-const targetGroupIndexSource = readFileSync(new URL("../app/target-group/index/page.js", import.meta.url), "utf8");
 const topicBulletSource = readFileSync(new URL("../components/topic-bullet.jsx", import.meta.url), "utf8");
 const breadcrumbSource = readFileSync(new URL("../components/breadcrumb.jsx", import.meta.url), "utf8");
 const updateLogSource = readFileSync(new URL("../app/update-log/page.js", import.meta.url), "utf8");
@@ -46,76 +42,41 @@ test("shared module header separates main navigation from breadcrumbs with a das
   assert.match(breadcrumbSource, /ChevronRight/);
 });
 
-test("standard submodules use the shared header rather than a second tab bar", () => {
-  assert.match(typeareaSource, /ModuleHeader/);
-  assert.match(pyramidSource, /ModuleHeader/);
-  assert.match(standardIndexSource, /ModuleHeader/);
+test("update-log uses the shared header", () => {
   assert.match(updateLogSource, /ModuleHeader/);
-  assert.doesNotMatch(typeareaSource, /StandardTabs/);
-  assert.doesNotMatch(pyramidSource, /StandardTabs/);
-  assert.doesNotMatch(standardIndexSource, /StandardTabs/);
 });
 
-test("standard navigation stays active across its child routes", () => {
-  assert.match(mainTabSource, /pathname\.startsWith\("\/standard\/"\)/);
+test("breadcrumbs only list modules that still have pages", () => {
+  const prefixes = [...headerSource.matchAll(/prefix: "([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(prefixes, ["/import-check", "/quality", "/upload", "/update-log", "/admin/addon", "/admin"]);
+});
+
+test("main tab shows only ปริมาณข้อมูล, คุณภาพ and GIS", () => {
+  const labels = [...mainTabSource.matchAll(/label: "([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(labels, ["ปริมาณข้อมูล", "คุณภาพ", "GIS"]);
   assert.match(mainTabSource, /pathname\.startsWith\("\/import-check\/"\)/);
-  assert.match(mainTabSource, /href: "\/standard\/index", label: "ข้อมูลพื้นฐาน"/);
+  assert.match(mainTabSource, /pathname\.startsWith\("\/quality\/"\)/);
 });
 
-test("target-group is a main-tab module with an index menu of its child topics", () => {
-  assert.match(mainTabSource, /\/target-group\/index/);
-  assert.match(mainTabSource, /href: "\/target-group\/index", label: "กลุ่มเป้าหมาย"/);
-  assert.match(mainTabSource, /pathname\.startsWith\("\/target-group\/"\)/);
-  assert.match(headerSource, /prefix: "\/target-group"/);
-  assert.match(targetGroupIndexSource, /ModuleHeader/);
-  assert.match(targetGroupIndexSource, /moduleTopicList/);
-  assert.match(targetGroupIndexSource, /TopicBullet/);
-  assert.match(targetGroupIndexSource, /กลุ่มเป้าหมายตามตัวชี้วัด/);
-  assert.match(targetGroupIndexSource, /href: "\/target-group\/kpi"/);
-  assert.doesNotMatch(targetGroupIndexSource, /description:|<small>|standardMenuText/);
-  assert.doesNotMatch(targetGroupIndexSource, /จำนวนผู้ป่วย DM\/HT ในเขต/);
-  const targetGroupKpiSource = readFileSync(
-    new URL("../app/target-group/kpi/page.js", import.meta.url),
-    "utf8"
-  );
-  assert.match(targetGroupKpiSource, /href="\/target-group\/kpi\/dm-ht"/);
-  assert.match(targetGroupKpiSource, /จำนวนผู้ป่วย DM\/HT/);
-  assert.doesNotMatch(targetGroupKpiSource, /<small>/);
-  assert.doesNotMatch(targetGroupKpiSource, /moduleTopicListSmall/);
-  assert.match(targetGroupIndexSource, /กลุ่มเป้าหมายการจัดเก็บรายได้/);
-  assert.match(headerSource, /"\/target-group\/kpi\/dm-ht": \[/);
-  assert.match(headerSource, /href: "\/target-group\/kpi", label: "กลุ่มเป้าหมายตามตัวชี้วัด"/);
-  assert.match(headerSource, /label: "จำนวนผู้ป่วย DM\/HT"/);
-  assert.match(headerSource, /const currentPages = Array\.isArray\(currentPage\)/);
-});
-
-test("gis is the right-aligned main-tab module", () => {
+test("gis is a left-group main tab and Add-On is the right-aligned last item", () => {
   const gisSource = readFileSync(new URL("../app/gis/page.js", import.meta.url), "utf8");
 
-  assert.match(mainTabSource, /TABS_END/);
-  assert.match(mainTabSource, /tabButtonEnd/);
   assert.match(mainTabSource, /href: "\/gis", label: "GIS"/);
   assert.match(mainTabSource, /pathname\.startsWith\("\/gis\/"\)/);
+  assert.doesNotMatch(mainTabSource, /TABS_END|tabButtonEnd/);
+  assert.match(mainTabSource, /import AddonTab from "@\/components\/addon-tab"/);
+  assert.match(mainTabSource, /renderTab\(tab, pathname\)\)\}\s*<AddonTab \/>\s*<\/nav>/);
+  assert.match(globalCss, /\.addonTabWrap \{[^}]*margin-left: auto/);
+  assert.match(globalCss, /\.addonTabButton\.tabButtonActive[^{]*\{[^}]*background: var\(--panel\)/);
   // /gis ไม่มี breadcrumb — หน้าเป็นแผนที่เต็มพื้นที่ ไม่ต้องมีป้าย "GIS" ซ้ำกับ tab
   assert.doesNotMatch(headerSource, /prefix: "\/gis"/);
   assert.match(gisSource, /ModuleHeader/);
-  // กลุ่มขวา (GIS + Add-On) ชิดขอบขวาผ่าน tabButtonEnd — ต้องเป็น rule ระดับบนสุด
-  // ต่อจาก .tabsContainer ไม่ใช่อยู่ใน @media ไม่งั้นชิดขวาเฉพาะจอเล็ก
-  assert.match(
-    globalCss,
-    /\.tabsContainer \{\s*display: flex;[^}]*\}\s*(?:\/\*[^*]*\*\/\s*)?\.tabButton\.tabButtonEnd \{\s*margin-left: auto;/,
-  );
-  assert.doesNotMatch(globalCss, /\.addonTabWrap \{[^}]*margin-left: auto;/);
 });
 
 test("all portal topic menus use one topic-only line", () => {
   const portalSources = [
     "../app/dashboard/quality/page.js",
     "../app/import-check/index/page.js",
-    "../app/standard/index/page.js",
-    "../app/target-group/index/page.js",
-    "../app/target-group/kpi/page.js",
-    "../app/workload/page.js",
   ].map((path) => readFileSync(new URL(path, import.meta.url), "utf8"));
 
   for (const portalSource of portalSources) {
@@ -130,12 +91,6 @@ test("all portal topic menus use one topic-only line", () => {
   assert.match(topicBulletSource, /ChevronRight/);
   assert.match(globalCss, /\.moduleTopicText\s*\{[\s\S]*?white-space:\s*nowrap;/);
   assert.match(globalCss, /\.moduleTopicText\s*\{[\s\S]*?font-size:\s*14px;/);
-  assert.match(globalCss, /\.moduleTopicText\s*\{[\s\S]*?font-weight:\s*700;/);
+  assert.match(globalCss, /\.moduleTopicText\s*\{[\s\S]*?font-weight:\s*400;/);
   assert.doesNotMatch(globalCss, /moduleTopicList(?:Compact|Small) \.moduleTopicText/);
-});
-
-test("report is a top-level module rather than a Dashboard main-tab item", () => {
-  assert.match(mainTabSource, /\/report\/index/);
-  assert.match(mainTabSource, /รายงาน/);
-  assert.doesNotMatch(mainTabSource, /dashboard\/report/);
 });

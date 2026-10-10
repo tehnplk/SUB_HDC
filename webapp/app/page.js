@@ -1,58 +1,55 @@
+import Link from "next/link";
 import ModuleHeader from "@/components/module-header";
-import { BarChart3, CircleCheckBig, ClipboardList, SearchCheck } from "lucide-react";
+import LandingDistrictMap from "@/components/landing-district-map";
+import { ArrowRight, FileText, Map, ShieldCheck } from "lucide-react";
 
 const concepts = [
   {
-    icon: CircleCheckBig,
-    number: "01",
-    title: "ตรวจสอบคุณภาพ",
-    description: "ตรวจสอบความครบถ้วน ถูกต้อง และทันเวลาของข้อมูล",
+    href: "/import-check/index",
+    icon: FileText,
+    title: "ปริมาณข้อมูล",
+    description: "ติดตามการนำเข้าและจำนวนข้อมูล 43 แฟ้มของแต่ละหน่วยบริการ",
   },
   {
-    icon: ClipboardList,
-    number: "02",
-    title: "จัดทำทะเบียนเป้าหมาย",
-    description: "จัดกลุ่มประชากรเป้าหมายให้พร้อมสำหรับการดำเนินงาน",
+    href: "/quality",
+    icon: ShieldCheck,
+    title: "คุณภาพข้อมูล",
+    description: "ตรวจสอบความถูกต้องของรหัสและข้อมูลที่บันทึกซ้ำซ้อน",
   },
   {
-    icon: SearchCheck,
-    number: "03",
-    title: "ติดตามส่วนขาด",
-    description: "ค้นหาและติดตามข้อมูลหรือบริการที่ยังไม่ครบตามเป้าหมาย",
-  },
-  {
-    icon: BarChart3,
-    number: "04",
-    title: "สรุปผลงาน",
-    description: "สรุปผลการดำเนินงานเพื่อใช้ติดตามและตัดสินใจในพื้นที่",
+    href: "/gis",
+    icon: Map,
+    title: "GIS",
+    description: "แผนที่ขอบเขตตำบลและพิกัดกลุ่มเปราะบางในพื้นที่",
   },
 ];
 
 export default function Home() {
   return (
     <div className="main dashboardMain">
-      <section className="panel panelWide dashboardPanel landingConceptPanel">
+      <section className="panel panelWide dashboardPanel landingPanel">
         <ModuleHeader />
-        <section className="landingConcept" aria-label="แนวทางการใช้ข้อมูลระดับอำเภอ">
-          <div className="landingConceptBody">
-            <div className="landingConceptGrid">
-              {concepts.map(({ icon: Icon, number, title, description }) => (
-                <article className="landingConceptCard" key={number}>
-                  <div className="landingConceptCardTop">
-                    <span className="landingConceptIcon" aria-hidden="true"><Icon /></span>
-                    <span className="landingConceptNumber">{number}</span>
-                  </div>
-                  <h2>{title}</h2>
-                  <p>{description}</p>
-                </article>
+        <div className="landingBody">
+          <div className="landingMain">
+            <div className="landingIntro">
+              <h1>ข้อมูลสุขภาพระดับอำเภอ</h1>
+              <p>ใช้ข้อมูล 43 แฟ้มจากทุกหน่วยบริการ ตรวจสอบปริมาณ คุณภาพ และดูข้อมูลบนแผนที่ในที่เดียว</p>
+            </div>
+            <nav className="landingGrid" aria-label="งานหลัก">
+              {concepts.map(({ href, icon: Icon, title, description }) => (
+                <Link className="landingCard" href={href} key={href}>
+                  <span className="landingCardIcon" aria-hidden="true"><Icon /></span>
+                  <span className="landingCardTitle">
+                    {title}
+                    <ArrowRight aria-hidden="true" />
+                  </span>
+                  <span className="landingCardText">{description}</span>
+                </Link>
               ))}
-            </div>
-
-            <div className="landingConceptVisual">
-              <img src="/ai.png" alt="ผู้ช่วย AI สำหรับวิเคราะห์ข้อมูลสุขภาพ" />
-            </div>
+            </nav>
           </div>
-        </section>
+          <LandingDistrictMap />
+        </div>
       </section>
     </div>
   );

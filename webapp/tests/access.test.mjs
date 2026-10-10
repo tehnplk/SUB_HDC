@@ -47,12 +47,11 @@ const CASES = [
   ["guest", "POST", "/api/upload-zip", 403],
   ["user", "POST", "/api/import-zip", "ok"],
   ["guest", "GET", "/api/quality/person-dup", 403],
-  ["guest", "POST", "/api/ai/chat", 403],
+  ["guest", "POST", "/api/import-zip", 403],
 
-  ["anon", "GET", "/api/dm-ht-count/export", "302 /error/msg?msg="],
+  ["anon", "GET", "/api/quality/person-dup/export", "302 /error/msg?msg="],
   ["guest", "GET", "/api/quality/person-dup/export", "302 /err?msg="],
-  ["guest", "GET", "/api/ai/export/a.xlsx", "302 /err?msg="],
-  ["user", "GET", "/api/visit-monthly-workload/export", "ok"],
+  ["user", "GET", "/api/quality/person-dup/export", "ok"],
 
   ["anon", "GET", "/api/visit-counter", "ok"],
   ["anon", "POST", "/api/visit-counter", 401],
@@ -84,9 +83,9 @@ test("proxy origin makes Location absolute; route handlers keep it relative", ()
   assert.equal(decideAccess({ pathname: "/gis", search: "?a=1" }).headers.get("Location"), "/login?callbackUrl=%2Fgis%3Fa%3D1");
 });
 
-test("longest prefix wins so exports under /api/ai redirect instead of JSON", () => {
-  assert.equal(policyFor("/api/ai/export/a.xlsx").kind, "export");
-  assert.equal(policyFor("/api/ai/chat", "POST").kind, "api");
+test("longest prefix wins so exports under an api prefix redirect instead of JSON", () => {
+  assert.equal(policyFor("/api/quality/person-dup/export").kind, "export");
+  assert.equal(policyFor("/api/quality/person-dup").kind, "api");
 });
 
 // ทุก handler ที่ตารางบอกว่าต้องป้องกัน ต้องเรียก requireAccess เอง (กันกรณี proxy ไม่ครอบ)

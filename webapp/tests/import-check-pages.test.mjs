@@ -32,10 +32,10 @@ test("Import Check owns the canonical child routes", () => {
 });
 
 test("compare-hdc-person applies severity thresholds and guidance to type1/3 differences", () => {
-  // group ละ 3 คอลัมน์: HDC / SUB-HDC / ส่วนต่าง ครบทั้ง type1-5
+  // group ละ 3 คอลัมน์: HDC / Data Hub / ส่วนต่าง ครบทั้ง type1-5
   assert.match(compareHdcSource, /"Type 1", "Type 2", "Type 3", "Type 4", "Type 5"/);
   assert.match(compareHdcSource, />HDC<\/th>/);
-  assert.match(compareHdcSource, />SUB-HDC<\/th>/);
+  assert.match(compareHdcSource, />Data Hub<\/th>/);
   assert.match(compareHdcSource, />ส่วนต่าง<\/th>/);
   // TYPE 1/3: deficit <=20 plain, >20 orange, >100 red
   assert.match(compareHdcSource, /ALERT_TYPE_INDEXES = new Set\(\[0, 2\]\)/);

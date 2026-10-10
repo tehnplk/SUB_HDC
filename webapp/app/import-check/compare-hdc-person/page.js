@@ -5,7 +5,7 @@ import { CircleAlert, FileText, RefreshCw } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
 
 const TYPE_LABELS = ["Type 1", "Type 2", "Type 3", "Type 4", "Type 5"];
-// type1 / type3 คือประชากรรับผิดชอบ — SUB-HDC น้อยกว่า HDC = ข้อมูลนำเข้าไม่ครบ
+// type1 / type3 คือประชากรรับผิดชอบ — Data Hub น้อยกว่า HDC = ข้อมูลนำเข้าไม่ครบ
 const ALERT_TYPE_INDEXES = new Set([0, 2]);
 
 function formatNumber(value) {
@@ -61,7 +61,7 @@ export default function CompareHdcPersonPage() {
   return (
     <div className="main dashboardMain">
       <section className="panel panelWide dashboardPanel">
-        <ModuleHeader subtitle="เปรียบเทียบประชากรแยก TYPEAREA ระหว่าง HDC กับ SUB-HDC รายหน่วยบริการ" />
+        <ModuleHeader subtitle="เปรียบเทียบประชากรแยก TYPEAREA ระหว่าง HDC กับ Data Hub รายหน่วยบริการ" />
 
         {error ? <div className="error">{error}</div> : null}
 
@@ -96,7 +96,7 @@ export default function CompareHdcPersonPage() {
                   const tone = ALERT_TYPE_INDEXES.has(index) ? " compareTargetHeader" : " compareDimCol";
                   return [
                     <th key={`${label}-hdc`} className={`numCol compareGroupCol${tone}`}>HDC</th>,
-                    <th key={`${label}-sub`} className={`numCol${tone}`}>SUB-HDC</th>,
+                    <th key={`${label}-sub`} className={`numCol${tone}`}>Data Hub</th>,
                     <th key={`${label}-diff`} className={`numCol${tone}`}>ส่วนต่าง</th>,
                   ];
                 })}
@@ -157,7 +157,7 @@ export default function CompareHdcPersonPage() {
           <RefreshCw aria-hidden="true" />
           {loading
             ? "…"
-            : `ดึงข้อมูลจาก HDC กลางเมื่อ : ${formatDate(data?.hdcFetchedAt)} และประมวลผล PERSON ที่ SUB-HDC เมื่อ : ${formatDate(data?.transformedAt)}`}
+            : `ดึงข้อมูลจาก HDC กลางเมื่อ : ${formatDate(data?.hdcFetchedAt)} และประมวลผล PERSON ที่ Data Hub เมื่อ : ${formatDate(data?.transformedAt)}`}
         </div>
       </section>
     </div>

@@ -46,7 +46,7 @@ export async function GET() {
       if (!hdcFetchedAt || row.d_update > hdcFetchedAt) hdcFetchedAt = row.d_update;
     }
 
-    // แสดงเฉพาะหน่วยที่มีใน s_person_type_count (มีข้อมูลนำเข้าฝั่ง SUB-HDC แล้ว)
+    // แสดงเฉพาะหน่วยที่มีใน s_person_type_count (มีข้อมูลนำเข้าฝั่ง Data Hub แล้ว)
     const rows = subRows
       .map((row) => {
         const hdc = hdcByHospcode.get(row.hospcode) || TYPE_KEYS.map(() => 0);
@@ -67,7 +67,7 @@ export async function GET() {
       units: rows.length,
       hdcType1: rows.reduce((total, row) => total + row.types[0].hdc, 0),
       subType1: rows.reduce((total, row) => total + row.types[0].sub, 0),
-      // หน่วยที่ SUB-HDC น้อยกว่า HDC ใน type1 หรือ type3 (จุดที่ต้องตามข้อมูล)
+      // หน่วยที่ Data Hub น้อยกว่า HDC ใน type1 หรือ type3 (จุดที่ต้องตามข้อมูล)
       shortUnits: rows.filter((row) => row.types[0].diff < 0 || row.types[2].diff < 0).length,
     };
 

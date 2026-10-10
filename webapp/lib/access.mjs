@@ -11,25 +11,16 @@ export const LEVEL = { LOGIN: ROLE.GUEST, MEMBER: ROLE.USER, ADMIN: ROLE.ADMIN }
 // prefix ที่ยาวที่สุดชนะ; path ที่ไม่อยู่ในตาราง = สาธารณะ
 export const POLICIES = [
   // /quality (portal) เปิดให้เห็น topic list — ป้องกันเฉพาะหน้าข้อมูลย่อย
-  { prefix: "/ai", kind: "page", level: LEVEL.MEMBER },
   { prefix: "/gis", kind: "page", level: LEVEL.MEMBER },
-  { prefix: "/dashboard/report", kind: "page", level: LEVEL.MEMBER },
   { prefix: "/upload", kind: "page", level: LEVEL.MEMBER },
-  { prefix: "/report", kind: "page", level: LEVEL.MEMBER },
   { prefix: "/quality/person-dup", kind: "page", level: LEVEL.MEMBER },
-  { prefix: "/quality/service-instype-err", kind: "page", level: LEVEL.MEMBER },
-  { prefix: "/quality/specialpp-error", kind: "page", level: LEVEL.MEMBER },
   { prefix: "/admin", kind: "page", level: LEVEL.ADMIN },
 
-  { prefix: "/api/ai", kind: "api", level: LEVEL.MEMBER },
   { prefix: "/api/raw-records", kind: "api", level: LEVEL.MEMBER },
-  { prefix: "/api/report", kind: "api", level: LEVEL.MEMBER },
   { prefix: "/api/upload-zip", kind: "api", level: LEVEL.MEMBER },
   { prefix: "/api/import-zip", kind: "api", level: LEVEL.MEMBER },
   { prefix: "/api/log-import/cleanup", kind: "api", level: LEVEL.MEMBER },
   { prefix: "/api/quality/person-dup", kind: "api", level: LEVEL.MEMBER },
-  { prefix: "/api/quality/service-instype-err", kind: "api", level: LEVEL.MEMBER },
-  { prefix: "/api/quality/specialpp-error", kind: "api", level: LEVEL.MEMBER },
   // ข้อมูลรายบุคคล (ชื่อ วันเกิด ที่อยู่) — ชั้นข้อมูลอื่นของ /api/gis ไม่มี PII จึงเปิดสาธารณะ
   { prefix: "/api/gis/vulnerable", kind: "api", level: LEVEL.MEMBER },
   { prefix: "/api/gis/person-search", kind: "api", level: LEVEL.MEMBER },
@@ -37,13 +28,7 @@ export const POLICIES = [
   // GET อ่านยอดเป็นสาธารณะ; POST นับเฉพาะผู้ login
   { prefix: "/api/visit-counter", methods: ["POST"], kind: "api", level: LEVEL.LOGIN },
 
-  { prefix: "/api/ai/export", kind: "export", level: LEVEL.MEMBER },
-  { prefix: "/api/dm-ht-count/export", kind: "export", level: LEVEL.MEMBER },
-  { prefix: "/api/ncdscreen-workload/export", kind: "export", level: LEVEL.MEMBER },
-  { prefix: "/api/visit-monthly-workload/export", kind: "export", level: LEVEL.MEMBER },
   { prefix: "/api/quality/person-dup/export", kind: "export", level: LEVEL.MEMBER },
-  { prefix: "/api/quality/service-instype-err/export", kind: "export", level: LEVEL.MEMBER },
-  { prefix: "/api/quality/specialpp-error/export", kind: "export", level: LEVEL.MEMBER },
 ];
 
 const MEMBER_MESSAGE = "กรุณาติดต่อผู้ดูแลระบบประจำอำเภอของท่าน\nเพื่อขอสิทธิระดับ User ขึ้นไปในการเข้าถึงข้อมูลนี้";

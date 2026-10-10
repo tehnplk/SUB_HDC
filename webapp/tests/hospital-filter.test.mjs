@@ -40,13 +40,7 @@ test("HospitalFilter uses a high-contrast keyboard highlight", async () => {
 
 test("hospital selectors use the shared HospitalFilter component", async () => {
   const pages = [
-    "app/quality/service-instype-err/page.js",
-    "app/workload/visit-monthly/page.js",
-    "app/workload/ncdscreen-workload/page.js",
     "app/quality/person-dup/page.js",
-    "app/standard/person-pyramid/page.js",
-    "app/dashboard/person-target/page.js",
-    "app/target-group/kpi/page.js",
   ];
 
   for (const relativePath of pages) {

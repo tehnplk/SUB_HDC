@@ -106,7 +106,7 @@ export default function DashboardPageTitle() {
 
   return (
     <h4 className="pageHeaderTitle">
-      <span className="pageHeaderName">SUB-HDC{centerSuffix}</span>
+      <span className="pageHeaderName">Data Hub{centerSuffix}</span>
       <span className="headerSubline">
       <Link
         href="/update-log"

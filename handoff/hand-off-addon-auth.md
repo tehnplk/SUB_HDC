@@ -12,7 +12,10 @@ https://<addon>/dashboard/check?session-id=<cid_hash>
 ระบบเสริมนำ `session-id` นั้นมา **ค้นว่าเป็นผู้ใช้คนไหน** โดยเรียก endpoint
 `POST|GET /api/addon-auth` ของ SUB-HDC ซึ่งป้องกันด้วย JWT (secret = `JWT_KEY`)
 
-- เมนู Add-On + การต่อ `session-id`: ดู `webapp/app/api/addon-url/route.js`
+- เมนู Add-On = dropdown ตัวสุดท้ายของ main tab bar ชิดขอบขวา
+  (`webapp/components/addon-tab.jsx`, render ใน `main-tab.jsx`); รายการจัดการที่
+  `/admin/addon` (admin เท่านั้น)
+- การต่อ `session-id`: ดู `webapp/app/api/addon-url/route.js`
 - endpoint ตรวจสอบ: `webapp/app/api/addon-auth/route.js`
 - ตัวตรวจ JWT: `webapp/lib/api-auth.mjs` (`verifyApiJwt`)
 - **ทุกเมนูภายใต้ Add-On ต่อ `session-id` เสมอ**: ผู้ใช้ที่ login ได้

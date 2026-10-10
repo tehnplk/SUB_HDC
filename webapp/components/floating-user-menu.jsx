@@ -32,7 +32,7 @@ export default function FloatingUserMenu({ userName, userFullname, userAvatarIni
   const displayName = userFullname || userName || providerId || "Guest";
   const initials = userAvatarInitial?.trim().slice(0, 1) || displayName.trim().slice(0, 1).toUpperCase() || "U";
   const isAuthenticated = Boolean(userFullname || userName || providerId);
-  const hospitalLabel = [hoscode, hospitalName].filter(Boolean).join(" · ") || centerName || "SUB HDC";
+  const hospitalLabel = [hoscode, hospitalName].filter(Boolean).join(" · ") || centerName || "Data Hub";
 
   async function handleSignOut() {
     setOpen(false);
