@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
+import { createRequire } from "node:module";
 import test from "node:test";
 
-import { deleteExpiredFailedLogImports } from "../lib/log-import.mjs";
+const require = createRequire(import.meta.url);
+const { deleteExpiredFailed } = require("../lib/log-import-file.js");
 
-test("deleteExpiredFailedLogImports deletes only failed rows older than five days", async () => {
+test("deleteExpiredFailed deletes only failed rows older than five days", async () => {
   const executed = [];
   const connection = {
     async execute(sql, values) {
@@ -12,7 +14,7 @@ test("deleteExpiredFailedLogImports deletes only failed rows older than five day
     },
   };
 
-  const deleted = await deleteExpiredFailedLogImports(connection);
+  const deleted = await deleteExpiredFailed(connection);
 
   assert.equal(deleted, 2);
   assert.equal(executed.length, 1);

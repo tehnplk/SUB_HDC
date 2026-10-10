@@ -10,6 +10,7 @@ import { POST } from "../app/api/upload-zip/route.js";
 const nextConfigPath = path.resolve(process.cwd(), "next.config.mjs");
 
 async function postFile(file) {
+  process.env.AUTH_TEST_BYPASS = "1";
   const formData = new FormData();
   formData.set("file", file);
   return POST(

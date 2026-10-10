@@ -1,17 +1,17 @@
-import { createDbConnection } from "@/lib/db";
-import { deleteExpiredFailedLogImports } from "@/lib/log-import.mjs";
+import { withDb } from "@/lib/db";
+import { deleteExpiredFailed } from "@/lib/log-import-file.js";
+import { requireAccess } from "@/lib/access.mjs";
 
 export const runtime = "nodejs";
 
-export async function POST() {
-  let conn;
+export async function POST(request) {
+  const { denied } = await requireAccess(request);
+  if (denied) return denied;
+
   try {
-    conn = await createDbConnection();
-    const deleted = await deleteExpiredFailedLogImports(conn);
+    const deleted = await withDb((conn) => deleteExpiredFailed(conn));
     return Response.json({ deleted });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
-  } finally {
-    if (conn) await conn.end();
   }
 }

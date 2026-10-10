@@ -27,8 +27,9 @@ POST /api/addon-auth        body: { "session-id": "<cid_hash>" }
 Header: Authorization: Bearer <JWT>
 ```
 
-- runtime nodejs; ไม่อยู่ใน `PROTECTED_API_PREFIXES` (proxy.js) — ป้องกันเองใน
-  route ด้วย Bearer JWT
+- runtime nodejs; ไม่อยู่ใน `POLICIES` ของ `lib/access.mjs` (proxy ปล่อยผ่าน,
+  ไม่เรียก `requireAccess`) — ป้องกันเองใน route ด้วย Bearer JWT
+  (`api-auth.mjs` มีแค่ `createApiJwt`/`verifyApiJwt` ใช้เฉพาะ endpoint นี้)
 
 ### การยืนยันสิทธิ์ (JWT)
 

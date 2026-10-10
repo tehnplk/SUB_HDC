@@ -1,5 +1,5 @@
-import { requireGisAuth } from "@/lib/gis-auth.mjs";
-import { getPooledDbConnection } from "@/lib/db";
+import { requireAccess } from "@/lib/access.mjs";
+import { withDb } from "@/lib/db";
 import { decryptAes, getAesKey } from "@/lib/f43-decrypt.mjs";
 
 export const runtime = "nodejs";
@@ -35,8 +35,8 @@ function villageCode({ changwat, ampur, tambon, village }) {
 }
 
 export async function GET(request) {
-  const unauthorized = await requireGisAuth();
-  if (unauthorized) return unauthorized;
+  const { denied } = await requireAccess(request);
+  if (denied) return denied;
 
   const params = new URL(request.url).searchParams;
   const query = (params.get("q") || "").trim();
@@ -48,10 +48,8 @@ export async function GET(request) {
   const [firstName, ...rest] = query.split(/\s+/);
   const lastNameTerm = rest.join(" ");
 
-  let conn;
   try {
-    conn = await getPooledDbConnection();
-    const [rows] = await conn.query(
+    const [rows] = await withDb((conn) => conn.query(
       `SELECT p.hospcode, p.pid, p.cid_aes, p.name, p.lname, p.sex, p.birth,
               h.house, h.road, h.villaname, h.village, h.tambon, h.ampur, h.changwat
          FROM person p
@@ -64,7 +62,7 @@ export async function GET(request) {
         ORDER BY p.name, p.pid
         LIMIT ?`,
       [hospcode, `${firstName}%`, SCAN_LIMIT]
-    );
+    ));
 
     const key = getAesKey();
     const items = [];
@@ -90,7 +88,5 @@ export async function GET(request) {
     return Response.json({ items });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
-  } finally {
-    if (conn) await conn.end();
   }
 }

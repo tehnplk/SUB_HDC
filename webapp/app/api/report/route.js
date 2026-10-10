@@ -1,5 +1,5 @@
-import { requireApiJwt } from "@/lib/api-auth.mjs";
-import { createDbConnection } from "@/lib/db";
+import { requireAccess } from "@/lib/access.mjs";
+import { withDb } from "@/lib/db";
 import {
   buildReportQuery,
   getReportResultSet,
@@ -27,31 +27,26 @@ function reportPayload(report) {
 }
 
 export async function GET(request) {
-  const unauthorized = await requireApiJwt(request);
-  if (unauthorized) return unauthorized;
+  const { denied } = await requireAccess(request);
+  if (denied) return denied;
 
-  let conn;
   try {
-    conn = await createDbConnection();
-    const [rows] = await conn.query(
+    const [rows] = await withDb((conn) => conn.query(
       "SELECT id, name, `sql`, date_update FROM report ORDER BY id"
-    );
+    ));
 
     return Response.json({
       rows: rows.map(reportPayload),
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
-  } finally {
-    if (conn) await conn.end();
   }
 }
 
 export async function POST(request) {
-  const unauthorized = await requireApiJwt(request);
-  if (unauthorized) return unauthorized;
+  const { denied } = await requireAccess(request);
+  if (denied) return denied;
 
-  let conn;
   try {
     const body = await request.json();
     const id = Number(body?.id);
@@ -59,40 +54,40 @@ export async function POST(request) {
       return Response.json({ error: "Invalid report id" }, { status: 400 });
     }
 
-    conn = await createDbConnection({ multipleStatements: true });
-    const report = await getReport(conn, id);
-    if (!report) {
-      return Response.json({ error: "Report not found" }, { status: 404 });
-    }
+    // report SQL may SET @user variables — run it on a dedicated connection so
+    // those session variables never reach the shared pool
+    return await withDb(async (conn) => {
+      const report = await getReport(conn, id);
+      if (!report) {
+        return Response.json({ error: "Report not found" }, { status: 404 });
+      }
 
-    const sql = normalizeReportSql(report.sql);
-    const [queryRows, queryFields] = await conn.query(buildReportQuery(sql));
-    const { rows: rawRows, fields } = getReportResultSet(queryRows, queryFields);
-    const rows = normalizeReportRows(rawRows);
-    const columns = fields.map((field) => field.name);
+      const sql = normalizeReportSql(report.sql);
+      const [queryRows, queryFields] = await conn.query(buildReportQuery(sql));
+      const { rows: rawRows, fields } = getReportResultSet(queryRows, queryFields);
+      const rows = normalizeReportRows(rawRows);
+      const columns = fields.map((field) => field.name);
 
-    return Response.json({
-      report: {
-        id: Number(report.id),
-        name: report.name,
-        date_update: report.date_update,
-      },
-      columns,
-      rows,
-      limited: rows.length >= 500,
-    });
+      return Response.json({
+        report: {
+          id: Number(report.id),
+          name: report.name,
+          date_update: report.date_update,
+        },
+        columns,
+        rows,
+        limited: rows.length >= 500,
+      });
+    }, { connectionOptions: { multipleStatements: true } });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
-  } finally {
-    if (conn) await conn.end();
   }
 }
 
 export async function PATCH(request) {
-  const unauthorized = await requireApiJwt(request);
-  if (unauthorized) return unauthorized;
+  const { denied } = await requireAccess(request);
+  if (denied) return denied;
 
-  let conn;
   try {
     const body = await request.json();
     const id = Number(body?.id);
@@ -106,30 +101,28 @@ export async function PATCH(request) {
       return Response.json({ error: "Report name is required" }, { status: 400 });
     }
 
-    conn = await createDbConnection();
-    const [result] = await conn.query(
-      "UPDATE report SET name = ?, `sql` = ?, date_update = NOW() WHERE id = ?",
-      [name, sql, id]
-    );
+    return await withDb(async (conn) => {
+      const [result] = await conn.query(
+        "UPDATE report SET name = ?, `sql` = ?, date_update = NOW() WHERE id = ?",
+        [name, sql, id]
+      );
 
-    if (!result.affectedRows) {
-      return Response.json({ error: "Report not found" }, { status: 404 });
-    }
+      if (!result.affectedRows) {
+        return Response.json({ error: "Report not found" }, { status: 404 });
+      }
 
-    const report = await getReport(conn, id);
-    return Response.json({ report: reportPayload(report) });
+      const report = await getReport(conn, id);
+      return Response.json({ report: reportPayload(report) });
+    });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
-  } finally {
-    if (conn) await conn.end();
   }
 }
 
 export async function PUT(request) {
-  const unauthorized = await requireApiJwt(request);
-  if (unauthorized) return unauthorized;
+  const { denied } = await requireAccess(request);
+  if (denied) return denied;
 
-  let conn;
   try {
     const body = await request.json();
     const name = String(body?.name || "").trim();
@@ -139,26 +132,23 @@ export async function PUT(request) {
       return Response.json({ error: "Report name is required" }, { status: 400 });
     }
 
-    conn = await createDbConnection();
-    const [result] = await conn.query(
-      "INSERT INTO report (name, `sql`) VALUES (?, ?)",
-      [name, sql]
-    );
-
-    const report = await getReport(conn, result.insertId);
+    const report = await withDb(async (conn) => {
+      const [result] = await conn.query(
+        "INSERT INTO report (name, `sql`) VALUES (?, ?)",
+        [name, sql]
+      );
+      return getReport(conn, result.insertId);
+    });
     return Response.json({ report: reportPayload(report) }, { status: 201 });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
-  } finally {
-    if (conn) await conn.end();
   }
 }
 
 export async function DELETE(request) {
-  const unauthorized = await requireApiJwt(request);
-  if (unauthorized) return unauthorized;
+  const { denied } = await requireAccess(request);
+  if (denied) return denied;
 
-  let conn;
   try {
     const body = await request.json();
     const id = Number(body?.id);
@@ -167,8 +157,7 @@ export async function DELETE(request) {
       return Response.json({ error: "Invalid report id" }, { status: 400 });
     }
 
-    conn = await createDbConnection();
-    const [result] = await conn.query("DELETE FROM report WHERE id = ?", [id]);
+    const [result] = await withDb((conn) => conn.query("DELETE FROM report WHERE id = ?", [id]));
 
     if (!result.affectedRows) {
       return Response.json({ error: "Report not found" }, { status: 404 });
@@ -177,7 +166,5 @@ export async function DELETE(request) {
     return Response.json({ deleted: true, id });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
-  } finally {
-    if (conn) await conn.end();
   }
 }

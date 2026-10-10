@@ -4,9 +4,11 @@ const crypto = require("node:crypto");
 
 const mysql = require("mysql2/promise");
 const { loadEnvConfig } = require("@next/env");
+const { getDbConfig } = require("./db.js");
 const sharedImporter = require("./import_f43_shared.js");
 const insertImporter = require("./import_f43_insert.js");
 const loadDataImporter = require("./import_f43_load_data.js");
+const logImport = require("./log-import-file.js");
 
 loadEnvConfig(process.cwd());
 
@@ -194,27 +196,6 @@ async function getExistingColumns(connection, tableName) {
   return new Map(rows.map((row) => [row.Field.toLowerCase(), row.Field]));
 }
 
-async function createLogImportFile(connection, fileName, fileSize = null) {
-  const [result] = await connection.execute(
-    "INSERT INTO `log_import_file` (`file_name`, `file_size`, `status`) VALUES (?, ?, ?)",
-    [fileName, fileSize, "pending"]
-  );
-  return result.insertId;
-}
-
-async function updateLogImportFileStatus(connection, id, status, notCompleteMsg = null) {
-  if (!id) return;
-  const shouldFinish = status === "complete" || status === "not_complate";
-  await connection.execute(
-    `UPDATE \`log_import_file\`
-     SET \`status\` = ?,
-         \`finish_date_time\` = ${shouldFinish ? "CURRENT_TIMESTAMP" : "NULL"},
-         \`not_complete_msg\` = ?
-     WHERE \`id\` = ?`,
-    [status, notCompleteMsg, id]
-  );
-}
-
 async function getPooledConnection(pool, attempts = 3) {
   let lastError;
   for (let attempt = 0; attempt < attempts; attempt += 1) {
@@ -315,13 +296,14 @@ function loadImportConfig(configPath = path.join(process.cwd(), "config.json")) 
 
 function parseArgs(argv = process.argv, env = process.env) {
   const importConfig = loadImportConfig(env.IMPORT_CONFIG_PATH || path.join(process.cwd(), "config.json"));
+  const db = getDbConfig(env);
   const args = {
     zip: "",
-    host: env.DB_HOST || "localhost",
-    port: Number(env.DB_PORT || 3306),
-    user: env.DB_USER || "root",
-    password: env.DB_PASSWORD || "",
-    database: env.DB_DATABASE || "sub_hdc",
+    host: db.host,
+    port: db.port,
+    user: db.user,
+    password: db.password,
+    database: db.database,
     batchSize: 500,
     onDuplicate: "error",
     fileName: "",
@@ -459,9 +441,9 @@ async function main() {
     try {
       if (!logImportId) {
         const zipFileSize = fs.statSync(args.zip).size;
-        logImportId = await createLogImportFile(logConn, args.fileName || path.basename(args.zip), zipFileSize);
+        logImportId = await logImport.createPending(logConn, args.fileName || path.basename(args.zip), zipFileSize);
       }
-      await updateLogImportFileStatus(logConn, logImportId, "processing");
+      await logImport.markProcessing(logConn, logImportId);
     } finally {
       logConn.release();
     }
@@ -591,12 +573,7 @@ async function main() {
     });
     const completeConn = await getPooledConnection(pool);
     try {
-      await updateLogImportFileStatus(
-        completeConn,
-        logImportId,
-        "complete",
-        buildWarningMessage(skippedRows, fileTruncations)
-      );
+      await logImport.markComplete(completeConn, logImportId, buildWarningMessage(skippedRows, fileTruncations));
     } finally {
       completeConn.release();
     }
@@ -605,7 +582,7 @@ async function main() {
       try {
         const errorConn = await getPooledConnection(pool);
         try {
-          await updateLogImportFileStatus(errorConn, logImportId, "not_complate", error.message);
+          await logImport.markFailed(errorConn, logImportId, error.message);
         } finally {
           errorConn.release();
         }
@@ -642,7 +619,6 @@ if (require.main === module) {
 module.exports = {
   buildLoadDataSql: loadDataImporter.buildLoadDataSql,
   acquireTableImportLock,
-  createLogImportFile,
   decodeText: sharedImporter.decodeText,
   encryptFileRows: sharedImporter.encryptFileRows,
   releaseTableImportLock,
@@ -664,6 +640,5 @@ module.exports = {
   formatTruncatedSummary,
   buildWarningMessage,
   tableImportLockName,
-  updateLogImportFileStatus,
   withTableImportLock,
 };

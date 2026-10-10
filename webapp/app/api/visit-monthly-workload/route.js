@@ -1,5 +1,5 @@
-import { createDbConnection } from "@/lib/db";
-import { getHospInfoMap } from "@/lib/hos-list-query.mjs";
+import { withDb } from "@/lib/db";
+import { resolveReportScope } from "@/lib/report.mjs";
 
 export const runtime = "nodejs";
 
@@ -23,62 +23,27 @@ function toNumber(value) {
 }
 
 export async function GET(request) {
-  let conn;
-
-  try {
-    conn = await createDbConnection();
-    const { searchParams } = new URL(request.url);
-    const requestedYear = Number(searchParams.get("fiscalYear"));
-    const requestedHospcode = searchParams.get("hospcode") || "";
-    const requestedAffiliation = searchParams.get("affiliation") || "";
-
-    const [yearRows] = await conn.query(
-      "SELECT DISTINCT fiscal_year FROM `s_visit` ORDER BY fiscal_year DESC"
-    );
-    const fiscalYears = yearRows.map((row) => toNumber(row.fiscal_year)).filter(Boolean);
-    const fiscalYear = fiscalYears.includes(requestedYear) ? requestedYear : (fiscalYears[0] || null);
-    const hospitalInfo = await getHospInfoMap(conn);
-
-    const [hospRows] = await conn.query(
-      "SELECT DISTINCT hospcode FROM `s_visit` ORDER BY hospcode"
-    );
-    const allHospitals = hospRows.map((row) => ({
-      hospcode: row.hospcode,
-      hospname: hospitalInfo[row.hospcode]?.hospname || "",
-      affiliation: hospitalInfo[row.hospcode]?.affiliation || "",
-    }));
-    const affiliations = [...new Set(allHospitals.map((hospital) => hospital.affiliation).filter(Boolean))]
-      .sort((left, right) => left.localeCompare(right, "th"));
-    const hospitals = requestedAffiliation
-      ? allHospitals.filter((hospital) => hospital.affiliation === requestedAffiliation)
-      : allHospitals;
+  return withDb(async (conn) => {
+    const scope = await resolveReportScope(conn, new URL(request.url).searchParams, { tables: ["s_visit"] });
+    const { fiscalYears, fiscalYear, affiliations, hospitals } = scope;
 
     if (!fiscalYear) {
       return Response.json({ fiscalYears, fiscalYear: null, affiliations, hospitals, months: MONTHS, rows: [] });
     }
 
-    const where = ["fiscal_year = ?"];
-    const values = [fiscalYear];
-    if (requestedHospcode) {
-      where.push("hospcode = ?");
-      values.push(requestedHospcode);
-    }
-
     const [rawRows] = await conn.query(
       `SELECT hospcode, month, visit_person, visit_count
        FROM \`s_visit\`
-       WHERE ${where.join(" AND ")}
+       WHERE ${scope.where}
        ORDER BY hospcode, month`,
-      values
+      scope.values
     );
     const byHospital = new Map();
     for (const rawRow of rawRows) {
-      const info = hospitalInfo[rawRow.hospcode] || {};
-      if (requestedAffiliation && info.affiliation !== requestedAffiliation) continue;
+      if (!scope.inAffiliation(rawRow.hospcode)) continue;
       const row = byHospital.get(rawRow.hospcode) || {
         hospcode: rawRow.hospcode,
-        hospname: info.hospname || "",
-        affiliation: info.affiliation || "",
+        ...scope.hospitalOf(rawRow.hospcode),
         months: Object.fromEntries(MONTHS.map((month) => [month.value, { visitPerson: 0, visitCount: 0 }])),
       };
       const month = row.months[toNumber(rawRow.month)];
@@ -98,9 +63,5 @@ export async function GET(request) {
       months: MONTHS,
       rows,
     });
-  } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
-  } finally {
-    if (conn) await conn.end();
-  }
+  }).catch((error) => Response.json({ error: error.message }, { status: 500 }));
 }

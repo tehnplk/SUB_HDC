@@ -7,11 +7,7 @@ import ExcelExportButton from "@/components/excel-export-button";
 import HospitalFilter from "@/components/hospital-filter";
 import FiscalYearFilter from "@/components/fiscal-year-filter";
 import AffiliationFilter from "@/components/affiliation-filter";
-
-function formatDate(value) {
-  if (!value || !/^\d{8}$/.test(value)) return value || "-";
-  return `${value.slice(6, 8)}/${value.slice(4, 6)}/${Number(value.slice(0, 4)) + 543}`;
-}
+import { formatThaiDate } from "@/lib/thai-date.mjs";
 
 function formatTransformedAt(value) {
   if (!value) return "ยังไม่มีข้อมูล";
@@ -155,7 +151,7 @@ export default function SpecialppErrorPage() {
                 <thead><tr><th className="numCol">ปีงบประมาณ</th><th className="numCol">PID</th><th>SEQ</th><th>วันที่รับบริการ</th><th>รหัส PPSPECIAL</th><th>ชื่อรหัส</th><th>สถานะ</th></tr></thead>
                 <tbody>
                   {detailState.loading ? <tr><td className="emptyCell" colSpan={7}>กำลังโหลดข้อมูล...</td></tr> : detailState.rows.length ? detailState.rows.map((row) => (
-                    <tr key={`${row.fiscal_year}-${row.pid}-${row.seq}-${row.date_serve}-${row.ppspecial}`}><td className="numCol">{row.fiscal_year}</td><td className="numCol">{row.pid}</td><td>{row.seq}</td><td>{formatDate(row.date_serve)}</td><td>{row.ppspecial || "-"}</td><td>{row.ppspecial_name || "-"}</td><td>{errorTypeLabel(row.error_type)}</td></tr>
+                    <tr key={`${row.fiscal_year}-${row.pid}-${row.seq}-${row.date_serve}-${row.ppspecial}`}><td className="numCol">{row.fiscal_year}</td><td className="numCol">{row.pid}</td><td>{row.seq}</td><td>{formatThaiDate(row.date_serve, "-")}</td><td>{row.ppspecial || "-"}</td><td>{row.ppspecial_name || "-"}</td><td>{errorTypeLabel(row.error_type)}</td></tr>
                   )) : <tr><td className="emptyCell" colSpan={7}>ไม่พบข้อมูล</td></tr>}
                 </tbody>
               </table>

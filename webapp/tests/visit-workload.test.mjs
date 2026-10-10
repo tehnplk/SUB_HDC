@@ -18,22 +18,21 @@ test("visit workload provides year, affiliation, and hospital filters", () => {
 });
 
 test("visit workload exports the filtered datagrid as xlsx", () => {
-  assert.match(exportSource, /requireExcelExportAccess/);
   assert.match(exportSource, /getVisitWorkload/);
-  assert.match(exportSource, /XLSX\.utils\.aoa_to_sheet/);
+  assert.match(exportSource, /fetchReport\(getVisitWorkload, request\)/);
+  assert.match(exportSource, /xlsxResponse\(columns/);
   assert.match(exportSource, /visitPerson/);
   assert.match(exportSource, /visitCount/);
-  assert.match(exportSource, /Content-Disposition/);
+  assert.match(exportSource, /visit_workload_\$\{data\.fiscalYear \|\| "all"\}\.xlsx/);
 });
 
 test("visit workload reads s_visit and filters safely", () => {
   assert.match(apiSource, /FROM \\`s_visit\\`/);
-  assert.match(apiSource, /fiscal_year = \?/);
-  assert.match(apiSource, /hospcode = \?/);
+  assert.match(apiSource, /resolveReportScope\(conn, .*\{ tables: \["s_visit"\] \}\)/);
+  assert.match(apiSource, /WHERE \$\{scope\.where\}/);
   assert.match(apiSource, /visit_person/);
   assert.match(apiSource, /visit_count/);
-  assert.match(apiSource, /getHospInfoMap/);
-  assert.match(apiSource, /info\.affiliation !== requestedAffiliation/);
+  assert.match(apiSource, /scope\.inAffiliation\(rawRow\.hospcode\)/);
   assert.match(pageSource, />คน<\/th>/);
   assert.match(pageSource, />ครั้ง<\/th>/);
   assert.match(pageSource, /visitPerson/);

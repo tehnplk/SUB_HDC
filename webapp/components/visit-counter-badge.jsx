@@ -22,7 +22,16 @@ export default function VisitCounterBadge() {
     }
     const method = alreadyCounted ? "GET" : "POST";
     fetch("/api/visit-counter", { method, cache: "no-store" })
-      .then((response) => (response.ok ? response.json() : null))
+      .then(async (response) => {
+        if (response.ok) return response.json();
+        // Anonymous visitors cannot increment the protected counter, but can
+        // still read and display its public total.
+        if (method === "POST" && response.status === 401) {
+          const totalResponse = await fetch("/api/visit-counter", { cache: "no-store" });
+          return totalResponse.ok ? totalResponse.json() : null;
+        }
+        return null;
+      })
       .then((payload) => {
         if (active && payload && typeof payload.total === "number") setTotal(payload.total);
       })

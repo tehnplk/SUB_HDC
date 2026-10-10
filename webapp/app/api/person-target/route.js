@@ -1,5 +1,6 @@
-import { createDbConnection } from "@/lib/db";
+import { withDb } from "@/lib/db";
 import { getHospNameMap } from "@/lib/hos-list-query.mjs";
+import { latestTransformAt } from "@/lib/report.mjs";
 
 export const runtime = "nodejs";
 
@@ -8,31 +9,14 @@ function toCount(value) {
 }
 
 export async function GET() {
-  let conn;
-
-  try {
-    conn = await createDbConnection();
+  return withDb(async (conn) => {
     const [sourceRows] = await conn.query(`
       SELECT hospcode, type_1, type_2, type_3, type_4, type_5
       FROM \`s_person_type_count\`
       ORDER BY hospcode
     `);
     const hospNames = await getHospNameMap(conn);
-
-    let transformedAt = null;
-    try {
-      const [[latestTransform]] = await conn.query(`
-        SELECT finish_at
-        FROM \`log_transform\`
-        WHERE transform_sql_task = 's_person_type_count.sql'
-          AND finish_at IS NOT NULL
-        ORDER BY finish_at DESC
-        LIMIT 1
-      `);
-      transformedAt = latestTransform?.finish_at || null;
-    } catch {
-      // Older sites may not have transform logging yet; the summary remains usable.
-    }
+    const transformedAt = await latestTransformAt(conn, "s_person_type_count.sql");
 
     const rows = sourceRows.map((row) => {
       const type1 = toCount(row.type_1);
@@ -77,12 +61,10 @@ export async function GET() {
     });
 
     return Response.json({ rows, summary, transformedAt });
-  } catch (error) {
+  }).catch((error) => {
     const message = error?.code === "ER_NO_SUCH_TABLE"
       ? "ยังไม่มีข้อมูลสรุปประชากร กรุณารอให้ transform ทำงานก่อน"
       : error.message;
     return Response.json({ error: message }, { status: 500 });
-  } finally {
-    if (conn) await conn.end();
-  }
+  });
 }

@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
+import { STATUS, isFailedStatus } from "@/lib/log-import-file.js";
 
 function formatDateTime(isoString) {
   if (!isoString) return "-";
@@ -62,26 +63,31 @@ function formatFileSize(fileSize) {
 // A completed import that skipped malformed rows still has a not_complete_msg:
 // treat it as "success with warning" rather than a plain success or a failure.
 function hasWarning(row) {
-  return row.status === "complete" && Boolean(row.not_complete_msg);
+  return row.status === STATUS.COMPLETE && Boolean(row.not_complete_msg);
+}
+
+// แถวที่กดเปิดดู not_complete_msg ได้: fail หรือสำเร็จแบบมีเตือน
+function hasMessage(row) {
+  return isFailedStatus(row.status) || hasWarning(row);
 }
 
 function statusBadgeClass(row) {
   const classes = ["importStatusBadge"];
-  if (row.status === "complete") classes.push(hasWarning(row) ? "isWarning" : "isComplete");
-  if (row.status === "pending") classes.push("isPending");
-  if (row.status === "processing") classes.push("isProcessing");
-  if (row.status === "not_complate" || row.status === "no_complete") classes.push("isNotComplete");
+  if (row.status === STATUS.COMPLETE) classes.push(hasWarning(row) ? "isWarning" : "isComplete");
+  if (row.status === STATUS.PENDING) classes.push("isPending");
+  if (row.status === STATUS.PROCESSING) classes.push("isProcessing");
+  if (isFailedStatus(row.status)) classes.push("isNotComplete");
   return classes.join(" ");
 }
 
 function statusBadgeLabel(row) {
-  if (row.status === "pending") return "รอนำเข้า";
-  if (row.status === "processing") {
+  if (row.status === STATUS.PENDING) return "รอนำเข้า";
+  if (row.status === STATUS.PROCESSING) {
     if (Number.isFinite(row.progress_percent)) return `กำลังนำเข้า ${Math.round(row.progress_percent)}%`;
     return "กำลังนำเข้า";
   }
-  if (row.status === "complete") return "สำเร็จ";
-  if (row.status === "not_complate" || row.status === "no_complete") return "ไม่สำเร็จ";
+  if (row.status === STATUS.COMPLETE) return "สำเร็จ";
+  if (isFailedStatus(row.status)) return "ไม่สำเร็จ";
   return row.status || "-";
 }
 
@@ -295,7 +301,7 @@ export default function LogImportDashboard() {
                       </span>
                     </td>
                     <td>
-                      {row.status === "not_complate" || hasWarning(row) ? (
+                      {hasMessage(row) ? (
                         <button
                           type="button"
                           className={`${statusBadgeClass(row)} isClickable`}
@@ -318,7 +324,7 @@ export default function LogImportDashboard() {
                     </td>
                     <td>{formatDurationSeconds(row.import_date_time, row.finish_date_time)}</td>
                   </tr>,
-                  expandedErrorId === row.id && (row.status === "not_complate" || hasWarning(row)) ? (
+                  expandedErrorId === row.id && hasMessage(row) ? (
                     <tr key={`msg-${row.id}`} className={`notCompleteMessageRow${hasWarning(row) ? " isWarningRow" : ""}`}>
                       <td colSpan={7}>
                         <div className="notCompleteMessage">{row.not_complete_msg || "-"}</div>

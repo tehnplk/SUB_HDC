@@ -39,7 +39,7 @@ test("db status route only checks database connection", () => {
   assert.equal(existsSync(routeUrl), true);
 
   const routeSource = readFileSync(routeUrl, "utf8");
-  assert.match(routeSource, /import \{ createDbConnection \} from "@\/lib\/db"/);
+  assert.match(routeSource, /import \{ withDb \} from "@\/lib\/db"/);
   assert.match(routeSource, /conn\.query\("SELECT 1"\)/);
   assert.match(routeSource, /status:\s*"online"/);
   assert.match(routeSource, /status:\s*"error"/);

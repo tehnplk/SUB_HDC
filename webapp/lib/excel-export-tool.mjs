@@ -2,7 +2,7 @@ import { mkdir, readdir, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
 import * as XLSX from "xlsx";
-import { getPooledDbConnection } from "./db.js";
+import { withDb } from "./db.js";
 import { normalizeDbQuerySql } from "./db-query-tool.mjs";
 
 export const EXCEL_EXPORT_TOOL_NAME = "ExcelExport";
@@ -131,45 +131,38 @@ function buildWorkbook(rows, columns, sheetName) {
   return XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
 }
 
-export async function runExcelExportTool(args, connectionFactory = getPooledDbConnection, options = {}) {
+export async function runExcelExportTool(args, runWithDb = withDb, options = {}) {
   const sql = normalizeDbQuerySql(args?.sql);
   const limitedSql = applyExcelExportLimit(sql);
-  let conn;
+  const [rows, fields] = await runWithDb((conn) => conn.query({
+    sql: limitedSql,
+    timeout: options.timeoutMs || 15000,
+  }));
 
-  try {
-    conn = await connectionFactory();
-    const [rows, fields] = await conn.query({
-      sql: limitedSql,
-      timeout: options.timeoutMs || 15000,
-    });
+  const columns = Array.isArray(fields) ? fields.map((field) => field.name) : [];
+  const safeRows = Array.isArray(rows) ? serializeRows(rows) : [];
+  const displayName = sanitizeExcelFilename(args?.filename);
+  const storedName = makeStoredFilename(displayName);
+  const exportRoot = options.exportRoot || getExportRoot(options.cwd || process.cwd());
+  const filePath = path.join(exportRoot, storedName);
+  const sheetName = sanitizeWorksheetName(args?.sheetName || "Export");
+  const buffer = buildWorkbook(safeRows, columns, sheetName);
 
-    const columns = Array.isArray(fields) ? fields.map((field) => field.name) : [];
-    const safeRows = Array.isArray(rows) ? serializeRows(rows) : [];
-    const displayName = sanitizeExcelFilename(args?.filename);
-    const storedName = makeStoredFilename(displayName);
-    const exportRoot = options.exportRoot || getExportRoot(options.cwd || process.cwd());
-    const filePath = path.join(exportRoot, storedName);
-    const sheetName = sanitizeWorksheetName(args?.sheetName || "Export");
-    const buffer = buildWorkbook(safeRows, columns, sheetName);
+  await mkdir(exportRoot, { recursive: true });
+  await writeFile(filePath, buffer);
+  cleanupOldExports(exportRoot).catch(() => {});
 
-    await mkdir(exportRoot, { recursive: true });
-    await writeFile(filePath, buffer);
-    cleanupOldExports(exportRoot).catch(() => {});
-
-    return {
-      ok: true,
-      sql: limitedSql,
-      columns,
-      rowCount: safeRows.length,
-      limited: Array.isArray(rows) && rows.length > safeRows.length,
-      filename: displayName,
-      storedName,
-      sheetName,
-      downloadUrl: `/api/ai/export/${encodeURIComponent(storedName)}`,
-    };
-  } finally {
-    if (conn) await conn.end();
-  }
+  return {
+    ok: true,
+    sql: limitedSql,
+    columns,
+    rowCount: safeRows.length,
+    limited: Array.isArray(rows) && rows.length > safeRows.length,
+    filename: displayName,
+    storedName,
+    sheetName,
+    downloadUrl: `/api/ai/export/${encodeURIComponent(storedName)}`,
+  };
 }
 
 export function userRequestedExcelExport(messages) {

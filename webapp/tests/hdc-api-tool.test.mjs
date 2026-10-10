@@ -9,11 +9,8 @@ import {
   userMentionedHdc,
 } from "../lib/hdc-api-tool.mjs";
 
-function mockConnection(rows) {
-  return async () => ({
-    query: async () => [rows],
-    end: async () => {},
-  });
+function mockDb(rows) {
+  return (fn) => fn({ query: async () => [rows] });
 }
 
 test("hdc-api-tool is exposed with search/source_table/year parameters", () => {
@@ -28,7 +25,7 @@ test("search mode resolves reports from the local hdc_api_report catalog", async
   const matches = [
     { report_name: "พัฒนาการเด็ก", source_table: "s_childdev_specialpp", category_name: "แม่และเด็ก" },
   ];
-  const result = await runHdcApiTool({ search: "พัฒนาการ" }, { connectionFactory: mockConnection(matches) });
+  const result = await runHdcApiTool({ search: "พัฒนาการ" }, { runWithDb: mockDb(matches) });
 
   assert.equal(result.ok, true);
   assert.equal(result.mode, "search");

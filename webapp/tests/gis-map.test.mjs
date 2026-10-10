@@ -1,14 +1,24 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import {
+  DEFAULT_PIN_ICON,
+  escapeHtml,
+  formatBirth,
+  PIN_ICONS,
+  pinIconHtml,
+  vulnerablePopupHtml,
+} from "../lib/gis-popup.mjs";
+import { draftReducer, EMPTY_DRAFT_FIELDS, INITIAL_DRAFT, personSearchUrl } from "../lib/gis-draft.mjs";
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 
 const mapSource = read("../components/gis-map.jsx");
 const pageSource = read("../app/gis/page.js");
-const proxySource = read("../proxy.js");
 const globalCss = read("../app/globals.css");
 const packageJson = JSON.parse(read("../package.json"));
+
+const run = (actions, state = INITIAL_DRAFT) => actions.reduce(draftReducer, state);
 
 test("/gis renders the leaflet map component", () => {
   assert.match(pageSource, /import GisMap from "@\/components\/gis-map"/);
@@ -16,9 +26,158 @@ test("/gis renders the leaflet map component", () => {
   assert.ok(packageJson.dependencies.leaflet);
 });
 
-test("/gis requires a User role or higher", () => {
-  assert.match(proxySource, /const PROTECTED_PAGE_PREFIXES = \[[\s\S]*?"\/gis"[\s\S]*?\];/);
-  assert.match(proxySource, /Number\(request\.auth\.user\.roleId\) === 4/);
+test("popup HTML escapes every DB value", () => {
+  const html = vulnerablePopupHtml({
+    properties: { fullname: '<script>alert("x")</script>', vulnerable_name: "a & b", pid: "<b>" },
+  });
+  assert.doesNotMatch(html, /<script>|<b>/);
+  assert.ok(html.includes("&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;"));
+  assert.ok(html.includes("<dd>a &amp; b</dd>"));
+  assert.equal(escapeHtml(null), "");
+  // ไม่มีชื่อต้องไม่ว่าง
+  assert.match(vulnerablePopupHtml({ properties: {} }), /<p class="gisPopupName">ไม่ระบุชื่อ<\/p>/);
+  assert.match(vulnerablePopupHtml(null), /ไม่ระบุชื่อ/);
+});
+
+test("birth is shown in the Thai Buddhist year with the age", () => {
+  const now = new Date(2026, 9, 10);
+  assert.equal(formatBirth("1950-03-01", now), "01/03/2493 (76 ปี)");
+  // ยังไม่ถึงวันเกิดปีนี้ อายุลดลง 1
+  assert.equal(formatBirth("1950-12-25", now), "25/12/2493 (75 ปี)");
+  // วันเกิดในอนาคต ไม่แสดงอายุติดลบ
+  assert.equal(formatBirth("2030-01-01", now), "01/01/2573");
+  assert.equal(formatBirth("19500301", now), "");
+  assert.equal(formatBirth(undefined, now), "");
+
+  const html = vulnerablePopupHtml({ properties: { birth: "1950-03-01", sex: "2" } }, now);
+  assert.ok(html.includes("<dt>วันเกิด</dt><dd>01/03/2493 (76 ปี)</dd>"));
+  assert.ok(html.includes("<dt>เพศ</dt><dd>หญิง</dd>"));
+});
+
+test("popup joins the address and resolves the village code to area names", () => {
+  const html = vulnerablePopupHtml({
+    properties: {
+      addr_no: "12/3",
+      road: "พระองค์ดำ",
+      village_code: "65010105",
+      moo: "5",
+      tambon_name: "ในเมือง",
+      district_name: "เมืองพิษณุโลก",
+      province_name: "พิษณุโลก",
+      hospcode: "07477",
+    },
+  });
+  assert.ok(html.includes("<dt>ที่อยู่</dt><dd>บ้านเลขที่ 12/3 หมู่บ้าน 65010105 ถ.พระองค์ดำ</dd>"));
+  assert.ok(html.includes("<dt>พื้นที่</dt><dd>หมู่ที่ 5 ต.ในเมือง อ.เมืองพิษณุโลก จ.พิษณุโลก</dd>"));
+  // ช่องว่างถูกข้าม ไม่มีแถวเปล่า
+  assert.doesNotMatch(html, /<dt>กลุ่ม<\/dt>|<dt>PID<\/dt>|<dt>วันเกิด<\/dt>/);
+
+  // join ไม่เจอ — ตกกลับไปโชว์รหัสดิบ; ชื่อหมู่บ้านมาแทนรหัสในบรรทัดที่อยู่
+  const fallback = vulnerablePopupHtml({ properties: { village_code: "65010105", village_name: "บ้านใหม่" } });
+  assert.ok(fallback.includes("<dt>ที่อยู่</dt><dd>บ้านใหม่</dd>"));
+  assert.ok(fallback.includes("<dt>พื้นที่</dt><dd>65010105</dd>"));
+});
+
+test("pin HTML carries the type glyph and falls back for unknown icons", () => {
+  const bed = pinIconHtml("bed", "#dc2626");
+  assert.match(bed, /^<span class="gisPin" style="--gis-pin-color:#dc2626"><svg /);
+  assert.ok(bed.includes(PIN_ICONS.bed));
+  assert.equal(DEFAULT_PIN_ICON, "user-round");
+  assert.ok(pinIconHtml("no-such-icon", "#000").includes(PIN_ICONS["user-round"]));
+});
+
+test("draft: arm, drop, drag, then click the pin to open the form", () => {
+  let state = run([{ type: "toggleAdd" }]);
+  assert.equal(state.addMode, true);
+
+  // ปักแล้วออกจากโหมด ยังไม่เปิดฟอร์ม และไม่เลือกกลุ่มให้ล่วงหน้า
+  state = run([{ type: "setField", field: "vulnerable", value: "2" }, { type: "drop", pos: { lat: 16.8, lng: 100.2 } }], state);
+  assert.equal(state.addMode, false);
+  assert.equal(state.formOpen, false);
+  assert.deepEqual(state.pos, { lat: 16.8, lng: 100.2 });
+  assert.deepEqual(state.fields, EMPTY_DRAFT_FIELDS);
+  assert.equal(state.fields.vulnerable, "");
+
+  state = run([{ type: "move", pos: { lat: 16.9, lng: 100.3 } }], state);
+  assert.deepEqual(state.pos, { lat: 16.9, lng: 100.3 });
+  assert.equal(state.formOpen, false);
+
+  state = run([{ type: "openForm" }], state);
+  assert.equal(state.formOpen, true);
+});
+
+test("draft: typing a name feeds the search, picking a result fills the form", () => {
+  let state = run([
+    { type: "drop", pos: { lat: 1, lng: 2 } },
+    { type: "openForm" },
+    { type: "setField", field: "hospcode", value: "07477" },
+    { type: "typeName", value: "สม" },
+  ]);
+  assert.equal(state.fields.fullname, "สม");
+  assert.equal(state.personQuery, "สม");
+
+  state = run([{ type: "searchStart" }], state);
+  assert.equal(state.personSearching, true);
+  const person = { hospcode: "07477", pid: "9", fullname: "สมชาย ใจดี", birth: "1950-03-01", addr_no: "1" };
+  state = run([{ type: "searchDone", items: [person] }], state);
+  assert.equal(state.personSearching, false);
+  assert.equal(state.personSearched, true);
+
+  state = run([{ type: "pickPerson", person }], state);
+  assert.equal(state.fields.fullname, "สมชาย ใจดี");
+  assert.equal(state.fields.pid, "9");
+  assert.equal(state.fields.addr_no, "1");
+  assert.equal(state.personQuery, "");
+  assert.deepEqual(state.personResults, []);
+
+  // ค้นแล้ว error ต้องมีข้อความ และผลค้นถูกล้าง
+  state = run([{ type: "searchFailed", error: "boom" }], state);
+  assert.equal(state.personError, "boom");
+  assert.equal(state.personSearched, true);
+});
+
+test("draft: cancel clears the pin, form and search; re-arming cancels too", () => {
+  const busy = run([
+    { type: "drop", pos: { lat: 1, lng: 2 } },
+    { type: "openForm" },
+    { type: "typeName", value: "สม" },
+    { type: "searchDone", items: [{ pid: "1" }] },
+    { type: "saveFailed", error: "x" },
+  ]);
+  for (const action of [{ type: "cancel" }, { type: "toggleAdd" }]) {
+    const state = draftReducer(busy, action);
+    assert.equal(state.pos, null);
+    assert.equal(state.formOpen, false);
+    assert.equal(state.saveError, "");
+    assert.equal(state.personQuery, "");
+    assert.deepEqual(state.personResults, []);
+    assert.equal(state.personError, "");
+    assert.equal(state.personSearched, false);
+  }
+  assert.equal(draftReducer(busy, { type: "toggleAdd" }).addMode, true);
+});
+
+test("draft: save start/fail/success", () => {
+  const open = run([{ type: "drop", pos: { lat: 1, lng: 2 } }, { type: "openForm" }]);
+  const saving = draftReducer(open, { type: "saveStart" });
+  assert.equal(saving.saving, true);
+  const failed = draftReducer(saving, { type: "saveFailed", error: "บันทึกไม่สำเร็จ" });
+  assert.equal(failed.saving, false);
+  assert.equal(failed.saveError, "บันทึกไม่สำเร็จ");
+  assert.equal(failed.formOpen, true);
+  const saved = draftReducer(saving, { type: "saved" });
+  assert.equal(saved.saving, false);
+  assert.equal(saved.pos, null);
+  assert.equal(saved.formOpen, false);
+});
+
+test("the name search needs a facility and two characters", () => {
+  assert.equal(personSearchUrl("", "สมชาย"), null);
+  assert.equal(personSearchUrl("07477", " ส "), null);
+  assert.equal(
+    personSearchUrl("07477", " สม "),
+    `/api/gis/person-search?q=${encodeURIComponent("สม")}&hospcode=07477`,
+  );
 });
 
 test("the map loads leaflet on the client only and cleans itself up", () => {
@@ -167,13 +326,10 @@ test("the vulnerable-group layer draws people as points from its own table", () 
   assert.match(mapSource, /const VULNERABLE_COLORS = \[/);
   assert.match(mapSource, /VULNERABLE_COLORS\[index % VULNERABLE_COLORS\.length\]/);
   // หมุดมี icon สื่อประเภท — divIcon รับ HTML string จึงเขียน path ของ lucide ตรง ๆ
-  assert.match(mapSource, /const PIN_ICONS = \{/);
-  for (const icon of ["bed", '"hand-helping"', "accessibility", '"user-round"']) {
-    assert.ok(mapSource.includes(`${icon}:`), `PIN_ICONS ต้องมี ${icon}`);
+  for (const icon of ["bed", "hand-helping", "accessibility", "user-round"]) {
+    assert.ok(PIN_ICONS[icon], `PIN_ICONS ต้องมี ${icon}`);
   }
-  assert.match(mapSource, /const DEFAULT_PIN_ICON = "user-round";/);
-  // icon ที่ไม่รู้จักต้องไม่ทำให้หมุดหาย — fallback เป็นตัวตั้งต้น
-  assert.match(mapSource, /PIN_ICONS\[icon\] \?\? PIN_ICONS\[DEFAULT_PIN_ICON\]/);
+  assert.match(mapSource, /html: pinIconHtml\(config\.pin\.icon, config\.pin\.color\)/);
   assert.match(mapSource, /pointToLayer: config\.pin/);
   assert.match(mapSource, /L\.divIcon\(\{/);
   // ปลายหมุดต้องชี้ที่พิกัดจริง ไม่ใช่กึ่งกลางกล่อง
@@ -188,14 +344,7 @@ test("the vulnerable-group layer draws people as points from its own table", () 
   assert.match(mapSource, /popupAnchor: \[0, -34\],/);
   // ขอบเขตยังเป็น tooltip ตอน hover เหมือนเดิม
   assert.match(mapSource, /featureLayer\.bindTooltip\(label, \{ sticky: true \}\)/);
-  // popup ประกอบ HTML เอง — ข้อมูลจาก DB ต้อง escape ก่อนเสมอ
-  assert.match(mapSource, /function escapeHtml\(value\)/);
-  assert.doesNotMatch(mapSource, /\$\{fullname\}|\$\{vulnerableName\}|\$\{value\}/);
-  assert.match(mapSource, /escapeHtml\(fullname \|\| "ไม่ระบุชื่อ"\)/);
-  assert.match(mapSource, /const SEX_LABELS = \{ 1: "ชาย", 2: "หญิง" \};/);
-  // birth เป็น ค.ศ. — แสดงเป็น พ.ศ. พร้อมอายุ
-  assert.match(mapSource, /const thaiYear = Number\(year\) \+ 543;/);
-  assert.match(mapSource, /if \(beforeBirthday\) age -= 1;/);
+  // popup HTML/escape ทดสอบเชิงพฤติกรรมด้านบน
   assert.match(globalCss, /\.gisPopupName \{/);
   assert.match(globalCss, /\.gisPopupList \{/);
 
@@ -267,7 +416,7 @@ test("c_vulnerable is the lookup for the vulnerable column", () => {
   assert.match(ddl, /\(3, 'ผู้พิการ', 'accessibility'\)/);
   // ทุก icon ที่ seed ต้องมีใน PIN_ICONS ไม่งั้นหมุดตกไปใช้ตัวตั้งต้นเงียบ ๆ
   for (const [, icon] of ddl.matchAll(/, '([a-z-]+)'\),?$/gm)) {
-    assert.ok(mapSource.includes(`${icon}:`) || mapSource.includes(`"${icon}":`), `PIN_ICONS ขาด ${icon}`);
+    assert.ok(PIN_ICONS[icon], `PIN_ICONS ขาด ${icon}`);
   }
   // seed ต้องรันซ้ำได้
   assert.match(ddl, /ON CONFLICT \(id\) DO UPDATE SET name = EXCLUDED\.name, icon = EXCLUDED\.icon;/);
@@ -292,14 +441,15 @@ test("the Add Point toolbox sits under the zoom control and saves through a guar
   // ติดโหมดแล้วคลิกแผนที่ครั้งเดียวเพื่อ "ปัก" หมุดร่าง แล้วออกจากโหมดทันที
   assert.match(mapSource, /map\.on\("click", onClick\)/);
   assert.match(mapSource, /map\.off\("click", onClick\)/);
-  assert.match(mapSource, /setAddMode\(false\);/);
-  // หมุดร่างสีแดง ลากย้ายได้ และยังไม่เปิดฟอร์มตอนปัก
+  assert.match(mapSource, /useReducer\(draftReducer, INITIAL_DRAFT\)/);
+  assert.match(mapSource, /dispatch\(\{ type: "drop", pos: \{ lat: latlng\.lat, lng: latlng\.lng \} \}\);/);
+  // หมุดร่างสีแดง ลากย้ายได้
   assert.match(mapSource, /const DRAFT_PIN_COLOR = "#dc2626";/);
   assert.match(mapSource, /draggable: true,/);
   assert.match(mapSource, /html: pinIconHtml\(DRAFT_PIN_ICON, DRAFT_PIN_COLOR\)/);
-  assert.match(mapSource, /marker\.on\("dragend", \(\) => \{/);
+  assert.match(mapSource, /dispatch\(\{ type: "move", pos: \{ lat, lng \} \}\);/);
   // คลิกหมุดร่างอีกทีถึงเปิดฟอร์ม
-  assert.match(mapSource, /marker\.on\("click", \(\) => setFormOpen\(true\)\);/);
+  assert.match(mapSource, /marker\.on\("click", \(\) => dispatch\(\{ type: "openForm" \}\)\);/);
   assert.match(mapSource, /\{formOpen && draftPos \? \(/);
   // ฟอร์มอยู่กลางแผนที่เสมอ จึงไม่ตกขอบไม่ว่าปักหมุดตรงไหน
   assert.match(globalCss, /\.gisAddForm \{[\s\S]*?top: 50%;[\s\S]*?left: 50%;[\s\S]*?transform: translate\(-50%, -50%\);/);
@@ -311,9 +461,8 @@ test("the Add Point toolbox sits under the zoom control and saves through a guar
   assert.match(mapSource, /delete geoJsonCacheRef\.current\[layerId\];/);
   assert.match(mapSource, /reloadDataLayer\(`vulnerable-\$\{draftFields\.vulnerable\}`\)/);
 
-  // ฝั่งเขียนต้อง login ก่อน ส่วน GET ยังเปิดสาธารณะเหมือนตัวแผนที่
+  // สิทธิ์ GET/POST ทดสอบเชิงพฤติกรรมใน access.test.mjs
   assert.match(routeSource, /export async function POST\(request\)/);
-  assert.match(routeSource, /const unauthorized = await requireGisAuth\(\);/);
   // validate ก่อนเขียนเสมอ
   assert.match(routeSource, /if \(!hospcode \|\| !pid\)/);
   assert.match(routeSource, /if \(!Number\.isInteger\(vulnerable\)\)/);
@@ -332,29 +481,18 @@ test("the Add Point toolbox sits under the zoom control and saves through a guar
   for (const placeholder of ["บ้านเลขที่", "ถนน", "รหัสหมู่บ้าน", "ชื่อหมู่บ้าน"]) {
     assert.ok(mapSource.includes(`placeholder="${placeholder}"`), `ฟอร์มต้องมีช่อง ${placeholder}`);
   }
-  // popup รวมที่อยู่เป็นบรรทัดเดียว ข้ามส่วนที่ว่าง
-  assert.match(mapSource, /\["ที่อยู่", address\],/);
-  assert.match(mapSource, /\.filter\(Boolean\)/);
-
   // รหัสหมู่บ้านแสดงเป็นชื่อพื้นที่ — 6 หลักแรก join subdistrict_boundary
+  // (ฝั่ง popup ทดสอบเชิงพฤติกรรมด้านบน)
   assert.match(routeSource, /LEFT JOIN subdistrict_boundary sb/);
   assert.ok(routeSource.includes("ON sb.code = 'TH' || left(v.village_code, 6)"));
   // หมู่ที่ตัดศูนย์นำหน้าออก (05 -> 5)
   assert.ok(routeSource.includes("NULLIF(ltrim(right(v.village_code, 2), '0'), '') AS moo"));
-  assert.match(mapSource, /moo \? `หมู่ที่ \$\{moo\}` : "",/);
-  assert.match(mapSource, /tambonName \? `ต\.\$\{tambonName\}` : "",/);
-  assert.match(mapSource, /districtName \? `อ\.\$\{districtName\}` : "",/);
-  assert.match(mapSource, /provinceName \? `จ\.\$\{provinceName\}` : "",/);
-  // join ไม่เจอต้องไม่หายไปเฉย ๆ — ตกกลับไปโชว์รหัสดิบ
-  assert.match(mapSource, /\["พื้นที่", area \|\| villageCode\],/);
 });
 
 test("the draft form searches names from PERSON joined to HOME", () => {
   const searchSource = read("../app/api/gis/person-search/route.js");
   const cryptoSource = read("../lib/f43-decrypt.mjs");
 
-  // ข้อมูลระบุตัวบุคคล ต้อง login ก่อนค้น
-  assert.match(searchSource, /const unauthorized = await requireGisAuth\(\);/);
   assert.match(searchSource, /FROM person p/);
   assert.match(searchSource, /LEFT JOIN home h ON h\.hospcode = p\.hospcode AND h\.hid = p\.hid/);
   // lname/house/cid เข้ารหัสไว้ กรองใน SQL ไม่ได้ ต้องถอดใน node แล้วค่อยกรอง
@@ -377,30 +515,16 @@ test("the draft form searches names from PERSON joined to HOME", () => {
   assert.match(cryptoSource, /if \(buffer\.length <= 28\) return "";/);
 
   // ฝั่งฟอร์ม: หน่วงก่อนยิง แล้วเลือกผลลัพธ์มาเติมทุกช่อง
-  assert.match(mapSource, /setTimeout\(\(\) => \{/);
-  assert.match(mapSource, /\/api\/gis\/person-search\?q=\$\{encodeURIComponent\(query\)\}/);
-  assert.match(mapSource, /function pickPerson\(person\)/);
-  assert.match(mapSource, /setDraftFields\(\(current\) => \(\{ \.\.\.current, \.\.\.person \}\)\)/);
-  assert.match(mapSource, /onClick=\{\(\) => pickPerson\(person\)\}/);
+  assert.match(mapSource, /\}, 300\);/);
+  assert.match(mapSource, /const url = personSearchUrl\(draftFields\.hospcode, personQuery\);/);
+  assert.match(mapSource, /onClick=\{\(\) => dispatch\(\{ type: "pickPerson", person \}\)\}/);
   assert.match(globalCss, /\.gisPersonResults \{/);
-});
-
-test("GIS write and search endpoints skip login in dev only", () => {
-  const gisAuth = read("../lib/gis-auth.mjs");
-
-  // production ยังบังคับ login ตามเดิม ข้ามเฉพาะตอน next dev
-  assert.match(gisAuth, /if \(process\.env\.NODE_ENV !== "production"\) return null;/);
-  assert.match(gisAuth, /return requireAppAuth\(\);/);
-  // ต้องไม่แตะ guard กลางที่หน้าอื่นใช้ร่วมกัน
-  const authGuard = read("../lib/auth-guard.mjs");
-  assert.doesNotMatch(authGuard, /NODE_ENV/);
 });
 
 test("the name search needs only two characters and always shows feedback", () => {
   const searchSource = read("../app/api/gis/person-search/route.js");
 
   assert.match(searchSource, /if \(query\.length < 2\) return Response\.json\(\{ items: \[\] \}\);/);
-  assert.match(mapSource, /if \(!draftFields\.hospcode \|\| query\.length < 2\) \{/);
   // ค้นแล้วไม่เจอ หรือ error ต้องมีข้อความบอก ไม่ใช่เงียบ
   assert.match(mapSource, /ไม่พบรายชื่อ/);
   assert.match(mapSource, /personSearched && personResults\.length === 0/);
@@ -426,9 +550,7 @@ test("the draft form orders keys last and forces a group choice", () => {
     "PID",
   ]);
 
-  // ไม่เลือกกลุ่มให้ล่วงหน้า และบังคับเลือกก่อนบันทึก
-  assert.match(mapSource, /setDraftFields\(\{ \.\.\.EMPTY_DRAFT_FIELDS \}\);/);
-  assert.doesNotMatch(mapSource, /vulnerable: String\(vulnerableTypes\[0\]/);
+  // บังคับเลือกกลุ่มก่อนบันทึก (ไม่เลือกให้ล่วงหน้า — ดู reducer test "drop")
   assert.match(mapSource, /<option value="">เลือกกลุ่ม<\/option>/);
   assert.match(mapSource, /onChange=\{setDraftField\("vulnerable"\)\} required/);
 });
@@ -464,6 +586,4 @@ test("the pin form picks a facility in the district before searching a person", 
   assert.match(mapSource, /<option value="">เลือกหน่วยบริการ<\/option>/);
   assert.match(mapSource, /onChange=\{setDraftField\("hospcode"\)\} required/);
   assert.match(mapSource, /disabled=\{!draftFields\.hospcode\}/);
-  assert.match(mapSource, /if \(!draftFields\.hospcode \|\| query\.length < 2\)/);
-  assert.match(mapSource, /&hospcode=\$\{encodeURIComponent\(draftFields\.hospcode\)\}/);
 });

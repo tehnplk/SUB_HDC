@@ -1,5 +1,5 @@
-import { createDbConnection } from "@/lib/db";
-import { getHospInfoMap, getHospNameMap } from "@/lib/hos-list-query.mjs";
+import { withDb } from "@/lib/db";
+import { resolveReportScope } from "@/lib/report.mjs";
 
 export const runtime = "nodejs";
 
@@ -23,58 +23,14 @@ function toNumber(value) {
 }
 
 export async function GET(request) {
-  let conn;
-
-  try {
-    conn = await createDbConnection();
-    const { searchParams } = new URL(request.url);
-    const requestedYear = Number(searchParams.get("fiscalYear"));
-    const requestedHospcode = searchParams.get("hospcode") || "";
-    const requestedAffiliation = searchParams.get("affiliation") || "";
-
-    const [yearRows] = await conn.query(`
-      SELECT DISTINCT fiscal_year
-      FROM (
-        SELECT fiscal_year FROM \`s_dm_screen\`
-        UNION
-        SELECT fiscal_year FROM \`s_ht_screen\`
-      ) screening_years
-      ORDER BY fiscal_year DESC
-    `);
-    const fiscalYears = yearRows.map((row) => toNumber(row.fiscal_year)).filter(Boolean);
-    const fiscalYear = fiscalYears.includes(requestedYear) ? requestedYear : (fiscalYears[0] || null);
-    const hospNames = await getHospNameMap(conn);
-    const hospitalInfo = await getHospInfoMap(conn);
-
-    const [hospRows] = await conn.query(`
-      SELECT DISTINCT hospcode
-      FROM (
-        SELECT hospcode FROM \`s_dm_screen\`
-        UNION
-        SELECT hospcode FROM \`s_ht_screen\`
-      ) screening_hospitals
-      ORDER BY hospcode
-    `);
-    const allHospitals = hospRows.map((row) => ({
-      hospcode: row.hospcode,
-      hospname: hospitalInfo[row.hospcode]?.hospname || hospNames[row.hospcode] || "",
-      affiliation: hospitalInfo[row.hospcode]?.affiliation || "",
-    }));
-    const affiliations = [...new Set(allHospitals.map((hospital) => hospital.affiliation).filter(Boolean))]
-      .sort((left, right) => left.localeCompare(right, "th"));
-    const hospitals = requestedAffiliation
-      ? allHospitals.filter((hospital) => hospital.affiliation === requestedAffiliation)
-      : allHospitals;
+  return withDb(async (conn) => {
+    const scope = await resolveReportScope(conn, new URL(request.url).searchParams, {
+      tables: ["s_dm_screen", "s_ht_screen"],
+    });
+    const { fiscalYears, fiscalYear, affiliations, hospitals, where, values } = scope;
 
     if (!fiscalYear) {
       return Response.json({ fiscalYears, fiscalYear: null, affiliations, hospitals, rows: [], trend: [], summary: { dm: 0, ht: 0, total: 0 } });
-    }
-
-    const where = ["fiscal_year = ?"];
-    const values = [fiscalYear];
-    if (requestedHospcode) {
-      where.push("hospcode = ?");
-      values.push(requestedHospcode);
     }
 
     const [rawRows] = await conn.query(
@@ -84,11 +40,11 @@ export async function GET(request) {
        FROM (
          SELECT hospcode, fiscal_year, month
          FROM \`s_dm_screen\`
-         WHERE ${where.join(" AND ")}
+         WHERE ${where}
          UNION
          SELECT hospcode, fiscal_year, month
          FROM \`s_ht_screen\`
-         WHERE ${where.join(" AND ")}
+         WHERE ${where}
        ) keys_by_month
        LEFT JOIN \`s_dm_screen\` dm
          ON dm.hospcode = keys_by_month.hospcode
@@ -106,15 +62,13 @@ export async function GET(request) {
     const byMonth = new Map(FISCAL_MONTHS.map((month) => [month.value, { ...month, dm: 0, ht: 0, total: 0 }]));
 
     for (const row of rawRows) {
-      const rowAffiliation = hospitalInfo[row.hospcode]?.affiliation || "";
-      if (requestedAffiliation && rowAffiliation !== requestedAffiliation) continue;
+      if (!scope.inAffiliation(row.hospcode)) continue;
       const dm = toNumber(row.dm_screen);
       const ht = toNumber(row.ht_screen);
       const total = dm + ht;
       const current = byHospital.get(row.hospcode) || {
         hospcode: row.hospcode,
-        hospname: hospitalInfo[row.hospcode]?.hospname || hospNames[row.hospcode] || "",
-        affiliation: rowAffiliation,
+        ...scope.hospitalOf(row.hospcode),
         dm: 0,
         ht: 0,
         total: 0,
@@ -139,7 +93,6 @@ export async function GET(request) {
     }
 
     const rows = [...byHospital.values()]
-      .filter((row) => !requestedAffiliation || row.affiliation === requestedAffiliation)
       .sort((left, right) => left.hospcode.localeCompare(right.hospcode));
     const summary = rows.reduce(
       (total, row) => ({ dm: total.dm + row.dm, ht: total.ht + row.ht, total: total.total + row.total }),
@@ -156,9 +109,5 @@ export async function GET(request) {
       trend: FISCAL_MONTHS.map((month) => byMonth.get(month.value)),
       summary,
     });
-  } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
-  } finally {
-    if (conn) await conn.end();
-  }
+  }).catch((error) => Response.json({ error: error.message }, { status: 500 }));
 }

@@ -1,5 +1,5 @@
-import { requireAdminApi } from "@/lib/admin-auth";
-import { createDbConnection } from "@/lib/db";
+import { requireAccess } from "@/lib/access.mjs";
+import { withDb } from "@/lib/db";
 
 export const runtime = "nodejs";
 
@@ -27,12 +27,10 @@ async function getRoles(connection) {
   return rows.map((row) => ({ id: Number(row.id), role: String(row.role) }));
 }
 
-export async function GET() {
-  const admin = await requireAdminApi();
-  if (admin.response) return admin.response;
-  let connection;
-  try {
-    connection = await createDbConnection();
+export async function GET(request) {
+  const { denied } = await requireAccess(request);
+  if (denied) return denied;
+  return withDb(async (connection) => {
     const [rows] = await connection.query(
       `SELECT u.id, u.provider_id, u.fullname, u.hoscode, h.hospname, u.role AS role_id,
               r.role AS role_name, r.note AS role_note, u.login_count, u.last_activity, u.is_active, u.note
@@ -42,17 +40,12 @@ export async function GET() {
        ORDER BY u.last_activity IS NULL, u.last_activity DESC, u.id DESC`,
     );
     return Response.json({ users: rows.map(userPayload), roles: await getRoles(connection) });
-  } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
-  } finally {
-    if (connection) await connection.end();
-  }
+  }).catch((error) => Response.json({ error: error.message }, { status: 500 }));
 }
 
 export async function PATCH(request) {
-  const admin = await requireAdminApi();
-  if (admin.response) return admin.response;
-  let connection;
+  const { denied, session } = await requireAccess(request);
+  if (denied) return denied;
   try {
     const body = await request.json();
     const id = Number(body?.id);
@@ -66,49 +59,47 @@ export async function PATCH(request) {
       return Response.json({ error: "Invalid role or note" }, { status: 400 });
     }
 
-    connection = await createDbConnection();
-    const [roleRows] = await connection.query(
-      "SELECT id, role FROM c_user_role WHERE id = ? AND is_active = 1 LIMIT 1",
-      [roleId],
-    );
-    if (!roleRows.length) {
-      return Response.json({ error: "Role is not active" }, { status: 400 });
-    }
-    const [currentRows] = await connection.query(
-      "SELECT provider_id FROM c_user_provider WHERE id = ? LIMIT 1",
-      [id],
-    );
-    if (!currentRows.length) {
-      return Response.json({ error: "User not found" }, { status: 404 });
-    }
-    if (admin.session.user.providerId === currentRows[0].provider_id && (!isActive || roleId !== 1)) {
-      return Response.json({ error: "You cannot disable or demote your own account" }, { status: 400 });
-    }
-    await connection.query(
-      "UPDATE c_user_provider SET role = ?, is_active = ?, note = ? WHERE id = ?",
-      [roleId, isActive ? 1 : 0, note || null, id],
-    );
-    const [rows] = await connection.query(
-      `SELECT u.id, u.provider_id, u.fullname, u.hoscode, h.hospname, u.role AS role_id,
-              r.role AS role_name, r.note AS role_note, u.login_count, u.last_activity, u.is_active, u.note
-       FROM c_user_provider u
-       LEFT JOIN c_user_role r ON r.id = u.role
-       LEFT JOIN c_hospital h ON h.hospcode = u.hoscode
-       WHERE u.id = ?`,
-      [id],
-    );
-    return Response.json({ user: userPayload(rows[0]) });
+    return await withDb(async (connection) => {
+      const [roleRows] = await connection.query(
+        "SELECT id, role FROM c_user_role WHERE id = ? AND is_active = 1 LIMIT 1",
+        [roleId],
+      );
+      if (!roleRows.length) {
+        return Response.json({ error: "Role is not active" }, { status: 400 });
+      }
+      const [currentRows] = await connection.query(
+        "SELECT provider_id FROM c_user_provider WHERE id = ? LIMIT 1",
+        [id],
+      );
+      if (!currentRows.length) {
+        return Response.json({ error: "User not found" }, { status: 404 });
+      }
+      if (session.user.providerId === currentRows[0].provider_id && (!isActive || roleId !== 1)) {
+        return Response.json({ error: "You cannot disable or demote your own account" }, { status: 400 });
+      }
+      await connection.query(
+        "UPDATE c_user_provider SET role = ?, is_active = ?, note = ? WHERE id = ?",
+        [roleId, isActive ? 1 : 0, note || null, id],
+      );
+      const [rows] = await connection.query(
+        `SELECT u.id, u.provider_id, u.fullname, u.hoscode, h.hospname, u.role AS role_id,
+                r.role AS role_name, r.note AS role_note, u.login_count, u.last_activity, u.is_active, u.note
+         FROM c_user_provider u
+         LEFT JOIN c_user_role r ON r.id = u.role
+         LEFT JOIN c_hospital h ON h.hospcode = u.hoscode
+         WHERE u.id = ?`,
+        [id],
+      );
+      return Response.json({ user: userPayload(rows[0]) });
+    });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
-  } finally {
-    if (connection) await connection.end();
   }
 }
 
 export async function DELETE(request) {
-  const admin = await requireAdminApi();
-  if (admin.response) return admin.response;
-  let connection;
+  const { denied, session } = await requireAccess(request);
+  if (denied) return denied;
   try {
     const body = await request.json();
     const id = Number(body?.id);
@@ -116,23 +107,22 @@ export async function DELETE(request) {
       return Response.json({ error: "Invalid user id" }, { status: 400 });
     }
 
-    connection = await createDbConnection();
-    const [rows] = await connection.query(
-      "SELECT provider_id FROM c_user_provider WHERE id = ? LIMIT 1",
-      [id],
-    );
-    if (!rows.length) {
-      return Response.json({ error: "User not found" }, { status: 404 });
-    }
-    if (admin.session.user.providerId === rows[0].provider_id) {
-      return Response.json({ error: "You cannot delete your own account" }, { status: 400 });
-    }
+    return await withDb(async (connection) => {
+      const [rows] = await connection.query(
+        "SELECT provider_id FROM c_user_provider WHERE id = ? LIMIT 1",
+        [id],
+      );
+      if (!rows.length) {
+        return Response.json({ error: "User not found" }, { status: 404 });
+      }
+      if (session.user.providerId === rows[0].provider_id) {
+        return Response.json({ error: "You cannot delete your own account" }, { status: 400 });
+      }
 
-    await connection.query("DELETE FROM c_user_provider WHERE id = ?", [id]);
-    return Response.json({ deletedId: id });
+      await connection.query("DELETE FROM c_user_provider WHERE id = ?", [id]);
+      return Response.json({ deletedId: id });
+    });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
-  } finally {
-    if (connection) await connection.end();
   }
 }

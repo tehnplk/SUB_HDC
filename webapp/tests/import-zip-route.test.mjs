@@ -7,7 +7,6 @@ import {
   buildQueueFileName,
   parseQueueFileName,
 } from "../lib/import-dirs.js";
-import { createPendingLogImportFile, logImportOrderClause } from "../lib/log-import.mjs";
 
 const routePath = path.resolve(process.cwd(), "app", "api", "import-zip", "route.js");
 
@@ -30,27 +29,6 @@ test("queue file names without an id parse as manual drop-ins", () => {
 test("buildQueueFileName rejects invalid log import ids", () => {
   assert.throws(() => buildQueueFileName(0, "a.zip"));
   assert.throws(() => buildQueueFileName("x", "a.zip"));
-});
-
-test("logImportOrderClause keeps processing rows above pending rows", () => {
-  assert.match(logImportOrderClause(), /WHEN 'processing' THEN 0/);
-  assert.match(logImportOrderClause(), /WHEN 'pending' THEN 1/);
-});
-
-test("createPendingLogImportFile stores the queued zip file size", async () => {
-  const executed = [];
-  const connection = {
-    async execute(sql, values) {
-      executed.push({ sql, values });
-      return [{ insertId: 42 }];
-    },
-  };
-
-  const id = await createPendingLogImportFile(connection, "queued.zip", 2048);
-
-  assert.equal(id, 42);
-  assert.match(executed[0].sql, /`file_name`, `file_size`, `status`/);
-  assert.deepEqual(executed[0].values, ["queued.zip", 2048, "pending"]);
 });
 
 test("import route only enqueues to the directory queue and never spawns import work", async () => {

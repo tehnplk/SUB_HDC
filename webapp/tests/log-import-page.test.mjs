@@ -7,13 +7,14 @@ const pagePath = path.resolve(process.cwd(), "app", "dashboard", "log-import", "
 const routePath = path.resolve(process.cwd(), "app", "api", "dashboard", "route.js");
 const cleanupRoutePath = path.resolve(process.cwd(), "app", "api", "log-import", "cleanup", "route.js");
 const cssPath = path.resolve(process.cwd(), "app", "globals.css");
+const logImportLibPath = path.resolve(process.cwd(), "lib", "log-import-file.js");
 
 test("log import page hides not_complete_msg column and reveals it from not_complate status", async () => {
   const source = await readFile(pagePath, "utf8");
 
   assert.doesNotMatch(source, /<th[^>]*>not_complete_msg<\/th>/);
   assert.match(source, /expandedErrorId/);
-  assert.match(source, /row\.status === "not_complate"/);
+  assert.match(source, /isFailedStatus\(row\.status\)/);
   assert.match(source, /row\.not_complete_msg/);
 });
 
@@ -31,9 +32,9 @@ test("log import page displays Thai labels for import status badges", async () =
   const source = await readFile(pagePath, "utf8");
 
   assert.match(source, /function statusBadgeLabel/);
-  assert.match(source, /row\.status === "pending"[\s\S]+รอนำเข้า/);
-  assert.match(source, /row\.status === "processing"[\s\S]+กำลังนำเข้า/);
-  assert.match(source, /row\.status === "complete"[\s\S]+สำเร็จ/);
+  assert.match(source, /row\.status === STATUS\.PENDING[\s\S]+รอนำเข้า/);
+  assert.match(source, /row\.status === STATUS\.PROCESSING[\s\S]+กำลังนำเข้า/);
+  assert.match(source, /row\.status === STATUS\.COMPLETE[\s\S]+สำเร็จ/);
   assert.match(source, /ไม่สำเร็จ/);
   assert.match(source, /statusBadgeLabel\(row\)/);
 });
@@ -44,9 +45,10 @@ test("log import page flags a completed import that skipped rows as success with
 
   // complete + not_complete_msg => warning badge that opens the message row
   assert.match(source, /function hasWarning/);
-  assert.match(source, /row\.status === "complete" && Boolean\(row\.not_complete_msg\)/);
+  assert.match(source, /row\.status === STATUS\.COMPLETE && Boolean\(row\.not_complete_msg\)/);
   assert.match(source, /isWarning/);
-  assert.match(source, /row\.status === "not_complate" \|\| hasWarning\(row\)/);
+  assert.match(source, /isFailedStatus\(row\.status\) \|\| hasWarning\(row\)/);
+  assert.match(source, /expandedErrorId === row\.id && hasMessage\(row\)/);
   assert.match(source, /<AlertTriangle aria-hidden="true" \/>/);
   assert.match(cssSource, /\.importStatusBadge\.isWarning/);
 });
@@ -89,7 +91,7 @@ test("log import page shows processing percent in the status badge", async () =>
   const pageSource = await readFile(pagePath, "utf8");
 
   assert.match(pageSource, /function statusBadgeLabel\(row\)/);
-  assert.match(pageSource, /row\.status === "processing"[\s\S]*Number\.isFinite\(row\.progress_percent\)/);
+  assert.match(pageSource, /row\.status === STATUS\.PROCESSING[\s\S]*Number\.isFinite\(row\.progress_percent\)/);
   assert.match(pageSource, /Math\.round\(row\.progress_percent\)/);
   assert.match(pageSource, /statusBadgeLabel\(row\)/);
 });
@@ -98,7 +100,7 @@ test("log import grid shows file size after file name and falls back to dash", a
   const pageSource = await readFile(pagePath, "utf8");
   const routeSource = await readFile(routePath, "utf8");
 
-  assert.match(routeSource, /SELECT id, file_name, file_size, import_date_time/);
+  assert.match(await readFile(logImportLibPath, "utf8"), /SELECT id, file_name, file_size, import_date_time/);
   assert.match(routeSource, /file_size: r\.file_size == null \? null : Number\(r\.file_size\)/);
   assert.match(pageSource, /function formatFileSize/);
   assert.match(pageSource, /if \(fileSize == null \|\| fileSize === ""\) return "-"/);
@@ -123,9 +125,9 @@ test("log import page splits rows into waiting success and failed tabs with serv
   assert.match(pageSource, /aria-pressed=\{activeStatusTab === "pending"\}/);
   assert.match(pageSource, /aria-pressed=\{activeStatusTab === "success"\}/);
   assert.match(pageSource, /aria-pressed=\{activeStatusTab === "failed"\}/);
-  assert.match(routeSource, /success: \["complete"\]/);
-  assert.match(routeSource, /failed: \["not_complate", "no_complete"\]/);
-  assert.match(routeSource, /pending: \["pending", "processing"\]/);
+  // tab → status mapping อยู่ใน log-import-file.STATUSES_BY_TAB (behavioural test แยก)
+  assert.match(routeSource, /listLogImportPage\(conn, \{/);
+  assert.match(routeSource, /tab: url\.searchParams\.get\("status"\) \|\| "success"/);
   assert.match(cssSource, /\.logImportStatusTabs/);
   assert.match(cssSource, /\.logImportStatusTabActive/);
 });
@@ -135,9 +137,10 @@ test("log import page lazy-loads 20 rows per page sorted by id desc", async () =
   const routeSource = await readFile(routePath, "utf8");
 
   // server-side pagination: LIMIT/OFFSET + default sort id ล่าสุดก่อน
+  const libSource = await readFile(logImportLibPath, "utf8");
   assert.match(routeSource, /const LOG_IMPORT_PAGE_SIZE = 20/);
-  assert.match(routeSource, /ORDER BY id DESC/);
-  assert.match(routeSource, /LIMIT \? OFFSET \?/);
+  assert.match(libSource, /ORDER BY id DESC/);
+  assert.match(libSource, /LIMIT \? OFFSET \?/);
   // หน้าเปลี่ยน page → fetch ใหม่ (lazy) + ปุ่มเลื่อนหน้าอยู่ล่างตาราง
   assert.match(pageSource, /page: String\(page\)/);
   assert.match(pageSource, /className="pagination"/);
@@ -164,10 +167,9 @@ test("import-check log page cleans expired failed rows before its first data loa
   assert.match(pageSource, /pathname !== "\/import-check\/log-import"/);
   assert.match(pageSource, /fetch\("\/api\/log-import\/cleanup", \{ method: "POST" \}\)/);
   assert.match(pageSource, /if \(!cleanupComplete\) return undefined;[\s\S]*loadData\(controller\.signal\)/);
-  assert.match(cleanupRouteSource, /export async function POST\(\)/);
+  assert.match(cleanupRouteSource, /export async function POST\(request\)/);
   assert.doesNotMatch(cleanupRouteSource, /export async function GET\(\)/);
-  assert.match(cleanupRouteSource, /deleteExpiredFailedLogImports\(conn\)/);
-  assert.match(cleanupRouteSource, /if \(conn\) await conn\.end\(\)/);
+  assert.match(cleanupRouteSource, /withDb\(\(conn\) => deleteExpiredFailed\(conn\)\)/);
 });
 
 test("log import status tabs show icons", async () => {

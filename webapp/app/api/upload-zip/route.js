@@ -2,6 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import AdmZip from "adm-zip";
+import { requireAccess } from "../../../lib/access.mjs";
 
 export const runtime = "nodejs";
 
@@ -28,6 +29,9 @@ function uploadTooLargeResponse() {
 }
 
 export async function POST(request) {
+  const { denied } = await requireAccess(request);
+  if (denied) return denied;
+
   try {
     const contentLength = Number(request.headers.get("content-length") || 0);
     if (contentLength > MAX_UPLOAD_BYTES) return uploadTooLargeResponse();

@@ -7,10 +7,11 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { spawn } = require("node:child_process");
 
-const mysql = require("mysql2/promise");
 const { loadEnvConfig } = require("@next/env");
 
+const { withDb } = require("./db.js");
 const dirs = require("./import-dirs.js");
+const logImport = require("./log-import-file.js");
 const { secureDelete } = require("./secure-delete.js");
 
 loadEnvConfig(process.cwd());
@@ -37,26 +38,6 @@ const activeImportIds = new Set();
 // A file freshly renamed into the queue is complete (rename is atomic), but a
 // ZIP copied in manually can still be mid-write; leave very new files alone.
 const MIN_FILE_AGE_MS = Number(process.env.IMPORT_MIN_FILE_AGE_MS || 3000);
-
-function getDbConfig() {
-  return {
-    host: process.env.DB_HOST || "localhost",
-    port: Number(process.env.DB_PORT || 3306),
-    user: process.env.DB_USER || "root",
-    password: process.env.DB_PASSWORD || "",
-    database: process.env.DB_DATABASE || "sub_hdc",
-    charset: "utf8mb4",
-  };
-}
-
-async function withDb(callback) {
-  const connection = await mysql.createConnection(getDbConfig());
-  try {
-    return await callback(connection);
-  } finally {
-    await connection.end().catch(() => {});
-  }
-}
 
 function buildImportProcessArgs({ scriptPath, zipPath, originalName, logImportId, errorDir }) {
   const args = [
@@ -111,12 +92,7 @@ function createProgressTracker(logImportId, onPercent) {
 
 async function updateProgressPercent(logImportId, percent) {
   try {
-    await withDb((conn) =>
-      conn.execute("UPDATE `log_import_file` SET `progress_percent` = ? WHERE `id` = ?", [
-        percent,
-        logImportId,
-      ])
-    );
+    await withDb((conn) => logImport.setProgress(conn, logImportId, percent));
   } catch (error) {
     console.error(`[import ${logImportId}] progress update failed: ${error.message}`);
   }
@@ -127,43 +103,20 @@ async function updateProgressPercent(logImportId, percent) {
 // so create the log row here to keep the log-import page consistent.
 async function resolveLogImport(entry, zipPath) {
   if (entry.logImportId) {
-    const row = await withDb(async (conn) => {
-      const [rows] = await conn.execute(
-        "SELECT `file_name` FROM `log_import_file` WHERE `id` = ?",
-        [entry.logImportId]
-      );
-      return rows[0] || null;
-    });
-    if (row) {
-      return { logImportId: entry.logImportId, originalName: row.file_name };
+    const fileName = await withDb((conn) => logImport.getFileName(conn, entry.logImportId));
+    if (fileName !== null) {
+      return { logImportId: entry.logImportId, originalName: fileName };
     }
   }
 
   const fileSize = fs.statSync(zipPath).size;
-  const logImportId = await withDb(async (conn) => {
-    const [result] = await conn.execute(
-      "INSERT INTO `log_import_file` (`file_name`, `file_size`, `status`) VALUES (?, ?, ?)",
-      [entry.baseName, fileSize, "pending"]
-    );
-    return result.insertId;
-  });
+  const logImportId = await withDb((conn) => logImport.createPending(conn, entry.baseName, fileSize));
   return { logImportId, originalName: entry.baseName };
 }
 
 async function finalizeInterrupted(logImportId, message) {
   try {
-    await withDb((conn) =>
-      conn.execute(
-        `UPDATE \`log_import_file\`
-         SET \`status\` = 'not_complate',
-             \`finish_date_time\` = CURRENT_TIMESTAMP,
-             \`not_complete_msg\` = ?
-         WHERE \`id\` = ?
-           AND \`finish_date_time\` IS NULL
-           AND \`status\` IN ('pending', 'processing')`,
-        [message, logImportId]
-      )
-    );
+    await withDb((conn) => logImport.markFailed(conn, logImportId, message));
   } catch (error) {
     console.error(`[import ${logImportId}] finalize failed: ${error.message}`);
   }
@@ -178,28 +131,10 @@ function isTransientImportFailure(message) {
   return TRANSIENT_FAILURE_RE.test(String(message || ""));
 }
 
-// รีเซ็ต log row กลับเป็น pending เมื่อคืน ZIP เข้า queue เพื่อ re-import
-// (import_date_time = NOW() เพื่อให้ stale sweep นับเวลาใหม่จากรอบ retry นี้
-// ไม่ใช่เวลา upload เดิม ที่อาจเก่าจนโดน sweep ทันที)
-async function requeueLogImport(logImportId) {
-  await withDb((conn) =>
-    conn.execute(
-      `UPDATE \`log_import_file\`
-       SET \`status\` = 'pending',
-           \`import_date_time\` = CURRENT_TIMESTAMP,
-           \`finish_date_time\` = NULL,
-           \`progress_percent\` = NULL
-       WHERE \`id\` = ?`,
-      [logImportId]
-    )
-  );
-}
-
-// id ทั้งหมดที่ยังมีไฟล์รออยู่จริงใน queue/ หรือ processing/ — row ของ id
-// เหล่านี้ไม่ใช่ row กำพร้า ห้าม sweep ไม่ว่าจะรอมานานแค่ไหน (batch ใหญ่
-// ที่ อ.เมือง รอคิวเกิน 2 ชม. เป็นเรื่องปกติ — วัดจริง 2026-07-09)
-function collectQueuedImportIds() {
-  const ids = new Set();
+// id ที่ยังมีไฟล์อยู่จริงใน queue/ หรือ processing/ บวก id ที่ worker กำลังทำ —
+// row ของ id เหล่านี้ไม่ใช่ row กำพร้า ห้าม sweep (กติกาอยู่ที่ sweepOrphans)
+function collectLiveImportIds() {
+  const ids = new Set(activeImportIds);
   for (const dir of [dirs.queueDir(), dirs.processingDir()]) {
     for (const entry of dirs.listQueuedZips(dir)) {
       if (entry.logImportId) ids.add(entry.logImportId);
@@ -208,38 +143,11 @@ function collectQueuedImportIds() {
   return ids;
 }
 
-// เก็บ row กำพร้า: ค้าง pending/processing โดย "ไม่มีไฟล์ในคิวและไม่มี worker
-// กำลังทำ" — เกณฑ์ชี้ขาดคือไฟล์หาย ไม่ใช่เวลา (เวลาเป็นแค่ minimum age กัน
-// race ตอนไฟล์เพิ่งถูกสร้าง) จึงตั้ง staleMinutes สั้นได้โดยไม่โดนงานจริง
 async function sweepStaleImports(staleMinutes) {
   try {
-    const recovered = await withDb(async (conn) => {
-      const [rows] = await conn.execute(
-        `SELECT \`id\` FROM \`log_import_file\`
-         WHERE \`status\` IN ('pending', 'processing')
-           AND \`finish_date_time\` IS NULL
-           AND \`import_date_time\` < NOW() - INTERVAL ? MINUTE`,
-        [staleMinutes]
-      );
-      if (!rows.length) return 0;
-
-      const queuedIds = collectQueuedImportIds();
-      const orphanIds = rows
-        .map((row) => Number(row.id))
-        .filter((id) => !activeImportIds.has(id) && !queuedIds.has(id));
-      if (!orphanIds.length) return 0;
-
-      const [result] = await conn.execute(
-        `UPDATE \`log_import_file\`
-         SET \`status\` = 'not_complate',
-             \`finish_date_time\` = CURRENT_TIMESTAMP,
-             \`not_complete_msg\` = 'Import interrupted: no queue file found, recovered by cleanup'
-         WHERE \`id\` IN (${orphanIds.map(() => "?").join(", ")})
-           AND \`status\` IN ('pending', 'processing')`,
-        orphanIds
-      );
-      return result.affectedRows;
-    });
+    const recovered = await withDb((conn) =>
+      logImport.sweepOrphans(conn, staleMinutes, collectLiveImportIds())
+    );
     if (recovered > 0) {
       console.log(`Recovered ${recovered} orphaned import record(s)`);
     }
@@ -418,7 +326,7 @@ async function processZip(entry) {
       // เดียวกับที่ทำให้ interrupted) ไฟล์ต้องยังอยู่ใน queue; worker รอบ retry
       // จะตั้ง processing/complete ให้เองเมื่อ DB กลับมา
       if (logImportId) {
-        await requeueLogImport(logImportId).catch((error) =>
+        await withDb((conn) => logImport.requeue(conn, logImportId)).catch((error) =>
           console.error(`[import ${logImportId}] requeue status update failed: ${error.message}`)
         );
       }

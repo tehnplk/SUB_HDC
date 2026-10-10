@@ -1,4 +1,4 @@
-import { getPooledDbConnection } from "./db.js";
+import { withDb } from "./db.js";
 
 export const DB_QUERY_TOOL_NAME = "DbQuery";
 export const MAX_DB_QUERY_ROWS = 50;
@@ -111,17 +111,14 @@ function setCachedQueryResult(sql, result) {
   queryCache.set(sql, { result, expires: Date.now() + DB_QUERY_CACHE_TTL_MS });
 }
 
-export async function runDbQueryTool(args, connectionFactory = getPooledDbConnection) {
+export async function runDbQueryTool(args, runWithDb = withDb) {
   const sql = normalizeDbQuerySql(args?.sql);
   const limitedSql = applyDbQueryLimit(sql);
 
   const cached = getCachedQueryResult(limitedSql);
   if (cached) return cached;
 
-  let conn;
-
-  try {
-    conn = await connectionFactory();
+  return runWithDb(async (conn) => {
     const [rows, fields] = await conn.query({
       sql: limitedSql,
       timeout: DB_QUERY_TIMEOUT_MS,
@@ -136,7 +133,5 @@ export async function runDbQueryTool(args, connectionFactory = getPooledDbConnec
       rowCount: safeRows.length,
       limited: Array.isArray(rows) && rows.length > safeRows.length,
     };
-  } finally {
-    if (conn) await conn.end();
-  }
+  });
 }

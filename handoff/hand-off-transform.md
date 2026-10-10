@@ -53,7 +53,9 @@
   ตรงกับรอบ hourly ให้ daily full transform ทำงาน (daily wins the tie)
 
 - ถ้ากำลัง import (`log_import_file` มี pending/processing) รอบถูกเลื่อน
-  แล้ว retry จนสำเร็จ — เช็คซ้ำก่อนทุกไฟล์
+  แล้ว retry จนสำเร็จ — เช็คซ้ำก่อนทุกไฟล์. `isImporting` ใน
+  `run_transform.js` เป็นสำเนาของ `webapp/lib/log-import-file.js` (คนละ image
+  ไม่ mount `webapp/lib`) — เปลี่ยนสถานะ active ต้องแก้ทั้งสองที่
 - ทุก process ใช้ MariaDB advisory lock ชื่อ `sub_hdc_transform_cycle` ป้องกัน
   daemon/manual run ซ้อนกัน; ถ้ามีรอบอื่นทำงานอยู่จะรอ retry
 - ไฟล์ไหน error ข้ามไปไฟล์ถัดไป ไม่ล้มทั้งรอบ

@@ -22,6 +22,7 @@ sync/
   sync-jobs.json       # รายการ job (name/script/cron/enabled)
   jobs/
     sync_config.js     # config กลาง: URL/secret/JWT (อ่านจาก env ล้วน)
+    db.js              # getDbConfig + connectWithRetry ใช้ร่วมทุก job
     post_check_sub_center.js
     post_sync_kpi.js
     pull_sql_for_sync_data.js
