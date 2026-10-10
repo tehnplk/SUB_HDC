@@ -6,16 +6,9 @@ const guardSource = readFileSync(new URL("../components/importing-guard.jsx", im
 const statusRoute = readFileSync(new URL("../app/api/import-status/route.js", import.meta.url), "utf8");
 const reportPage = readFileSync(new URL("../app/dashboard/report/page.js", import.meta.url), "utf8");
 const aiPage = readFileSync(new URL("../app/ai/chat/page.js", import.meta.url), "utf8");
-const importStatusLib = readFileSync(new URL("../lib/import-status.mjs", import.meta.url), "utf8");
-
-test("import-status helper checks pending/processing rows", () => {
-  assert.match(importStatusLib, /status IN \('pending','processing'\)/);
-  assert.match(importStatusLib, /export async function isImporting/);
-});
-
 test("import-status endpoint returns the importing flag from the shared helper", () => {
-  assert.match(statusRoute, /import \{ isImporting \} from "@\/lib\/import-status\.mjs"/);
-  assert.match(statusRoute, /importing: await isImporting\(conn\)/);
+  assert.match(statusRoute, /import \{ isImporting \} from "@\/lib\/log-import-file\.js"/);
+  assert.match(statusRoute, /importing: await withDb\(isImporting\)/);
 });
 
 test("useImportingGuard polls import-status every 15s", () => {

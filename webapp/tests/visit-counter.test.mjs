@@ -37,6 +37,17 @@ test("visit counter API increments and reads the shared total", () => {
   assert.match(apiSource, /SELECT `total` FROM `visit_counter`/);
 });
 
+test("visit counter rate-limits public submissions with Redis", () => {
+  assert.match(apiSource, /const VISIT_WINDOW_SECONDS = 30 \* 60/);
+  assert.match(apiSource, /redis\.eval\(/);
+  assert.match(apiSource, /return allowed === 1/);
+});
+
+test("anonymous badges fall back to the public GET after POST is rejected", () => {
+  assert.match(badgeSource, /response\.status === 401/);
+  assert.match(badgeSource, /fetch\("\/api\/visit-counter", \{ cache: "no-store" \}\)/);
+});
+
 test("visit counter badge is a subtle inline chip, visible on mobile", () => {
   const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
   const badgeRule = css.slice(css.indexOf(".visitCounterBadge {"));

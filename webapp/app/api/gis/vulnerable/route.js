@@ -1,4 +1,4 @@
-import { requireGisAuth } from "@/lib/gis-auth.mjs";
+import { requireAccess } from "@/lib/access.mjs";
 import { queryGis } from "@/lib/postgis";
 
 export const runtime = "nodejs";
@@ -7,6 +7,9 @@ export const dynamic = "force-dynamic";
 // ทะเบียนกลุ่มเปราะบางรายคนที่มีพิกัด — ตอบเป็น GeoJSON FeatureCollection
 // ไม่ส่ง cid ออกไปหน้าเว็บ (ข้อมูลระบุตัวบุคคล)
 export async function GET(request) {
+  const { denied } = await requireAccess(request);
+  if (denied) return denied;
+
   // กรองตามประเภทกลุ่มเปราะบาง (c_vulnerable.id) — panel ยิงมาทีละกลุ่ม
   const raw = new URL(request.url).searchParams.get("vulnerable");
   const vulnerable = raw === null || raw === "" ? null : Number(raw);
@@ -51,11 +54,10 @@ export async function GET(request) {
   }
 }
 
-// เพิ่มหมุดรายคนจาก toolbox บนแผนที่ — เขียนข้อมูล ต้อง login ก่อน
-// (GET เปิดสาธารณะเหมือนตัวแผนที่ ป้องกันเฉพาะฝั่งเขียน)
+// เพิ่มหมุดรายคนจาก toolbox บนแผนที่
 export async function POST(request) {
-  const unauthorized = await requireGisAuth();
-  if (unauthorized) return unauthorized;
+  const { denied } = await requireAccess(request);
+  if (denied) return denied;
 
   let body;
   try {

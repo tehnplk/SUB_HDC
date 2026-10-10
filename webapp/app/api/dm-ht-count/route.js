@@ -1,5 +1,6 @@
-import { createDbConnection } from "@/lib/db";
+import { withDb } from "@/lib/db";
 import { getHospNameMap } from "@/lib/hos-list-query.mjs";
+import { latestTransformAt } from "@/lib/report.mjs";
 
 export const runtime = "nodejs";
 
@@ -8,10 +9,7 @@ function toCount(value) {
 }
 
 export async function GET() {
-  let conn;
-
-  try {
-    conn = await createDbConnection();
+  return withDb(async (conn) => {
     // นับรายหน่วยที่ขึ้นทะเบียน (hos_person_type_1_3 เก็บ hospcode คั่น ,) — คนหนึ่ง
     // ขึ้นทะเบียนหลายหน่วยได้ ผลรวมรายหน่วยจึงมากกว่าจำนวนคนจริง
     // แยกกลุ่มไม่ทับซ้อน: DM อย่างเดียว / HT อย่างเดียว / เป็นทั้งคู่
@@ -35,21 +33,7 @@ export async function GET() {
       FROM \`t_person_dm_ht\`
     `);
     const hospNames = await getHospNameMap(conn);
-
-    let transformedAt = null;
-    try {
-      const [[latestTransform]] = await conn.query(`
-        SELECT finish_at
-        FROM \`log_transform\`
-        WHERE transform_sql_task = 't_person_dm_ht.sql'
-          AND finish_at IS NOT NULL
-        ORDER BY finish_at DESC
-        LIMIT 1
-      `);
-      transformedAt = latestTransform?.finish_at || null;
-    } catch {
-      // Older sites may not have transform logging yet; the summary remains usable.
-    }
+    const transformedAt = await latestTransformAt(conn, "t_person_dm_ht.sql");
 
     const rows = sourceRows.map((row) => {
       const dmOnly = toCount(row.dm_only);
@@ -77,12 +61,10 @@ export async function GET() {
     };
 
     return Response.json({ rows, summary, transformedAt });
-  } catch (error) {
+  }).catch((error) => {
     const message = error?.code === "ER_NO_SUCH_TABLE"
       ? "ยังไม่มีทะเบียน DM/HT กรุณารอให้ transform ทำงานก่อน"
       : error.message;
     return Response.json({ error: message }, { status: 500 });
-  } finally {
-    if (conn) await conn.end();
-  }
+  });
 }

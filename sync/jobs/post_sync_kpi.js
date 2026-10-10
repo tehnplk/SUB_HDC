@@ -1,40 +1,7 @@
-const mysql = require("mysql2/promise");
+const { connectWithRetry } = require("./db");
 const { resolvePostUrl } = require("./sync_config");
 
-const DB_CONNECT_RETRIES = Number(process.env.SYNC_DB_CONNECT_RETRIES || 12);
-const DB_CONNECT_RETRY_DELAY_MS = Number(process.env.SYNC_DB_CONNECT_RETRY_DELAY_MS || 10000);
 const RUN_LOCK_NAME = "sub_hdc_sync_kpi_runner";
-
-function getDbConfig() {
-  return {
-    host: process.env.DB_HOST || "host.docker.internal",
-    port: Number(process.env.DB_PORT || 3308),
-    user: process.env.DB_USER || "root",
-    password: process.env.DB_PASSWORD || "",
-    database: process.env.DB_DATABASE || "sub_hdc",
-    charset: "utf8mb4",
-  };
-}
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function connectWithRetry() {
-  let lastError;
-  for (let attempt = 1; attempt <= DB_CONNECT_RETRIES; attempt += 1) {
-    try {
-      return await mysql.createConnection(getDbConfig());
-    } catch (error) {
-      lastError = error;
-      console.error(
-        `db connect attempt ${attempt}/${DB_CONNECT_RETRIES} failed: ${error?.message || error}`
-      );
-      if (attempt < DB_CONNECT_RETRIES) await sleep(DB_CONNECT_RETRY_DELAY_MS);
-    }
-  }
-  throw lastError;
-}
 
 function isDue(intervalMinute, now = Date.now()) {
   const interval = Number(intervalMinute);

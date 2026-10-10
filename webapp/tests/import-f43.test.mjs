@@ -649,50 +649,14 @@ test("parseArgs requires a valid import method in config.json without fallback",
   });
 });
 
-test("createLogImportFile stores the source zip name size and pending status", async () => {
-  const importer = require("../lib/import_f43_node.js");
-  const executed = [];
-  const connection = {
-    async execute(sql, values) {
-      executed.push({ sql, values });
-      return [{ insertId: 42 }];
-    },
-  };
+test("import worker records its lifecycle through the shared log-import-file module", async () => {
+  const source = await readFile(path.resolve(process.cwd(), "lib", "import_f43_node.js"), "utf8");
 
-  const id = await importer.createLogImportFile(connection, "source.zip", 1536);
-
-  assert.equal(id, 42);
-  assert.equal(executed.length, 1);
-  assert.match(executed[0].sql, /^INSERT INTO `log_import_file`/);
-  assert.match(executed[0].sql, /`file_size`/);
-  assert.match(executed[0].sql, /`status`/);
-  assert.deepEqual(executed[0].values, ["source.zip", 1536, "pending"]);
-});
-
-test("updateLogImportFileStatus stamps processing complete and not_complate states", async () => {
-  const importer = require("../lib/import_f43_node.js");
-  const executed = [];
-  const connection = {
-    async execute(sql, values) {
-      executed.push({ sql, values });
-      return [{ affectedRows: 1 }];
-    },
-  };
-
-  await importer.updateLogImportFileStatus(connection, 42, "processing");
-  await importer.updateLogImportFileStatus(connection, 42, "complete");
-  await importer.updateLogImportFileStatus(connection, 42, "not_complate", "home: failed");
-
-  assert.equal(executed.length, 3);
-  assert.match(executed[0].sql, /status` = \?/);
-  assert.match(executed[0].sql, /`finish_date_time` = NULL/);
-  assert.deepEqual(executed[0].values, ["processing", null, 42]);
-
-  assert.match(executed[1].sql, /CURRENT_TIMESTAMP/);
-  assert.deepEqual(executed[1].values, ["complete", null, 42]);
-
-  assert.match(executed[2].sql, /CURRENT_TIMESTAMP/);
-  assert.deepEqual(executed[2].values, ["not_complate", "home: failed", 42]);
+  assert.match(source, /require\("\.\/log-import-file\.js"\)/);
+  assert.doesNotMatch(source, /log_import_file`/);
+  assert.match(source, /logImport\.markProcessing\(/);
+  assert.match(source, /logImport\.markComplete\(/);
+  assert.match(source, /logImport\.markFailed\(/);
 });
 
 test("encryptFileRows encrypts HOME house_id house and telephone with AES", () => {

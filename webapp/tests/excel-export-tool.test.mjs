@@ -41,7 +41,7 @@ test("runExcelExportTool writes an Excel file from read-only SQL", async () => {
         filename: "disease-ranking.xlsx",
         sheetName: "Ranking",
       },
-      async () => ({
+      (fn) => fn({
         query(options) {
           calls.push(options);
           return [
@@ -52,7 +52,6 @@ test("runExcelExportTool writes an Excel file from read-only SQL", async () => {
             [{ name: "diagcode" }, { name: "cnt" }],
           ];
         },
-        end() {},
       }),
       { exportRoot }
     );

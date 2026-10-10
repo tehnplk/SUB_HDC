@@ -21,16 +21,15 @@ test("person-dup API reads the transform summary, not raw person, and never expo
   }
 });
 
-test("person-dup export requires login, requires hospcode, redirects browser links to /error/msg, and omits cid", () => {
-  assert.match(exportSource, /requireApiJwt/);
-  assert.match(exportSource, /\/error\/msg\?msg=/);
-  assert.match(exportSource, /t_person_type_1_3/);
+test("person-dup export requires hospcode and omits cid", () => {
+  // ใช้ข้อมูลจาก handler ของหน้า (ซึ่งไม่ส่ง cid) แล้วกรองกลุ่มที่มีหน่วยบริการที่เลือก
+  assert.match(exportSource, /import \{ GET as getPersonDup \} from "\.\.\/route\.js"/);
+  assert.match(exportSource, /entry\.hos === hospcode/);
   // ไม่ส่งออกคอลัมน์ cid (ordering by cid ยังทำได้ แต่ห้ามเป็น key/header ผลลัพธ์)
   assert.doesNotMatch(exportSource, /["']cid["']/);
   // บังคับต้องกรองหน่วยบริการก่อนจึงส่งออกได้ (ทั้งฝั่ง UI และ API)
   assert.match(exportSource, /if \(!hospcode\)/);
   assert.match(exportSource, /กรุณาเลือกหน่วยบริการก่อนส่งออก/);
-  assert.match(exportSource, /FIND_IN_SET\(\?, hos\)/);
   assert.match(exportSource, /อายุ ณ วันเริ่มปีงบประมาณ/);
   assert.match(exportSource, /อายุปัจจุบัน/);
 });

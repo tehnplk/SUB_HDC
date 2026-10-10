@@ -1,5 +1,5 @@
-import { requireAdminApi } from "@/lib/admin-auth";
-import { createDbConnection } from "@/lib/db";
+import { requireAccess } from "@/lib/access.mjs";
+import { withDb } from "@/lib/db";
 
 export const runtime = "nodejs";
 
@@ -24,52 +24,45 @@ function validateFields(body) {
   return { url, systemName, note, isActive };
 }
 
-export async function GET() {
-  const admin = await requireAdminApi();
-  if (admin.response) return admin.response;
-  let connection;
+export async function GET(request) {
+  const { denied } = await requireAccess(request);
+  if (denied) return denied;
   try {
-    connection = await createDbConnection();
-    const [rows] = await connection.query(
+    const [rows] = await withDb((connection) => connection.query(
       "SELECT id, url, system_name, is_active, note FROM c_addon_url ORDER BY id",
-    );
+    ));
     return Response.json({ addons: rows.map(addonPayload) });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
-  } finally {
-    if (connection) await connection.end();
   }
 }
 
 export async function POST(request) {
-  const admin = await requireAdminApi();
-  if (admin.response) return admin.response;
-  let connection;
+  const { denied } = await requireAccess(request);
+  if (denied) return denied;
   try {
     const fields = validateFields(await request.json());
     if (fields.error) return Response.json({ error: fields.error }, { status: 400 });
 
-    connection = await createDbConnection();
-    const [result] = await connection.query(
-      "INSERT INTO c_addon_url (url, system_name, is_active, note) VALUES (?, ?, ?, ?)",
-      [fields.url, fields.systemName, fields.isActive ? 1 : 0, fields.note || null],
-    );
-    const [rows] = await connection.query(
-      "SELECT id, url, system_name, is_active, note FROM c_addon_url WHERE id = ?",
-      [result.insertId],
-    );
+    const [rows] = await withDb(async (connection) => {
+      const [result] = await connection.query(
+        "INSERT INTO c_addon_url (url, system_name, is_active, note) VALUES (?, ?, ?, ?)",
+        [fields.url, fields.systemName, fields.isActive ? 1 : 0, fields.note || null],
+      );
+      return connection.query(
+        "SELECT id, url, system_name, is_active, note FROM c_addon_url WHERE id = ?",
+        [result.insertId],
+      );
+    });
     return Response.json({ addon: addonPayload(rows[0]) }, { status: 201 });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
-  } finally {
-    if (connection) await connection.end();
   }
 }
 
 export async function PATCH(request) {
-  const admin = await requireAdminApi();
-  if (admin.response) return admin.response;
-  let connection;
+  const { denied } = await requireAccess(request);
+  if (denied) return denied;
   try {
     const body = await request.json();
     const id = Number(body?.id);
@@ -79,53 +72,50 @@ export async function PATCH(request) {
     const fields = validateFields(body);
     if (fields.error) return Response.json({ error: fields.error }, { status: 400 });
 
-    connection = await createDbConnection();
-    const [current] = await connection.query(
-      "SELECT id FROM c_addon_url WHERE id = ? LIMIT 1",
-      [id],
-    );
-    if (!current.length) {
-      return Response.json({ error: "Add-on not found" }, { status: 404 });
-    }
-    await connection.query(
-      "UPDATE c_addon_url SET url = ?, system_name = ?, is_active = ?, note = ? WHERE id = ?",
-      [fields.url, fields.systemName, fields.isActive ? 1 : 0, fields.note || null, id],
-    );
-    const [rows] = await connection.query(
-      "SELECT id, url, system_name, is_active, note FROM c_addon_url WHERE id = ?",
-      [id],
-    );
-    return Response.json({ addon: addonPayload(rows[0]) });
+    return await withDb(async (connection) => {
+      const [current] = await connection.query(
+        "SELECT id FROM c_addon_url WHERE id = ? LIMIT 1",
+        [id],
+      );
+      if (!current.length) {
+        return Response.json({ error: "Add-on not found" }, { status: 404 });
+      }
+      await connection.query(
+        "UPDATE c_addon_url SET url = ?, system_name = ?, is_active = ?, note = ? WHERE id = ?",
+        [fields.url, fields.systemName, fields.isActive ? 1 : 0, fields.note || null, id],
+      );
+      const [rows] = await connection.query(
+        "SELECT id, url, system_name, is_active, note FROM c_addon_url WHERE id = ?",
+        [id],
+      );
+      return Response.json({ addon: addonPayload(rows[0]) });
+    });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
-  } finally {
-    if (connection) await connection.end();
   }
 }
 
 export async function DELETE(request) {
-  const admin = await requireAdminApi();
-  if (admin.response) return admin.response;
-  let connection;
+  const { denied } = await requireAccess(request);
+  if (denied) return denied;
   try {
     const body = await request.json();
     const id = Number(body?.id);
     if (!Number.isInteger(id) || id <= 0) {
       return Response.json({ error: "Invalid addon id" }, { status: 400 });
     }
-    connection = await createDbConnection();
-    const [rows] = await connection.query(
-      "SELECT id FROM c_addon_url WHERE id = ? LIMIT 1",
-      [id],
-    );
-    if (!rows.length) {
-      return Response.json({ error: "Add-on not found" }, { status: 404 });
-    }
-    await connection.query("DELETE FROM c_addon_url WHERE id = ?", [id]);
-    return Response.json({ deletedId: id });
+    return await withDb(async (connection) => {
+      const [rows] = await connection.query(
+        "SELECT id FROM c_addon_url WHERE id = ? LIMIT 1",
+        [id],
+      );
+      if (!rows.length) {
+        return Response.json({ error: "Add-on not found" }, { status: 404 });
+      }
+      await connection.query("DELETE FROM c_addon_url WHERE id = ?", [id]);
+      return Response.json({ deletedId: id });
+    });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
-  } finally {
-    if (connection) await connection.end();
   }
 }

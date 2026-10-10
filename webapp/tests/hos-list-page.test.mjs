@@ -25,7 +25,7 @@ const routeSource = readFileSync2(new URL("../app/api/dashboard/route.js", impor
 
 test("dashboard API short-circuits with importing flag when an import is running", () => {
   // uses the shared isImporting helper before touching the big tables
-  assert.match(routeSource, /import \{ isImporting \} from "@\/lib\/import-status\.mjs"/);
+  assert.match(routeSource, /import \{ isImporting[^}]*\} from "@\/lib\/log-import-file\.js"/);
   assert.match(routeSource, /if \(await isImporting\(conn\)\)/);
   assert.match(routeSource, /importing: true/);
   // the guard runs before the heavy per-file query path (the c_file lookup that

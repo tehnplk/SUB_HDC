@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { requireExcelExportAccess } from "../../../../../lib/auth-guard.mjs";
+import { requireAccess } from "../../../../../lib/access.mjs";
 
 export const runtime = "nodejs";
 
@@ -8,9 +8,9 @@ function isSafeExportFilename(filename) {
   return /^[a-zA-Z0-9._% -]+\.xlsx$/i.test(filename || "") && !filename.includes("..");
 }
 
-export async function GET(_request, context) {
-  const exportDenied = await requireExcelExportAccess();
-  if (exportDenied) return exportDenied;
+export async function GET(request, context) {
+  const { denied } = await requireAccess(request);
+  if (denied) return denied;
 
   const params = await context.params;
   const filename = decodeURIComponent(params?.filename || "");

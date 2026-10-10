@@ -1,6 +1,7 @@
-import { requireApiJwt } from "@/lib/api-auth.mjs";
-import { createDbConnection } from "@/lib/db";
+import { requireAccess } from "@/lib/access.mjs";
+import { withDb } from "@/lib/db";
 import { getHospNameMap } from "@/lib/hos-list-query.mjs";
+import { latestTransformAt } from "@/lib/report.mjs";
 
 export const runtime = "nodejs";
 
@@ -19,14 +20,12 @@ function splitCsv(value) {
 }
 
 export async function GET(request) {
-  // ทะเบียนรายคน (มี pid/hn) — เรียกผ่าน fetch ในหน้า ตอบ 401 JSON เมื่อไม่ login
-  const unauthorized = await requireApiJwt(request);
-  if (unauthorized) return unauthorized;
+  // ทะเบียนรายคน (มี pid/hn) — เรียกผ่าน fetch ในหน้า ตอบ 401 JSON เมื่อไม่ login;
+  // export/route.js ใช้ handler นี้แล้วกรองหน่วยบริการเอง
+  const { denied } = await requireAccess(request);
+  if (denied) return denied;
 
-  let conn;
-
-  try {
-    conn = await createDbConnection();
+  return withDb(async (conn) => {
 
     const [rawRows] = await conn.query(`
       SELECT cid, name, bdate, sex, hos, pid, hn, type,
@@ -39,21 +38,7 @@ export async function GET(request) {
     `);
 
     const hospNames = await getHospNameMap(conn);
-
-    let transformedAt = null;
-    try {
-      const [[latestTransform]] = await conn.query(`
-        SELECT finish_at
-        FROM \`log_transform\`
-        WHERE transform_sql_task = 't_person_type_1_3.sql'
-          AND finish_at IS NOT NULL
-        ORDER BY finish_at DESC
-        LIMIT 1
-      `);
-      transformedAt = latestTransform?.finish_at || null;
-    } catch {
-      // ไซต์เก่ายังไม่มี log_transform — หน้ายังใช้งานได้
-    }
+    const transformedAt = await latestTransformAt(conn, "t_person_type_1_3.sql");
 
     const hospcodeSet = new Set();
 
@@ -92,12 +77,10 @@ export async function GET(request) {
       .map((code) => ({ code, name: hospNames[code] || "" }));
 
     return Response.json({ count: persons.length, persons, hospcodes, transformedAt });
-  } catch (error) {
+  }).catch((error) => {
     const message = error?.code === "ER_NO_SUCH_TABLE"
       ? "ยังไม่มีตารางสรุป t_person_type_1_3 กรุณารอ transform ทำงานก่อน"
       : error.message;
     return Response.json({ error: message }, { status: 500 });
-  } finally {
-    if (conn) await conn.end();
-  }
+  });
 }

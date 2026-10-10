@@ -16,9 +16,12 @@
 - `/gis` (label `GIS`, lucide `Map`) occupies the right-aligned `TABS_END` group in
   `main-tab.jsx`; `.tabButton.tabButtonEnd { margin-left: auto }` pushes that group
   and the trailing Add-On tab to the right edge of the tab bar.
-- `/gis` is listed in `PROTECTED_PAGE_PREFIXES` in `webapp/proxy.js`, so anonymous
-  visitors are sent to login and `guest` (role ID 4) is denied; `user`, `superuser`,
-  and `admin` can access it. The read-only `/api/gis/*` endpoints remain public.
+- `/gis` is a `MEMBER` page policy in `webapp/lib/access.mjs`, so anonymous
+  visitors are sent to login and `guest` (role ID 4) is sent to `/err`; `user`,
+  `superuser`, and `admin` can access it. `/api/gis/vulnerable` (GET+POST) and
+  `/api/gis/person-search` carry person data and are `MEMBER` api policies (anon
+  401, guest 403); `/api/gis/hospitals`, `/api/gis/c-vulnerable` and
+  `/api/gis/subdistrict-boundary` are unlisted, hence public.
 - Breadcrumb entry: `{ prefix: "/gis", href: "/gis", label: "GIS" }` in
   `module-header.jsx`.
 - `webapp/app/gis/page.js` renders `ModuleHeader` + `<GisMap />`. `/gis` deliberately
@@ -67,14 +70,16 @@
 - A layer carrying a `pin` config is drawn through `pointToLayer` as an
   `L.marker` with an `L.divIcon` — a teardrop pin (`.gisPin`, a circle with one
   square corner rotated -45°) holding an icon that conveys the type. `iconAnchor`
-  puts the pin's tip on the real coordinate. The glyphs live in `PIN_ICONS` as raw
+  puts the pin's tip on the real coordinate. The glyphs live in `PIN_ICONS`
+  (`webapp/lib/gis-popup.mjs`, with `pinIconHtml`) as raw
   lucide SVG path markup, because `divIcon` takes an HTML string rather than a
   React element; an unknown icon name falls back to `DEFAULT_PIN_ICON` instead of
   rendering an empty pin.
 - Markers have no `setStyle`, so the basemap restyle skips any layer without a
   `style` — pins keep their colour and stay legible on imagery through their white
   border.
-- Clicking a pin opens a popup (`vulnerablePopupHtml`) with name, กลุ่ม, เพศ,
+- Clicking a pin opens a popup (`vulnerablePopupHtml` in `lib/gis-popup.mjs`,
+  pure and unit-testable alongside `escapeHtml`/`formatBirth`) with name, กลุ่ม, เพศ,
   วันเกิด (converted to พ.ศ. with the age), หน่วยบริการ and PID; pins have no hover
   tooltip. Boundary polygons still use a hover tooltip with `name_th`. The popup
   HTML is assembled by hand, so every DB value goes through `escapeHtml` first.
@@ -111,12 +116,16 @@
   `map.on("click")`. The mode hints render under the button in the same panel.
 - The first map click **drops a red draggable draft pin** (`DRAFT_PIN_COLOR`, plus
   glyph) and disarms the mode — it does not open the form yet. The user drags the
-  pin to adjust the position (`dragend` updates `draftPos`) and clicks it to open
+  pin to adjust the position (`dragend` dispatches `move`) and clicks it to open
   the form. Leaflet suppresses the marker `click` that follows a drag, so dragging
   never opens the form by accident.
-- Draft position and form fields are separate state (`draftPos` / `draftFields` /
-  `formOpen`), so the pin survives closing the form. `cancelDraft()` removes the
-  marker and clears all three; the toolbox button also calls it when re-arming.
+- Draft state is one `useReducer(draftReducer, INITIAL_DRAFT)` from
+  `webapp/lib/gis-draft.mjs` (pure: `pos` / `fields` / `formOpen` / search /
+  save state; the Leaflet marker itself stays in the component). Position and
+  fields are separate, so the pin survives closing the form. `cancelDraft()`
+  removes the marker and dispatches `cancel`; `toggleAdd` also cancels when
+  re-arming. `personSearchUrl(hospcode, q)` returns `null` without a facility or
+  under 2 characters.
 - While armed the container gets `.gisMapAdding` for a crosshair cursor. That rule
   needs two classes (`.gisMap.gisMapAdding`) to beat Leaflet's `.leaflet-grab`,
   which sets `cursor: grab` on the same element.
@@ -162,12 +171,9 @@
   rather than anchored to the pin, so it can never run off an edge when the pin is
   dropped near a corner; `max-height: calc(100% - 24px)` with `overflow-y: auto`
   covers a map shorter than the form.
-- The write POST and the name search are guarded by `requireGisAuth()`
-  (`webapp/lib/gis-auth.mjs`), which **skips the check unless
-  `NODE_ENV === "production"`** so `next dev` needs no login; the container runs
-  `npm run start`, so production still requires it. The shared `requireAppAuth()`
-  used by the rest of the app is untouched. Reading the map layers stays public in
-  every environment. It validates hospcode/pid, an integer group,
+- The vulnerable GET/POST and the name search call `requireAccess(request)`
+  (`MEMBER`) in every environment — there is no dev bypass, so `next dev` needs a
+  login too. The POST validates hospcode/pid, an integer group,
   finite coordinates and the birth format before touching the DB, and upserts
   `ON CONFLICT (hospcode, pid)` so re-adding the same person edits the existing row
   instead of failing on the primary key. `ST_MakePoint` takes **(lng, lat)** in that
@@ -243,7 +249,7 @@
   DEFAULT 1` (same 1 = ใช้งาน / 0 = ยกเลิก meaning as the MariaDB `c_*` tables).
   Seeded with `1 = ผู้สูงอายุที่มีภาวะพึ่งพิง` (`hand-helping`),
   `2 = ผู้ป่วยติดเตียง` (`bed`), `3 = ผู้พิการ` (`accessibility`).
-  `icon` names a key in `PIN_ICONS` in `components/gis-map.jsx`; a new type needs a
+  `icon` names a key in `PIN_ICONS` in `lib/gis-popup.mjs`; a new type needs a
   code change only when it wants a glyph that registry does not have yet. `vulnerable.vulnerable` holds
   `c_vulnerable.id` as a **soft reference** — no foreign key, matching the rest of
   the schema.
@@ -319,6 +325,16 @@
   `import_date_time < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 5 DAY)`.
 - Rows exactly five days old and all `pending`, `processing`, and `complete`
   rows are preserved.
+- All SQL on `log_import_file` goes through `webapp/lib/log-import-file.js`
+  (CommonJS, shared by Next routes, importer daemon and worker; every function
+  takes a mysql2 connection). `STATUS` holds `pending` → `processing` →
+  `complete` | `not_complate` (misspelled but the real DB value) plus read-only
+  legacy `no_complete`. Lifecycle: `createPending`, `markProcessing`,
+  `setProgress`, `markComplete(warning)`, `markFailed` (guarded — never overwrites
+  a finished row), `requeue`, `sweepOrphans` (orphan = active row whose file is no
+  longer in queue/processing; age is only a minimum, never the sole rule),
+  `isImporting`, `deleteExpiredFailed` (the cleanup above), `listPage` (log page
+  tabs). `transform/run_transform.js` keeps its own copy of `isImporting`.
 - Focused verification:
   `cd webapp; node --test tests/log-import-cleanup.test.mjs tests/log-import-page.test.mjs`.
 
@@ -333,7 +349,7 @@
 
 ## Admin user management
 
-- `/admin` is available only to the configured `.env` account or a ProviderID user with `c_user_provider.role = 1`; the API repeats the same authorization check.
+- `/admin` and `/api/admin` are `ADMIN` policies in `lib/access.mjs`: only the configured `.env` account or a ProviderID user with `c_user_provider.role = 1` passes (`isAdmin(user)`); the API handlers repeat the check via `requireAccess`.
 - The configured username/password account receives the `admin` role. `c_user_provider.role` stores `c_user_role.id`, which is resolved to its role name for ProviderID sessions.
 - `/api/admin/users` lists non-sensitive user fields and allows only `role_id`, `is_active`, and `note` updates. It never returns `cid_hash` or the saved profile.
 - Administrators can hard-delete another ProviderID user after an explicit confirmation; they cannot delete their own ProviderID account.
@@ -423,6 +439,52 @@
 data flow: page (client) → `fetch("/api/...", { cache: "no-store" })` →
 API route อ่าน**ตารางสรุปของ transform** (ไม่ query ตารางดิบ) — หน้าใหม่
 ควรมี API + ตารางสรุปของตัวเอง ดู @handoff/hand-off-transform.md
+
+ส่วนร่วมของ API รายงาน (`webapp/lib/report.mjs`) — ใช้แทนการเขียนเองทุก route:
+
+- `resolveReportScope(conn, searchParams, { tables, hospitalsPerYear, affiliationSource })`
+  อ่าน `fiscalYear`/`hospcode`/`affiliation` → ปีงบ (ไม่ระบุ/ไม่มี = ปีล่าสุด),
+  รายชื่อหน่วยบริการ/สังกัด, `where`/`values` สำหรับ SQL และ `badRequest`
+  (Response 400 เมื่อ hospcode ไม่อยู่ในรายงาน/สังกัด)
+- `latestTransformAt(conn, sqlFile)` = "Transform ล่าสุด" จาก `log_transform`
+  (ไม่มีตาราง → `null`)
+- export route เรียก handler ของหน้าเว็บผ่าน `fetchReport(handler, request, params)`
+  ตัวกรองและข้อมูลจึงตรงกับ grid เสมอ แล้วตอบด้วย
+  `xlsxResponse(columns, rows, { sheet, filename, minColWidth })`
+  (`columns` = `[[หัวคอลัมน์, (row) => ค่า], ...]`)
+- วันที่ไทย: `formatThaiDate` / `formatThaiDateTime` ใน `webapp/lib/thai-date.mjs`
+
+การต่อ MariaDB (`webapp/lib/db.js`, CommonJS): `withDb(fn)` ยืม connection จาก
+pool (`getDbPool()`, `connectionLimit` 10) — คืนเมื่อสำเร็จ, **destroy เมื่อ throw**
+(อาจค้าง transaction); `withDb(fn, { connectionOptions })` เปิด connection แยก
+แล้ว `end()` ใช้เมื่อแก้ session state เช่น `multipleStatements` ของ
+`POST /api/report`. `import_f43_node.js` มี pool ของตัวเอง (LOAD DATA/transaction)
+
+## Route protection
+
+- นโยบายสิทธิ์ทั้งระบบอยู่ที่ตาราง `POLICIES` ใน `webapp/lib/access.mjs` ที่เดียว:
+  `{ prefix, kind: page|api|export, level: LOGIN|MEMBER|ADMIN, methods? }` —
+  prefix ที่ยาวที่สุดชนะ, path ที่ไม่อยู่ในตาราง = สาธารณะ
+- role (`c_user_role.id`): 1 admin, 2 superuser, 3 user, 4 guest; บัญชี `.env` =
+  admin; `roleId` ที่อ่านไม่ได้ถือเป็น guest. `LOGIN` = login แล้ว (รวม guest),
+  `MEMBER` = user ขึ้นไป, `ADMIN` = admin; `isAdmin(user)` สำหรับ UI
+- ผลของ `decideAccess`:
+
+| | ไม่ได้ login | login แต่สิทธิไม่พอ |
+|---|---|---|
+| `page` | 302 `/login?callbackUrl=` | 302 `/err?msg=` |
+| `api` | 401 JSON | 403 JSON |
+| `export` | 302 `/error/msg?msg=` | 302 `/err?msg=` |
+
+- `webapp/proxy.js` เรียก `decideAccess` (ส่ง `origin` เพราะ middleware ต้องการ
+  Location absolute); route handler ที่ policy ครอบต้องเรียกซ้ำเอง:
+  `const { denied } = await requireAccess(request); if (denied) return denied;`
+  (`requireAccess` คืน `{ session, denied }`, throw ถ้า path ไม่มี policy)
+- เพิ่ม route ที่ต้องป้องกัน = เพิ่มแถวใน `POLICIES` + `requireAccess` ใน handler.
+  `tests/access.test.mjs` ตรวจตาราง และตรวจว่าทุก `route.js` เรียก
+  `requireAccess` **ก็ต่อเมื่อ** policy ครอบ method นั้น
+- `AUTH_TEST_BYPASS=1` ข้าม session ได้เฉพาะ test (ปิดตายเมื่อ
+  `NODE_ENV=production`) — ไม่มี dev bypass อื่น
 
 ## Work Load
 

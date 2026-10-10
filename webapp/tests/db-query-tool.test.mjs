@@ -108,7 +108,7 @@ test("runDbQueryTool executes limited SQL and returns compact metadata", async (
   const calls = [];
   const result = await runDbQueryTool(
     { sql: "SELECT file_name FROM c_file" },
-    async () => ({
+    (fn) => fn({
       query(options) {
         calls.push(options);
         return [
@@ -116,7 +116,6 @@ test("runDbQueryTool executes limited SQL and returns compact metadata", async (
           [{ name: "file_name" }],
         ];
       },
-      end() {},
     })
   );
 

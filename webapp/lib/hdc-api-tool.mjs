@@ -1,4 +1,4 @@
-import { getPooledDbConnection } from "./db.js";
+import { withDb } from "./db.js";
 
 export const HDC_API_TOOL_NAME = "hdc-api-tool";
 export const HDC_API_BASE_URL = "https://opendata.moph.go.th/api";
@@ -41,9 +41,8 @@ export const HDC_API_TOOL = {
   },
 };
 
-async function resolveReports(search, connectionFactory) {
-  const conn = await connectionFactory();
-  try {
+async function resolveReports(search, runWithDb) {
+  return runWithDb(async (conn) => {
     // Tokenize so multi-word searches ("เบาหวาน HbA1c") match reports that
     // contain every word anywhere in the name, not the exact phrase.
     const tokens = String(search).trim().split(/\s+/).filter(Boolean).slice(0, 6);
@@ -65,9 +64,7 @@ async function resolveReports(search, connectionFactory) {
       timeout: 8000,
     });
     return fallbackRows;
-  } finally {
-    await conn.end();
-  }
+  });
 }
 
 async function fetchReportSchema(sourceTable) {
@@ -115,7 +112,7 @@ async function fetchReportData(sourceTable, year, province) {
 
 export async function runHdcApiTool(args, deps = {}) {
   const {
-    connectionFactory = getPooledDbConnection,
+    runWithDb = withDb,
     fetchData = fetchReportData,
     fetchSchema = fetchReportSchema,
   } = deps;
@@ -128,7 +125,7 @@ export async function runHdcApiTool(args, deps = {}) {
   }
 
   if (!sourceTable) {
-    const matches = await resolveReports(search, connectionFactory);
+    const matches = await resolveReports(search, runWithDb);
     const requestLabel = `${HDC_API_TOOL_NAME} search="${search}"`;
     if (!matches.length) {
       return {

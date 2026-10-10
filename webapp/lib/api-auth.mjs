@@ -1,7 +1,5 @@
-import { requireAppAuth } from "./auth-guard.mjs";
-
-export const AUTH_COOKIE_NAME = "sub_hdc_api_jwt";
-export const API_JWT_TTL_SECONDS = 12 * 60 * 60;
+// HS256 JWT primitive สำหรับระบบภายนอก (/api/addon-auth) — สิทธิ์ผู้ใช้ในแอปอยู่ที่ lib/access.mjs
+const API_JWT_TTL_SECONDS = 12 * 60 * 60;
 
 const encoder = new TextEncoder();
 
@@ -66,15 +64,6 @@ function constantTimeEqual(left, right) {
   return diff === 0;
 }
 
-export function getCookieValue(header, name) {
-  if (!header) return "";
-  return header
-    .split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(`${name}=`))
-    ?.slice(name.length + 1) || "";
-}
-
 export async function createApiJwt(options = {}) {
   const issuedAt = nowSeconds(options);
   const header = { alg: "HS256", typ: "JWT" };
@@ -109,24 +98,3 @@ export async function verifyApiJwt(token, options = {}) {
   return constantTimeEqual(signature, expected);
 }
 
-export async function requireApiJwt(request, options = {}) {
-  if (Object.keys(options).length > 0 || process.env.AUTH_LEGACY_JWT === "1") {
-    const token = getCookieValue(request.headers.get("cookie"), AUTH_COOKIE_NAME);
-    if (await verifyApiJwt(token, options)) {
-      return null;
-    }
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  return requireAppAuth();
-}
-
-export function getApiJwtCookieOptions() {
-  return {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: API_JWT_TTL_SECONDS,
-  };
-}

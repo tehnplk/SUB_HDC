@@ -5,25 +5,12 @@ import { Database, FileSpreadsheet } from "lucide-react";
 import ModuleHeader from "@/components/module-header";
 import ExcelExportButton from "@/components/excel-export-button";
 import HospitalFilter from "@/components/hospital-filter";
-
-function formatBirth(value) {
-  if (!value || !/^\d{8}$/.test(value)) return value || "-";
-  const year = Number(value.slice(0, 4)) + 543;
-  return `${value.slice(6, 8)}/${value.slice(4, 6)}/${year}`;
-}
+import { formatThaiDate, formatThaiDateTime } from "@/lib/thai-date.mjs";
 
 function formatSex(value) {
   if (value === "1") return "ชาย";
   if (value === "2") return "หญิง";
   return value || "-";
-}
-
-function formatDUpdate(value) {
-  if (!value || !/^\d{8}/.test(value)) return value || "-";
-  const year = Number(value.slice(0, 4)) + 543;
-  const date = `${value.slice(6, 8)}/${value.slice(4, 6)}/${year}`;
-  if (value.length >= 12) return `${date} ${value.slice(8, 10)}:${value.slice(10, 12)}`;
-  return date;
 }
 
 function formatTransformedAt(value) {
@@ -189,7 +176,7 @@ export default function QualityPersonDupPage() {
                     </td>
                     <td>
                       {person.entries.map((e, i) => (
-                        <span key={i} className="dupLine">{formatBirth(e.birth)}</span>
+                        <span key={i} className="dupLine">{formatThaiDate(e.birth, "-")}</span>
                       ))}
                     </td>
                     <td>
@@ -208,7 +195,7 @@ export default function QualityPersonDupPage() {
                           key={i}
                           className={`dupLine${i === latestIndex ? " dupLatest" : ""}`}
                         >
-                          {formatDUpdate(e.d_update)}
+                          {formatThaiDateTime(e.d_update, "-")}
                         </span>
                       ))}
                     </td>

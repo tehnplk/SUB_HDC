@@ -4,35 +4,16 @@
 // importer/sync. อ่านตารางใหญ่หนัก จึง:
 //   - ข้ามรอบถ้ากำลัง import (LOAD DATA เขียนตารางอยู่ อย่าแย่ง disk I/O)
 //   - guard กันรอบซ้อน (ถ้ารอบก่อนยังไม่จบ ข้าม)
-const mysql = require("mysql2/promise");
 const { loadEnvConfig } = require("@next/env");
 
 loadEnvConfig(process.cwd());
+
+const { withDb } = require("./db.js");
 
 const CYCLE_MS = Number(process.env.CACHE_INTERVAL_MS || 24 * 60 * 60 * 1000);
 // เช็คบ่อยกว่ารอบจริง เพื่อ (1) รู้ว่าถึงเวลารอบใหม่ (2) ถ้ารอบก่อนโดนข้ามเพราะ
 // import อยู่ จะได้ลองใหม่เร็วขึ้นเมื่อ import จบ ไม่ต้องรอเต็ม 24 ชม.
 const POLL_MS = Number(process.env.CACHE_POLL_MS || 5 * 60 * 1000);
-
-function getDbConfig() {
-  return {
-    host: process.env.DB_HOST || "localhost",
-    port: Number(process.env.DB_PORT || 3306),
-    user: process.env.DB_USER || "root",
-    password: process.env.DB_PASSWORD || "",
-    database: process.env.DB_DATABASE || "sub_hdc",
-    charset: "utf8mb4",
-  };
-}
-
-async function withDb(callback) {
-  const connection = await mysql.createConnection(getDbConfig());
-  try {
-    return await callback(connection);
-  } finally {
-    await connection.end().catch(() => {});
-  }
-}
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -91,7 +72,7 @@ async function runOnce({ isImporting, runCacheCycle }) {
 }
 
 async function main() {
-  const { isImporting } = await import("./import-status.mjs");
+  const { isImporting } = require("./log-import-file.js");
   const { runCacheCycle } = await import("./cache.mjs");
   const { waitRedisReady } = await import("./redis.mjs");
   const deps = { isImporting, runCacheCycle };

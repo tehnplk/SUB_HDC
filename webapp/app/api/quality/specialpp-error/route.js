@@ -1,89 +1,37 @@
-import { requireApiJwt } from "@/lib/api-auth.mjs";
-import { createDbConnection } from "@/lib/db";
-import { getHospInfoMap } from "@/lib/hos-list-query.mjs";
+import { requireAccess } from "@/lib/access.mjs";
+import { withDb } from "@/lib/db";
+import { latestTransformAt, resolveReportScope } from "@/lib/report.mjs";
 
 export const runtime = "nodejs";
 
 export async function GET(request) {
-  const unauthorized = await requireApiJwt(request);
-  if (unauthorized) return unauthorized;
+  const { denied } = await requireAccess(request);
+  if (denied) return denied;
 
-  let conn;
-
-  try {
-    conn = await createDbConnection();
+  return withDb(async (conn) => {
     const { searchParams } = new URL(request.url);
-    const requestedYear = Number(searchParams.get("fiscalYear"));
-    const requestedHospcode = searchParams.get("hospcode") || "";
-    const requestedAffiliation = searchParams.get("affiliation") || "";
-    const detailsRequested = searchParams.get("details") === "1";
-    const hospitalInfo = await getHospInfoMap(conn, { affiliationSource: "depShort" });
+    const scope = await resolveReportScope(conn, searchParams, {
+      tables: ["t_specialpp_error"],
+      hospitalsPerYear: true,
+      affiliationSource: "depShort",
+    });
+    if (scope.badRequest) return scope.badRequest;
+    const transformedAt = await latestTransformAt(conn, "t_specialpp_error.sql");
 
-    const [yearRows] = await conn.query(
-      "SELECT DISTINCT fiscal_year FROM `t_specialpp_error` ORDER BY fiscal_year DESC"
-    );
-    const fiscalYears = yearRows.map((row) => Number(row.fiscal_year)).filter(Boolean);
-    const fiscalYear = fiscalYears.includes(requestedYear) ? requestedYear : (fiscalYears[0] || null);
-    let transformedAt = null;
-    try {
-      const [[latestTransform]] = await conn.query(
-        `SELECT finish_at FROM \`log_transform\`
-         WHERE transform_sql_task = 't_specialpp_error.sql'
-           AND finish_at IS NOT NULL
-         ORDER BY finish_at DESC
-         LIMIT 1`
-      );
-      transformedAt = latestTransform?.finish_at || null;
-    } catch {
-      // Older installations may not have log_transform yet.
-    }
-
-    const [hospRows] = await conn.query(
-      "SELECT DISTINCT hospcode FROM `t_specialpp_error` WHERE fiscal_year = ? ORDER BY hospcode",
-      [fiscalYear]
-    );
-    const allHospitals = hospRows.map((row) => ({
-      hospcode: row.hospcode,
-      hospname: hospitalInfo[row.hospcode]?.hospname || "",
-      affiliation: hospitalInfo[row.hospcode]?.affiliation || "",
-    }));
-    const affiliations = [...new Set(allHospitals.map((hospital) => hospital.affiliation).filter(Boolean))]
-      .sort((left, right) => left.localeCompare(right, "th"));
-    const hospitals = requestedAffiliation
-      ? allHospitals.filter((hospital) => hospital.affiliation === requestedAffiliation)
-      : allHospitals;
-
-    if (requestedHospcode && !allHospitals.some((hospital) => hospital.hospcode === requestedHospcode)) {
-      return Response.json({ error: "ไม่พบหน่วยบริการ" }, { status: 400 });
-    }
-    if (requestedHospcode && requestedAffiliation && hospitalInfo[requestedHospcode]?.affiliation !== requestedAffiliation) {
-      return Response.json({ error: "หน่วยบริการไม่อยู่ในสังกัดที่เลือก" }, { status: 400 });
-    }
-
-    const where = ["fiscal_year = ?"];
-    const values = [fiscalYear];
-    if (requestedHospcode) {
-      where.push("hospcode = ?");
-      values.push(requestedHospcode);
-    }
-
-    if (detailsRequested) {
-      if (!requestedHospcode) {
+    // รายการรายบุคคลของหน่วยบริการเดียว — export/route.js ใช้ชุดเดียวกันนี้
+    if (searchParams.get("details") === "1") {
+      if (!scope.hospcode) {
         return Response.json({ error: "ต้องระบุรหัสหน่วยบริการ" }, { status: 400 });
       }
       const [rawRows] = await conn.query(
         `SELECT hospcode, fiscal_year, pid, seq, date_serve, ppspecial, ppspecial_name, error_type
          FROM \`t_specialpp_error\`
-         WHERE ${where.join(" AND ")}
+         WHERE ${scope.where}
          ORDER BY date_serve DESC, pid, seq`,
-        values
+        scope.values
       );
-      const rows = rawRows.map((row) => ({
-        ...row,
-        hospname: hospitalInfo[row.hospcode]?.hospname || "",
-        affiliation: hospitalInfo[row.hospcode]?.affiliation || "",
-      }));
-      return Response.json({ rows, count: rows.length, transformedAt });
+      const rows = rawRows.map((row) => ({ ...row, ...scope.hospitalOf(row.hospcode) }));
+      return Response.json({ rows, count: rows.length, transformedAt, fiscalYear: scope.fiscalYear });
     }
 
     const [rawRows] = await conn.query(
@@ -92,39 +40,36 @@ export async function GET(request) {
         SUM(error_type = 'cancelled') AS cancelled,
         COUNT(*) AS total
        FROM \`t_specialpp_error\`
-       WHERE ${where.join(" AND ")}
+       WHERE ${scope.where}
        GROUP BY hospcode
        ORDER BY total DESC, hospcode`,
-      values
+      scope.values
     );
     const rows = rawRows
-      .filter((row) => !requestedAffiliation || hospitalInfo[row.hospcode]?.affiliation === requestedAffiliation)
+      .filter((row) => scope.inAffiliation(row.hospcode))
       .map((row) => ({
         hospcode: row.hospcode,
-        hospname: hospitalInfo[row.hospcode]?.hospname || "",
-        affiliation: hospitalInfo[row.hospcode]?.affiliation || "",
+        ...scope.hospitalOf(row.hospcode),
         not_standard: Number(row.not_standard),
         cancelled: Number(row.cancelled),
         total: Number(row.total),
       }));
 
     return Response.json({
-      fiscalYears,
-      fiscalYear,
-      affiliations,
-      hospitals,
+      fiscalYears: scope.fiscalYears,
+      fiscalYear: scope.fiscalYear,
+      affiliations: scope.affiliations,
+      hospitals: scope.hospitals,
       rows,
       notStandard: rows.reduce((sum, row) => sum + row.not_standard, 0),
       cancelled: rows.reduce((sum, row) => sum + row.cancelled, 0),
       count: rows.reduce((sum, row) => sum + row.total, 0),
       transformedAt,
     });
-  } catch (error) {
+  }).catch((error) => {
     const message = error?.code === "ER_NO_SUCH_TABLE"
       ? "ยังไม่มีตารางสรุป t_specialpp_error กรุณารอ transform ทำงานก่อน"
       : error.message;
     return Response.json({ error: message }, { status: 500 });
-  } finally {
-    if (conn) await conn.end();
-  }
+  });
 }

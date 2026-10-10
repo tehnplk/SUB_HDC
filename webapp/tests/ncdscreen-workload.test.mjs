@@ -38,22 +38,18 @@ test("NCD screening workload page provides filters, workload tab, and total tren
 });
 
 test("NCD workload exports the active filtered datagrid as xlsx", () => {
-  assert.match(exportSource, /requireExcelExportAccess/);
   assert.match(exportSource, /getNcdWorkload/);
   assert.match(exportSource, /metric.*ht.*ht.*dm/);
-  assert.match(exportSource, /XLSX\.utils\.aoa_to_sheet/);
-  assert.match(exportSource, /Content-Disposition/);
+  assert.match(exportSource, /fetchReport\(getNcdWorkload, request\)/);
+  assert.match(exportSource, /xlsxResponse\(columns/);
+  assert.match(exportSource, /ncd_\$\{metric\}_workload_\$\{data\.fiscalYear \|\| "all"\}\.xlsx/);
 });
 
 test("NCD screening workload API reads the Typearea 1/3 summary and filters safely", () => {
-  assert.match(apiSource, /s_dm_screen/);
-  assert.match(apiSource, /s_ht_screen/);
-  assert.match(apiSource, /fiscal_year = \?/);
-  assert.match(apiSource, /hospcode = \?/);
-  assert.match(apiSource, /requestedAffiliation/);
-  assert.match(apiSource, /getHospInfoMap/);
-  assert.match(apiSource, /row\.affiliation === requestedAffiliation/);
-  assert.match(apiSource, /getHospNameMap/);
+  assert.match(apiSource, /tables: \["s_dm_screen", "s_ht_screen"\]/);
+  assert.match(apiSource, /WHERE \$\{where\}/);
+  assert.match(apiSource, /\[\.\.\.values, \.\.\.values\]/);
+  assert.match(apiSource, /scope\.inAffiliation\(row\.hospcode\)/);
   assert.match(apiSource, /FISCAL_MONTHS/);
   assert.match(pageSource, /setTab\("dm"\)/);
   assert.match(pageSource, /setTab\("ht"\)/);

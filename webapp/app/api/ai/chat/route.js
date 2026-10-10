@@ -11,7 +11,7 @@ import {
   runExcelExportTool,
   userRequestedExcelExport,
 } from "@/lib/excel-export-tool.mjs";
-import { requireAppAuth, requireExcelExportAccess } from "../../../../lib/auth-guard.mjs";
+import { requireAccess } from "../../../../lib/access.mjs";
 
 export const runtime = "nodejs";
 
@@ -338,8 +338,8 @@ async function runChatAgent(client, inputMessages, emit = () => {}) {
 }
 
 export async function POST(request) {
-  const unauthorized = await requireAppAuth();
-  if (unauthorized) return unauthorized;
+  const { denied } = await requireAccess(request);
+  if (denied) return denied;
 
   try {
     let payload;
@@ -353,11 +353,6 @@ export async function POST(request) {
 
     if (!messages.some((message) => message.role === "user")) {
       return Response.json({ error: "Message is required" }, { status: 400 });
-    }
-
-    if (userRequestedExcelExport(messages)) {
-      const exportDenied = await requireExcelExportAccess();
-      if (exportDenied) return exportDenied;
     }
 
     const client = getLlmClient();

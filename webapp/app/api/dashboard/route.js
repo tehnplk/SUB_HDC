@@ -1,5 +1,5 @@
-import { createDbConnection } from "@/lib/db";
-import { isImporting } from "@/lib/import-status.mjs";
+import { withDb } from "@/lib/db";
+import { isImporting, listPage as listLogImportPage, STATUS } from "@/lib/log-import-file.js";
 import { cacheGetJson, cacheSetJson } from "@/lib/redis.mjs";
 import { CACHE_TTL_SECONDS, hosListCacheKey, isCachedFile } from "@/lib/dashboard-cache.mjs";
 import {
@@ -22,10 +22,8 @@ import {
 export const runtime = "nodejs";
 
 export async function GET(request) {
-  let conn;
-  try {
+  return withDb(async (conn) => {
     const url = new URL(request.url);
-    conn = await createDbConnection();
 
     const isSummary = url.searchParams.get("summary") === "true";
     if (isSummary) {
@@ -91,48 +89,12 @@ export async function GET(request) {
       // ที่ SQL, default sort id ล่าสุดก่อน (ลำดับการสร้างรายการนำเข้า)
       const LOG_IMPORT_PAGE_SIZE = 20;
       const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
-      const statusTab = url.searchParams.get("status") || "success";
-      const q = (url.searchParams.get("q") || "").trim();
-
-      const statusesByTab = {
-        success: ["complete"],
-        failed: ["not_complate", "no_complete"],
-        pending: ["pending", "processing"],
-      };
-      const statuses = statusesByTab[statusTab] || statusesByTab.success;
-
-      const where = [`status IN (${statuses.map(() => "?").join(", ")})`];
-      const params = [...statuses];
-      if (q) {
-        where.push("(file_name LIKE ? OR CAST(id AS CHAR) LIKE ?)");
-        params.push(`%${q}%`, `%${q}%`);
-      }
-      const whereSql = `WHERE ${where.join(" AND ")}`;
-
-      // จำนวนต่อ tab นับจากทั้งตาราง (ไม่ผูกกับคำค้น — พฤติกรรมเดิมของหน้า)
-      const [countRows] = await conn.query(
-        "SELECT status, COUNT(*) AS n FROM log_import_file GROUP BY status"
-      );
-      const counts = { success: 0, failed: 0, pending: 0 };
-      for (const row of countRows) {
-        if (row.status === "complete") counts.success += Number(row.n);
-        else if (row.status === "not_complate" || row.status === "no_complete") counts.failed += Number(row.n);
-        else if (row.status === "pending" || row.status === "processing") counts.pending += Number(row.n);
-      }
-
-      const [[{ total }]] = await conn.query(
-        `SELECT COUNT(*) AS total FROM log_import_file ${whereSql}`,
-        params
-      );
-
-      const [rows] = await conn.query(
-        `SELECT id, file_name, file_size, import_date_time, status, finish_date_time, not_complete_msg, progress_percent
-         FROM log_import_file
-         ${whereSql}
-         ORDER BY id DESC
-         LIMIT ? OFFSET ?`,
-        [...params, LOG_IMPORT_PAGE_SIZE, (page - 1) * LOG_IMPORT_PAGE_SIZE]
-      );
+      const { rows, total, counts } = await listLogImportPage(conn, {
+        tab: url.searchParams.get("status") || "success",
+        q: (url.searchParams.get("q") || "").trim(),
+        page,
+        pageSize: LOG_IMPORT_PAGE_SIZE,
+      });
       return Response.json({
         rows: rows.map((r) => ({
           id: Number(r.id),
@@ -141,13 +103,13 @@ export async function GET(request) {
           import_date_time: r.import_date_time,
           status: r.status,
           progress_percent:
-            r.status === "processing" && r.progress_percent != null
+            r.status === STATUS.PROCESSING && r.progress_percent != null
               ? Number(r.progress_percent)
               : null,
           finish_date_time: r.finish_date_time,
           not_complete_msg: r.not_complete_msg,
         })),
-        total: Number(total),
+        total,
         page,
         pageSize: LOG_IMPORT_PAGE_SIZE,
         counts,
@@ -297,9 +259,5 @@ export async function GET(request) {
       hospNames: await getHospNameMap(conn),
       centerName: process.env.CENTER_NAME || "เมือง",
     });
-  } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
-  } finally {
-    if (conn) await conn.end();
-  }
+  }).catch((error) => Response.json({ error: error.message }, { status: 500 }));
 }

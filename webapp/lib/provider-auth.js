@@ -1,5 +1,5 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
-import { createDbConnection } from "./db.js";
+import { withDb } from "./db.js";
 
 function firstText(...values) {
   for (const value of values) {
@@ -59,8 +59,7 @@ export function verifyProviderProfile(serializedProfile, signature) {
 export async function registerProviderUser(profile) {
   const identity = getProviderIdentity(profile);
   if (!identity.providerId) throw new Error("ProviderID profile is missing provider_id");
-  const connection = await createDbConnection();
-  try {
+  return withDb(async (connection) => {
     const [rows] = await connection.execute(
       `SELECT u.id, u.is_active, u.role AS role_id, r.role AS role_name
        FROM c_user_provider u
@@ -91,7 +90,5 @@ export async function registerProviderUser(profile) {
       [identity.providerId, identity.cidHash, identity.fullname || null, identity.hoscode, defaultRoles[0].id, serializedProfile],
     );
     return { ...identity, id: result.insertId, roleId: Number(defaultRoles[0].id), role: "guest" };
-  } finally {
-    await connection.end();
-  }
+  });
 }

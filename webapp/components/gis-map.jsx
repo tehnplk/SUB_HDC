@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import "leaflet/dist/leaflet.css";
+import { pinIconHtml, vulnerablePopupHtml } from "@/lib/gis-popup.mjs";
+import { draftReducer, INITIAL_DRAFT, personSearchUrl } from "@/lib/gis-draft.mjs";
 
 // ศูนย์กลางแผนที่ = จ.พิษณุโลก
 const DEFAULT_CENTER = [16.82, 100.26];
@@ -60,44 +62,9 @@ const VULNERABLE_PANEL_TITLE = "ชั้นข้อมูลกลุ่มเ
 // (lookup ไม่มีคอลัมน์สี) เพื่อให้แยกกลุ่มออกจากกันบนแผนที่
 const VULNERABLE_COLORS = ["#dc2626", "#7c3aed", "#0891b2", "#ca8a04", "#db2777"];
 
-// icon ในหมุด — path ชุดเดียวกับ lucide (24x24, stroke) เขียนเป็น markup ตรง ๆ
-// เพราะ L.divIcon รับ HTML string ไม่ใช่ React element. ชื่อ key = c_vulnerable.icon
-const PIN_ICONS = {
-  bed: '<path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/>',
-  "hand-helping":
-    '<path d="M11 12h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 14"/><path d="m7 18 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/><path d="m2 13 6 6"/>',
-  accessibility:
-    '<circle cx="16" cy="4" r="1"/><path d="m18 19 1-7-6 1"/><path d="m5 8 3-3 5.5 3-2.36 3.5"/><path d="M4.24 14.5a5 5 0 0 0 6.88 6"/><path d="M13.76 17.5a5 5 0 0 0-6.88-6"/>',
-  "heart-pulse":
-    '<path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/><path d="M3.22 13H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/>',
-  "user-round": '<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>',
-  plus: '<path d="M12 5v14"/><path d="M5 12h14"/>',
-};
-
 // หมุดร่างตอนกำลังปัก — สีแดง ลากย้ายได้ คลิกแล้วเปิดฟอร์ม
 const DRAFT_PIN_COLOR = "#dc2626";
 const DRAFT_PIN_ICON = "plus";
-
-const EMPTY_DRAFT_FIELDS = {
-  hospcode: "",
-  pid: "",
-  cid: "",
-  fullname: "",
-  sex: "",
-  birth: "",
-  vulnerable: "",
-  addr_no: "",
-  road: "",
-  village_code: "",
-  village_name: "",
-};
-
-const DEFAULT_PIN_ICON = "user-round";
-
-function pinIconHtml(icon, color) {
-  const glyph = PIN_ICONS[icon] ?? PIN_ICONS[DEFAULT_PIN_ICON];
-  return `<span class="gisPin" style="--gis-pin-color:${color}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${glyph}</svg></span>`;
-}
 
 // หมุดรายคน — ใช้ divIcon ไม่ใช่ circleMarker เพื่อให้มี icon สื่อประเภทในหมุด
 function vulnerableLayer({ id, name, icon }, index) {
@@ -114,87 +81,6 @@ function vulnerableLayer({ id, name, icon }, index) {
 function dataLayerStyle(baseLabel, { style, imageryStyle }) {
   const base = BASE_LAYERS.find(({ label }) => label === baseLabel);
   return base?.imagery && imageryStyle ? imageryStyle : style;
-}
-
-const SEX_LABELS = { 1: "ชาย", 2: "หญิง" };
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-// birth มาเป็น YYYY-MM-DD (ค.ศ.) — แสดงเป็น วัน/เดือน/พ.ศ. พร้อมอายุ
-function formatBirth(birth) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birth ?? "");
-  if (!match) return "";
-  const [, year, month, day] = match;
-  const born = new Date(Number(year), Number(month) - 1, Number(day));
-  const now = new Date();
-  let age = now.getFullYear() - born.getFullYear();
-  const beforeBirthday =
-    now.getMonth() < born.getMonth()
-    || (now.getMonth() === born.getMonth() && now.getDate() < born.getDate());
-  if (beforeBirthday) age -= 1;
-  const thaiYear = Number(year) + 543;
-  return age >= 0 ? `${day}/${month}/${thaiYear} (${age} ปี)` : `${day}/${month}/${thaiYear}`;
-}
-
-// popup ของหมุด — คลิกแล้วเห็นรายละเอียด ไม่ใช่ label ตอน hover
-function vulnerablePopupHtml(feature) {
-  const {
-    fullname,
-    sex,
-    birth,
-    vulnerable_name: vulnerableName,
-    addr_no: addrNo,
-    road,
-    village_code: villageCode,
-    village_name: villageName,
-    moo,
-    tambon_name: tambonName,
-    district_name: districtName,
-    province_name: provinceName,
-    hospcode,
-    pid,
-  } = feature?.properties ?? {};
-
-  // ที่อยู่รวมเป็นบรรทัดเดียว ข้ามส่วนที่ไม่มีข้อมูล
-  const address = [
-    addrNo ? `บ้านเลขที่ ${addrNo}` : "",
-    villageName || (villageCode ? `หมู่บ้าน ${villageCode}` : ""),
-    road ? `ถ.${road}` : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  // รหัสหมู่บ้านแสดงเป็นชื่อพื้นที่ ถ้า join ไม่เจอค่อยตกกลับไปโชว์รหัสดิบ
-  const area = [
-    moo ? `หมู่ที่ ${moo}` : "",
-    tambonName ? `ต.${tambonName}` : "",
-    districtName ? `อ.${districtName}` : "",
-    provinceName ? `จ.${provinceName}` : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  const rows = [
-    ["กลุ่ม", vulnerableName],
-    ["เพศ", SEX_LABELS[sex]],
-    ["วันเกิด", formatBirth(birth)],
-    ["ที่อยู่", address],
-    ["พื้นที่", area || villageCode],
-    ["หน่วยบริการ", hospcode],
-    ["PID", pid],
-  ].filter(([, value]) => value !== undefined && value !== null && value !== "");
-
-  const body = rows
-    .map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`)
-    .join("");
-
-  return `<div class="gisPopup"><p class="gisPopupName">${escapeHtml(fullname || "ไม่ระบุชื่อ")}</p><dl class="gisPopupList">${body}</dl></div>`;
 }
 
 // ชั้นข้อมูลที่ใช้กำหนดกรอบ zoom ตั้งต้นของแผนที่
@@ -240,17 +126,20 @@ export default function GisMap() {
   const dataLayers = useMemo(() => layerPanels.flatMap(({ layers }) => layers), [layerPanels]);
   const [loadingDataLayer, setLoadingDataLayer] = useState(null);
   const [dataLayerError, setDataLayerError] = useState("");
-  const [addMode, setAddMode] = useState(false);
-  const [draftPos, setDraftPos] = useState(null);
-  const [formOpen, setFormOpen] = useState(false);
-  const [draftFields, setDraftFields] = useState(EMPTY_DRAFT_FIELDS);
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState("");
-  const [personQuery, setPersonQuery] = useState("");
-  const [personResults, setPersonResults] = useState([]);
-  const [personSearching, setPersonSearching] = useState(false);
-  const [personError, setPersonError] = useState("");
-  const [personSearched, setPersonSearched] = useState(false);
+  const [draft, dispatch] = useReducer(draftReducer, INITIAL_DRAFT);
+  const {
+    addMode,
+    pos: draftPos,
+    formOpen,
+    fields: draftFields,
+    saving,
+    saveError,
+    personQuery,
+    personResults,
+    personSearching,
+    personError,
+    personSearched,
+  } = draft;
 
   useEffect(() => {
     let cancelled = false;
@@ -465,18 +354,13 @@ export default function GisMap() {
       // leaflet กด click หลังลากให้เอง จึงไม่เปิดฟอร์มค้างตอนลากเสร็จ
       marker.on("dragend", () => {
         const { lat, lng } = marker.getLatLng();
-        setDraftPos({ lat, lng });
+        dispatch({ type: "move", pos: { lat, lng } });
       });
-      marker.on("click", () => setFormOpen(true));
+      marker.on("click", () => dispatch({ type: "openForm" }));
       marker.addTo(map);
       draftMarkerRef.current = marker;
 
-      setDraftPos({ lat: latlng.lat, lng: latlng.lng });
-      // ไม่เลือกกลุ่มให้ล่วงหน้า — ผู้ใช้ต้องเลือกเองก่อนบันทึก
-      setDraftFields({ ...EMPTY_DRAFT_FIELDS });
-      setFormOpen(false);
-      setSaveError("");
-      setAddMode(false);
+      dispatch({ type: "drop", pos: { lat: latlng.lat, lng: latlng.lng } });
     };
 
     map.on("click", onClick);
@@ -484,7 +368,7 @@ export default function GisMap() {
       map.off("click", onClick);
       container.classList.remove("gisMapAdding");
     };
-  }, [ready, addMode, vulnerableTypes]);
+  }, [ready, addMode]);
 
   function removeDraftMarker() {
     const marker = draftMarkerRef.current;
@@ -494,20 +378,7 @@ export default function GisMap() {
 
   function cancelDraft() {
     removeDraftMarker();
-    setDraftPos(null);
-    setFormOpen(false);
-    setSaveError("");
-    setPersonQuery("");
-    setPersonResults([]);
-    setPersonError("");
-    setPersonSearched(false);
-  }
-
-  // ค้นชื่อจากแฟ้ม PERSON + HOME — lname/house เข้ารหัสไว้ API ถอดให้ฝั่ง server
-  function pickPerson(person) {
-    setDraftFields((current) => ({ ...current, ...person }));
-    setPersonQuery("");
-    setPersonResults([]);
+    dispatch({ type: "cancel" });
   }
 
   // โหลดชั้นข้อมูลใหม่หลังบันทึก — ล้าง cache แล้วให้ effect สร้าง layer ใหม่
@@ -521,8 +392,7 @@ export default function GisMap() {
 
   async function saveDraft(event) {
     event.preventDefault();
-    setSaving(true);
-    setSaveError("");
+    dispatch({ type: "saveStart" });
     try {
       const res = await fetch("/api/gis/vulnerable", {
         method: "POST",
@@ -532,32 +402,26 @@ export default function GisMap() {
       const body = await res.json();
       if (!res.ok) throw new Error(body?.error || "บันทึกไม่สำเร็จ");
       reloadDataLayer(`vulnerable-${draftFields.vulnerable}`);
-      cancelDraft();
+      removeDraftMarker();
+      dispatch({ type: "saved" });
     } catch (error) {
-      setSaveError(error.message);
-    } finally {
-      setSaving(false);
+      dispatch({ type: "saveFailed", error: error.message });
     }
   }
 
+  // ค้นชื่อจากแฟ้ม PERSON + HOME — lname/house เข้ารหัสไว้ API ถอดให้ฝั่ง server
   // หน่วงก่อนยิงค้นหา ไม่ให้ยิงทุกตัวอักษรที่พิมพ์
   useEffect(() => {
     if (!formOpen) return;
-    // ต่ำกว่า 2 ตัวอักษรยังไม่ค้น — กว้างเกินไปและกวาดทั้งแฟ้ม person
-    // และต้องเลือกหน่วยบริการก่อน ไม่งั้นได้คนทั้งอำเภอมาปนกัน
-    const query = personQuery.trim();
-    if (!draftFields.hospcode || query.length < 2) {
-      setPersonResults([]);
-      setPersonError("");
-      setPersonSearched(false);
+    const url = personSearchUrl(draftFields.hospcode, personQuery);
+    if (!url) {
+      dispatch({ type: "searchReset" });
       return;
     }
     let cancelled = false;
 
     const timer = setTimeout(() => {
-      setPersonSearching(true);
-      const url = `/api/gis/person-search?q=${encodeURIComponent(query)}`
-        + `&hospcode=${encodeURIComponent(draftFields.hospcode)}`;
+      dispatch({ type: "searchStart" });
       fetch(url, { cache: "no-store" })
         .then(async (res) => {
           const body = await res.json();
@@ -567,19 +431,10 @@ export default function GisMap() {
           return body;
         })
         .then(({ items }) => {
-          if (cancelled) return;
-          setPersonResults(items ?? []);
-          setPersonError("");
-          setPersonSearched(true);
+          if (!cancelled) dispatch({ type: "searchDone", items: items ?? [] });
         })
         .catch((error) => {
-          if (cancelled) return;
-          setPersonResults([]);
-          setPersonError(error.message);
-          setPersonSearched(true);
-        })
-        .finally(() => {
-          if (!cancelled) setPersonSearching(false);
+          if (!cancelled) dispatch({ type: "searchFailed", error: error.message });
         });
     }, 300);
 
@@ -590,7 +445,7 @@ export default function GisMap() {
   }, [personQuery, formOpen, draftFields.hospcode]);
 
   const setDraftField = (field) => (event) =>
-    setDraftFields((current) => ({ ...current, [field]: event.target.value }));
+    dispatch({ type: "setField", field, value: event.target.value });
 
   return (
     <div className="gisMapWrap">
@@ -633,10 +488,7 @@ export default function GisMap() {
               <span className="srOnly">ค้นหาชื่อ-สกุลจากแฟ้ม PERSON</span>
               <input
                 value={draftFields.fullname}
-                onChange={(event) => {
-                  setDraftField("fullname")(event);
-                  setPersonQuery(event.target.value);
-                }}
+                onChange={(event) => dispatch({ type: "typeName", value: event.target.value })}
                 placeholder={draftFields.hospcode ? "ค้นชื่อ เว้นวรรคแล้วพิมพ์นามสกุล" : "เลือกหน่วยบริการก่อน"}
                 autoComplete="off"
                 disabled={!draftFields.hospcode}
@@ -653,7 +505,7 @@ export default function GisMap() {
               <ul className="gisPersonResults">
                 {personResults.map((person) => (
                   <li key={`${person.hospcode}-${person.pid}`}>
-                    <button type="button" onClick={() => pickPerson(person)}>
+                    <button type="button" onClick={() => dispatch({ type: "pickPerson", person })}>
                       <span>{person.fullname}</span>
                       <span className="gisPersonMeta">{person.hospcode}</span>
                     </button>
@@ -771,8 +623,8 @@ export default function GisMap() {
                   aria-pressed={addMode}
                   title="เพิ่มหมุดกลุ่มเปราะบาง"
                   onClick={() => {
-                    setAddMode((current) => !current);
-                    cancelDraft();
+                    removeDraftMarker();
+                    dispatch({ type: "toggleAdd" });
                   }}
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
