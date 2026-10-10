@@ -1,37 +1,31 @@
-import mysql from "mysql2/promise";
+// การเชื่อมต่อ MariaDB ของ webapp image ทั้งหมด (Next routes + importer/cache
+// daemon) — CommonJS เพื่อให้ daemon ที่รันด้วย node ตรง ๆ require ได้
+const mysql = require("mysql2/promise");
 
-export function getDbConfig() {
-  const port = Number(process.env.DB_PORT || 3306);
+function getDbConfig(env = process.env) {
+  const port = Number(env.DB_PORT || 3306);
   if (!Number.isInteger(port) || port <= 0) {
     throw new Error("DB_PORT must be a valid port number");
   }
 
   return {
-    host: process.env.DB_HOST || "localhost",
+    host: env.DB_HOST || "localhost",
     port,
-    user: process.env.DB_USER || "root",
-    password: process.env.DB_PASSWORD || "",
-    database: process.env.DB_DATABASE || "sub_hdc",
+    user: env.DB_USER || "root",
+    password: env.DB_PASSWORD || "",
+    database: env.DB_DATABASE || "sub_hdc",
     charset: "utf8mb4",
   };
 }
 
-export function createDbConnection(options = {}) {
-  return mysql.createConnection({
-    ...getDbConfig(),
-    ...options,
-  });
-}
-
-// Shared pool for short-lived API queries (AI tools) — avoids paying TCP +
-// auth handshake per query. Kept on globalThis so Next.js dev hot reload
-// reuses the same pool instead of leaking one per reload.
-export function getDbPool() {
+// Kept on globalThis so Next.js dev hot reload reuses the same pool instead of
+// leaking one per reload.
+function getDbPool() {
   if (!globalThis.__subHdcDbPool) {
     globalThis.__subHdcDbPool = mysql.createPool({
       ...getDbConfig(),
       waitForConnections: true,
-      connectionLimit: 5,
+      connectionLimit: 10,
       queueLimit: 50,
       enableKeepAlive: true,
     });
@@ -39,12 +33,33 @@ export function getDbPool() {
   return globalThis.__subHdcDbPool;
 }
 
-// Pool-backed drop-in for createDbConnection: same query/end interface,
-// but end() releases back to the pool instead of closing the socket.
-export async function getPooledDbConnection() {
-  const conn = await getDbPool().getConnection();
-  return {
-    query: (...args) => conn.query(...args),
-    end: async () => conn.release(),
-  };
+// Runs fn(conn) on a pooled connection and always gives it back. When fn throws
+// the connection is destroyed rather than released: it may still hold an open
+// transaction, and a pooled socket must not carry that into the next request.
+//
+// connectionOptions (e.g. multipleStatements) → a dedicated connection, ended
+// afterwards. Use it whenever fn changes session state (SET @var, SET SESSION)
+// that would otherwise leak into the pool.
+async function withDb(fn, { connectionOptions, pool } = {}) {
+  if (connectionOptions) {
+    const conn = await mysql.createConnection({ ...getDbConfig(), ...connectionOptions });
+    try {
+      return await fn(conn);
+    } finally {
+      await conn.end().catch(() => {});
+    }
+  }
+
+  const conn = await (pool || getDbPool()).getConnection();
+  let ok = false;
+  try {
+    const result = await fn(conn);
+    ok = true;
+    return result;
+  } finally {
+    if (ok) conn.release();
+    else conn.destroy();
+  }
 }
+
+module.exports = { getDbConfig, getDbPool, withDb };

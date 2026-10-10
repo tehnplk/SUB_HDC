@@ -1,5 +1,6 @@
-import { createDbConnection } from "@/lib/db";
+import { withDb } from "@/lib/db";
 import { getHospNameMap } from "@/lib/hos-list-query.mjs";
+import { latestTransformAt } from "@/lib/report.mjs";
 
 export const runtime = "nodejs";
 
@@ -10,10 +11,7 @@ function toCount(value) {
 }
 
 export async function GET() {
-  let conn;
-
-  try {
-    conn = await createDbConnection();
+  return withDb(async (conn) => {
 
     // HDC opendata ดึงโดย sync job hdc_api_s_persontype — ใช้ปีล่าสุดที่มี
     const [[hdcMeta]] = await conn.query(`
@@ -38,21 +36,7 @@ export async function GET() {
     `);
 
     const hospNames = await getHospNameMap(conn);
-
-    let transformedAt = null;
-    try {
-      const [[latestTransform]] = await conn.query(`
-        SELECT finish_at
-        FROM \`log_transform\`
-        WHERE transform_sql_task = 's_person_type_count.sql'
-          AND finish_at IS NOT NULL
-        ORDER BY finish_at DESC
-        LIMIT 1
-      `);
-      transformedAt = latestTransform?.finish_at || null;
-    } catch {
-      // Older sites may not have transform logging yet; the comparison remains usable.
-    }
+    const transformedAt = await latestTransformAt(conn, "s_person_type_count.sql");
 
     let hdcFetchedAt = null;
     const hdcByHospcode = new Map();
@@ -88,12 +72,10 @@ export async function GET() {
     };
 
     return Response.json({ rows, summary, hdcYear, hdcFetchedAt, transformedAt });
-  } catch (error) {
+  }).catch((error) => {
     const message = error?.code === "ER_NO_SUCH_TABLE"
       ? "ยังไม่มีข้อมูลเปรียบเทียบ กรุณารอ sync job hdc_api_s_persontype และ transform ทำงานก่อน"
       : error.message;
     return Response.json({ error: message }, { status: 500 });
-  } finally {
-    if (conn) await conn.end();
-  }
+  });
 }

@@ -98,7 +98,7 @@ test("daemon re-queues the zip instead of deleting when a worker is interrupted"
   assert.match(processSource, /result\.code === -1/);
   assert.match(processSource, /requeueOnExit = true/);
   assert.match(processSource, /renameSync\(processingPath, path\.join\(dirs\.queueDir\(\), requeueName\)\)/);
-  assert.match(processSource, /requeueLogImport\(logImportId\)/);
+  assert.match(processSource, /logImport\.requeue\(conn, logImportId\)/);
   // ไฟล์หย่อนมือ (ไม่มี prefix id__) ต้องถูก requeue ด้วยชื่อที่มี id — ไม่งั้น
   // รอบ retry สร้าง log row ใหม่ ทิ้ง row เดิมค้าง pending
   assert.match(processSource, /buildQueueFileName\(logImportId, entry\.baseName\)/);
@@ -147,15 +147,14 @@ test("stale sweep is file-aware: only rows without a queue file and no active wo
     source.indexOf("function recoverProcessingZips")
   );
 
-  // SELECT ก่อนแล้วกรองด้วยไฟล์จริง+worker ที่กำลังรัน — ไม่ UPDATE ดะตามเวลา
-  assert.match(sweep, /collectQueuedImportIds\(\)/);
-  assert.match(sweep, /activeImportIds\.has\(id\)/);
-  assert.match(sweep, /queuedIds\.has\(id\)/);
-  // helper สแกนทั้ง queue/ และ processing/
+  // กติกา sweep อยู่ใน log-import-file.sweepOrphans (มี behavioural test แยก);
+  // daemon ส่ง id ที่ยังมีชีวิต = worker ที่กำลังรัน + ไฟล์ใน queue/ และ processing/
+  assert.match(sweep, /logImport\.sweepOrphans\(conn, staleMinutes, collectLiveImportIds\(\)\)/);
   const collect = source.slice(
-    source.indexOf("function collectQueuedImportIds"),
+    source.indexOf("function collectLiveImportIds"),
     source.indexOf("async function sweepStaleImports")
   );
+  assert.match(collect, /new Set\(activeImportIds\)/);
   assert.match(collect, /queueDir\(\)/);
   assert.match(collect, /processingDir\(\)/);
 });
@@ -206,17 +205,11 @@ test("isTransientImportFailure separates network errors from data errors", () =>
   assert.equal(isTransientImportFailure(null), false);
 });
 
-test("requeueLogImport resets the log row back to pending for retry", async () => {
+test("daemon has no inline log_import_file SQL; it goes through log-import-file", async () => {
   const source = await readFile(daemonPath, "utf8");
-  const fn = source.slice(
-    source.indexOf("async function requeueLogImport"),
-    source.indexOf("async function sweepStaleImports")
-  );
 
-  // backtick ในไฟล์อยู่ใน template literal จึงถูก escape เป็น \` — เผื่อไว้ใน pattern
-  assert.match(fn, /status\\?`\s*=\s*'pending'/);
-  assert.match(fn, /finish_date_time\\?`\s*=\s*NULL/);
-  assert.match(fn, /import_date_time\\?`\s*=\s*CURRENT_TIMESTAMP/);
+  assert.match(source, /require\("\.\/log-import-file\.js"\)/);
+  assert.doesNotMatch(source, /log_import_file\\?`/);
 });
 
 test("load-data import sets a net timeout before LOAD DATA to avoid hangs", async () => {

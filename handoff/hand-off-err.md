@@ -11,34 +11,39 @@ browser (เช่นลิงก์ดาวน์โหลด) ซึ่งต
 - style: `.errorMsgCard` / `.errorMsgAction` ใน `globals.css`
 - เพิ่มจุดใช้งานใหม่: redirect มาที่ `/error/msg?msg=...` ได้เลย
   ไม่ต้องแก้ตัวหน้า
+- `/err` (`webapp/app/err/page.js`) = หน้าเดียวกันแต่ไม่มีปุ่มเข้าสู่ระบบ
+  (`showLogin={false}`) — ใช้เมื่อ login แล้วแต่สิทธิไม่พอ
 
 ## กติกาสำหรับ API route
 
-- endpoint ที่ถูกเปิดตรงจาก browser และต้อง login:
+ไม่ต้องเขียน redirect เอง — ลงทะเบียน endpoint ใน `POLICIES` ของ
+`webapp/lib/access.mjs` ด้วย `kind: "export"` (ลิงก์ที่เปิดตรงจาก browser)
+แล้วเรียก `requireAccess` ใน handler:
 
 ```js
-const unauthorized = await requireApiJwt(request);
-if (unauthorized) {
-  const msg = encodeURIComponent("ต้องเข้าสู่ระบบก่อนจึงจะ...ได้");
-  return new Response(null, {
-    status: 302,
-    headers: { Location: `/error/msg?msg=${msg}` },
-  });
-}
+// lib/access.mjs
+{ prefix: "/api/<topic>/export", kind: "export", level: LEVEL.MEMBER },
+
+// route.js
+const { denied } = await requireAccess(request);
+if (denied) return denied;
 ```
 
-- **`Location` ต้องเป็น relative เท่านั้น** — ห้ามสร้าง absolute URL จาก
-  `request.url` เพราะ production อยู่หลัง reverse proxy ทำให้เห็นเป็น host
-  ภายใน container ผู้ใช้จะถูกส่งไปผิดที่
-- API ที่ถูกเรียกผ่าน `fetch` ในหน้าเว็บ (ไม่ใช่เปิดลิงก์ตรง) ตอบ 401 JSON
-  ผ่าน `requireApiJwt` ตามปกติ — ไม่ redirect
+- `kind: "export"`: ไม่ได้ login → 302 `/error/msg?msg=ต้องเข้าสู่ระบบก่อนจึงจะส่งออก Excel ได้`;
+  login แล้วสิทธิไม่พอ → 302 `/err?msg=...`
+- **`Location` ใน route handler เป็น relative** — `requireAccess` ไม่ส่ง
+  `origin` ให้ `decideAccess` (production อยู่หลัง reverse proxy, `request.url`
+  เห็นเป็น host ภายใน container); มีแค่ `proxy.js` ที่ส่ง `origin` เพราะ
+  middleware ของ Next รับ Location แบบ absolute เท่านั้น
+- API ที่ถูกเรียกผ่าน `fetch` ในหน้าเว็บ ใช้ `kind: "api"` → 401/403 JSON
+  ไม่ redirect
 
 ## การทดสอบ
 
 ```powershell
 cd webapp
-node --test tests\quality-person-dup.test.mjs
+node --test tests\access.test.mjs tests\quality-person-dup.test.mjs
 ```
 
-ตรวจ endpoint ที่ใช้ pattern นี้: เรียกโดยไม่ login ต้องได้ 302 ไป
-`/error/msg?msg=...` และหน้าปลายทางแสดง card "ไม่มีสิทธิ"
+`access.test.mjs` ตรวจว่า export ที่ไม่ login ได้ 302 ไป `/error/msg?msg=...`
+และ guest ได้ 302 ไป `/err?msg=...`

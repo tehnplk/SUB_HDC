@@ -3,19 +3,15 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const apiSource = readFileSync(new URL("../app/api/admin/users/route.js", import.meta.url), "utf8");
-const pageSource = readFileSync(new URL("../app/admin/page.js", import.meta.url), "utf8");
 const clientSource = readFileSync(new URL("../app/admin/user-manager.jsx", import.meta.url), "utf8");
 const floatingMenuSource = readFileSync(new URL("../components/floating-user-menu.jsx", import.meta.url), "utf8");
 const authSource = readFileSync(new URL("../auth.js", import.meta.url), "utf8");
 const providerAuthSource = readFileSync(new URL("../lib/provider-auth.js", import.meta.url), "utf8");
 const moduleHeaderSource = readFileSync(new URL("../components/module-header.jsx", import.meta.url), "utf8");
 const layoutSource = readFileSync(new URL("../app/layout.js", import.meta.url), "utf8");
-const proxySource = readFileSync(new URL("../proxy.js", import.meta.url), "utf8");
 const guestErrorSource = readFileSync(new URL("../app/err/page.js", import.meta.url), "utf8");
 
-test("admin page and API enforce the configured account and ProviderID role ID independently", () => {
-  assert.match(pageSource, /isAdminSession\(session\)/);
-  assert.match(apiSource, /requireAdminApi\(\)/);
+test("sessions carry the configured-account flag and the ProviderID role ID", () => {
   assert.match(authSource, /isConfiguredUser:\s*true/);
   assert.match(authSource, /roleId:\s*providerUser\.roleId/);
   assert.match(providerAuthSource, /u\.role AS role_id/);
@@ -100,23 +96,9 @@ test("ProviderID login counts the initial and returning successful logins", () =
   assert.match(providerAuthSource, /login_count, last_activity/);
 });
 
-test("new ProviderID users are guests and protected routes deny guest access", () => {
+// สิทธิ์ guest/admin ต่อ path ทดสอบเชิงพฤติกรรมใน access.test.mjs
+test("new ProviderID users are guests and the guest error page hides the login button", () => {
   assert.match(providerAuthSource, /role = 'guest'/);
   assert.match(providerAuthSource, /role: "guest"/);
-  assert.match(proxySource, /Number\(request\.auth\.user\.roleId\) === 4/);
-  assert.match(proxySource, /new URL\("\/err", request\.nextUrl\.origin\)/);
-  assert.match(proxySource, /กรุณาติดต่อผู้ดูแลระบบประจำอำเภอของท่าน\\nเพื่อขอสิทธิระดับ User ขึ้นไปในการเข้าถึงข้อมูลนี้/);
   assert.match(guestErrorSource, /showLogin=\{false\}/);
-});
-
-test("proxy reserves /admin and /api/admin for admin role only", () => {
-  assert.match(proxySource, /ADMIN_ONLY_PAGE_PREFIXES = \["\/admin"\]/);
-  assert.match(proxySource, /ADMIN_ONLY_API_PREFIXES = \["\/api\/admin"\]/);
-  // admin = configured account หรือ roleId 1 (ตรงกับ isAdminSession)
-  assert.match(proxySource, /request\.auth\.user\.isConfiguredUser === true/);
-  assert.match(proxySource, /Number\(request\.auth\.user\.roleId\) === 1/);
-  // non-admin ที่ล็อกอินแล้ว: API ตอบ 403, page redirect ไป /err
-  assert.match(proxySource, /matchesPrefix\(pathname, ADMIN_ONLY_API_PREFIXES\)/);
-  assert.match(proxySource, /matchesPrefix\(pathname, ADMIN_ONLY_PAGE_PREFIXES\)/);
-  assert.match(proxySource, /ADMIN_PROTECTED_MESSAGE/);
 });

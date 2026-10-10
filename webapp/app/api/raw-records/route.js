@@ -1,5 +1,5 @@
-import { createDbConnection } from "@/lib/db";
-import { requireAppAuth } from "@/lib/auth-guard.mjs";
+import { withDb } from "@/lib/db";
+import { requireAccess } from "@/lib/access.mjs";
 import {
   chooseMonthlyDateColumn,
   datePrefixExpression,
@@ -22,10 +22,9 @@ async function getTableColumns(conn, tableName) {
 }
 
 export async function GET(request) {
-  let conn;
   try {
-    const unauthorized = await requireAppAuth();
-    if (unauthorized) return unauthorized;
+    const { denied } = await requireAccess(request);
+    if (denied) return denied;
 
     const url = new URL(request.url);
     const file = url.searchParams.get("file");
@@ -48,79 +47,77 @@ export async function GET(request) {
 
     const hasMonthFilter = monthValue && /^\d{2}$/.test(monthValue);
 
-    conn = await createDbConnection();
-
-    const [[fileRow]] = await conn.query(
-      "SELECT 1 FROM c_file WHERE file_name = ?",
-      [file]
-    );
-    if (!fileRow) {
-      return Response.json({ error: "Unknown file" }, { status: 404 });
-    }
-
-    const allColumns = await getTableColumns(conn, file);
-    const dateColumn = chooseMonthlyDateColumn(allColumns);
-    const tableSql = quoteIdentifier(file);
-
-    const columns = allColumns.filter((col) => !EXCLUDED_COLUMNS.has(col));
-    const columnList = columns.map((col) => quoteIdentifier(col)).join(", ");
-
-    let whereClause;
-    let whereParams;
-
-    if (dateColumn) {
-      const fiscalYearAd = normalizeFiscalYear(fiscalYear);
-      if (!fiscalYearAd) {
-        return Response.json(
-          { error: "Invalid fiscalYear" },
-          { status: 400 }
-        );
+    return await withDb(async (conn) => {
+      const [[fileRow]] = await conn.query(
+        "SELECT 1 FROM c_file WHERE file_name = ?",
+        [file]
+      );
+      if (!fileRow) {
+        return Response.json({ error: "Unknown file" }, { status: 404 });
       }
 
-      const range = getFiscalYearRange(fiscalYearAd);
-      const dateSql = datePrefixExpression(dateColumn);
+      const allColumns = await getTableColumns(conn, file);
+      const dateColumn = chooseMonthlyDateColumn(allColumns);
+      const tableSql = quoteIdentifier(file);
 
-      const conditions = [
-        "hospcode = ?",
-        `${dateSql} REGEXP '^[0-9]{8}$'`,
-        `${dateSql} >= ?`,
-        `${dateSql} < ?`,
-      ];
+      const columns = allColumns.filter((col) => !EXCLUDED_COLUMNS.has(col));
+      const columnList = columns.map((col) => quoteIdentifier(col)).join(", ");
 
-      const params = [hospcode, range.start, range.end];
+      let whereClause;
+      let whereParams;
 
-      if (hasMonthFilter) {
-        conditions.splice(1, 0, `SUBSTRING(${dateSql}, 5, 2) = ?`);
-        params.splice(1, 0, monthValue);
+      if (dateColumn) {
+        const fiscalYearAd = normalizeFiscalYear(fiscalYear);
+        if (!fiscalYearAd) {
+          return Response.json(
+            { error: "Invalid fiscalYear" },
+            { status: 400 }
+          );
+        }
+
+        const range = getFiscalYearRange(fiscalYearAd);
+        const dateSql = datePrefixExpression(dateColumn);
+
+        const conditions = [
+          "hospcode = ?",
+          `${dateSql} REGEXP '^[0-9]{8}$'`,
+          `${dateSql} >= ?`,
+          `${dateSql} < ?`,
+        ];
+
+        const params = [hospcode, range.start, range.end];
+
+        if (hasMonthFilter) {
+          conditions.splice(1, 0, `SUBSTRING(${dateSql}, 5, 2) = ?`);
+          params.splice(1, 0, monthValue);
+        }
+
+        whereClause = conditions.join(" AND ");
+        whereParams = params;
+      } else {
+        whereClause = "hospcode = ?";
+        whereParams = [hospcode];
       }
 
-      whereClause = conditions.join(" AND ");
-      whereParams = params;
-    } else {
-      whereClause = "hospcode = ?";
-      whereParams = [hospcode];
-    }
+      const [[{ total }]] = await conn.query(
+        `SELECT COUNT(*) AS total FROM ${tableSql} WHERE ${whereClause}`,
+        whereParams
+      );
 
-    const [[{ total }]] = await conn.query(
-      `SELECT COUNT(*) AS total FROM ${tableSql} WHERE ${whereClause}`,
-      whereParams
-    );
+      const [rows] = await conn.query(
+        `SELECT ${columnList} FROM ${tableSql} WHERE ${whereClause} ORDER BY hospcode LIMIT ? OFFSET ?`,
+        [...whereParams, limit, offset]
+      );
 
-    const [rows] = await conn.query(
-      `SELECT ${columnList} FROM ${tableSql} WHERE ${whereClause} ORDER BY hospcode LIMIT ? OFFSET ?`,
-      [...whereParams, limit, offset]
-    );
-
-    return Response.json({
-      total: Number(total),
-      page,
-      limit,
-      columns,
-      rows,
+      return Response.json({
+        total: Number(total),
+        page,
+        limit,
+        columns,
+        rows,
+      });
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
-  } finally {
-    if (conn) await conn.end();
   }
 }

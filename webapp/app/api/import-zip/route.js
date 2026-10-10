@@ -1,8 +1,8 @@
 import { access, mkdir, rename, stat } from "node:fs/promises";
 import path from "node:path";
-import { createDbConnection } from "../../../lib/db.js";
+import { withDb } from "../../../lib/db.js";
 import { loadImportSettings } from "../../../lib/import-config.mjs";
-import { createPendingLogImportFile } from "../../../lib/log-import.mjs";
+import { createPending } from "../../../lib/log-import-file.js";
 import {
   buildQueueFileName,
   countZips,
@@ -10,6 +10,7 @@ import {
   queueDir,
 } from "../../../lib/import-dirs.js";
 import { secureDelete } from "../../../lib/secure-delete.js";
+import { requireAccess } from "@/lib/access.mjs";
 
 export const runtime = "nodejs";
 
@@ -31,16 +32,14 @@ function resolveUploadedPath(storedName) {
 }
 
 async function createPendingLog(originalName, zipPath) {
-  const connection = await createDbConnection();
-  try {
-    const fileStat = await stat(zipPath);
-    return await createPendingLogImportFile(connection, originalName, fileStat.size);
-  } finally {
-    await connection.end();
-  }
+  const fileStat = await stat(zipPath);
+  return withDb((connection) => createPending(connection, originalName, fileStat.size));
 }
 
 export async function POST(request) {
+  const { denied } = await requireAccess(request);
+  if (denied) return denied;
+
   try {
     const body = await request.json();
     const storedName = body?.storedName;

@@ -3,20 +3,9 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const apiSource = readFileSync(new URL("../app/api/admin/addon-url/route.js", import.meta.url), "utf8");
-const pageSource = readFileSync(new URL("../app/admin/addon/page.js", import.meta.url), "utf8");
 const clientSource = readFileSync(new URL("../app/admin/addon/addon-manager.jsx", import.meta.url), "utf8");
 const floatingMenuSource = readFileSync(new URL("../components/floating-user-menu.jsx", import.meta.url), "utf8");
 const moduleHeaderSource = readFileSync(new URL("../components/module-header.jsx", import.meta.url), "utf8");
-
-test("admin addon page and API enforce admin access", () => {
-  assert.match(pageSource, /isAdminSession\(session\)/);
-  assert.match(pageSource, /redirect\("\/login\?callbackUrl=\/admin\/addon"\)/);
-  // ทุก HTTP method ของ API ต้องผ่าน requireAdminApi
-  assert.match(apiSource, /export async function GET[\s\S]*?requireAdminApi\(\)/);
-  assert.match(apiSource, /export async function POST[\s\S]*?requireAdminApi\(\)/);
-  assert.match(apiSource, /export async function PATCH[\s\S]*?requireAdminApi\(\)/);
-  assert.match(apiSource, /export async function DELETE[\s\S]*?requireAdminApi\(\)/);
-});
 
 test("admin addon API performs CRUD on c_addon_url", () => {
   assert.match(apiSource, /SELECT id, url, system_name, is_active, note FROM c_addon_url/);

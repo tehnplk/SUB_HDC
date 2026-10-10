@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { createDbConnection } from "@/lib/db";
+import { withDb } from "@/lib/db";
 
 export const runtime = "nodejs";
 
@@ -14,9 +14,7 @@ export async function GET() {
   // ผู้ใช้ที่ไม่ได้ login ก็ใช้เมนูได้ — session-id เป็น "none"
   const session = await auth();
 
-  let connection;
-  try {
-    connection = await createDbConnection();
+  return withDb(async (connection) => {
 
     // ค่าของ session-id = cid_hash จาก c_user_provider ของผู้ใช้ ProviderID ที่ login
     // — ผู้ที่ไม่ login / บัญชี .env (ไม่มี providerId) ได้ "none"
@@ -40,9 +38,7 @@ export async function GET() {
     }));
     // คืน sessionId ให้ client ต่อกับรายการคงที่ (fixed items) ด้วย
     return Response.json({ items, sessionId });
-  } catch (error) {
-    return Response.json({ items: [], sessionId: "none", error: error.message }, { status: 500 });
-  } finally {
-    if (connection) await connection.end();
-  }
+  }).catch((error) => (
+    Response.json({ items: [], sessionId: "none", error: error.message }, { status: 500 })
+  ));
 }
