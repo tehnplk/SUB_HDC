@@ -11,11 +11,42 @@
   Transform tables `s_dm_control`, `s_dm_screen_risk`, `s_ht_screen_risk`, and
   `s_epi2` were left untouched.
 
+## Removed features (2026-10-10)
+
+Main tab bar = `ปริมาณข้อมูล` (`/import-check/index`), `คุณภาพ` (`/quality`), `GIS`
+(`/gis`) on the left + `Add-On` dropdown at the far right. Every feature with no
+tab/link left was deleted together with its API routes, libs, CSS, tests,
+breadcrumb/proxy entries and redirects. DB tables, migrations, transform SQL and
+sync jobs were **not** touched. Do not restore without re-adding an entry point.
+
+- คุณภาพ เหลือแค่ `/quality/person-dup` (PERSON - TYPEAREA ซ้ำ): ลบ
+  `/quality/service-instype-err`, `/quality/specialpp-error` และ API `/api/quality/*`
+  ของสองหัวข้อนี้ (+ export) รวมถึง `components/fiscal-year-filter.jsx`,
+  `components/affiliation-filter.jsx` ที่ไม่มีหน้าใช้แล้ว (transform `t_specialpp_error`
+  ยังรันอยู่)
+- ข้อมูลพื้นฐาน: `/standard/*` (index, person-typearea, person-pyramid),
+  `/dashboard/person-target`, `/api/person-target`, `/api/person-pyramid`
+- กลุ่มเป้าหมาย: `/target-group/*` (index, kpi, kpi/dm-ht), `/api/dm-ht-count` (+ export)
+- Work Load: `/workload/*`, `/api/visit-monthly-workload` (+ export),
+  `/api/ncdscreen-workload` (+ export)
+- รายงาน: `/report/index`, `/dashboard/report`, `/api/report`, `lib/report-sql.mjs`
+- Ask AI: `/ai/chat`, `/api/ai/chat`, `/api/ai/export/[filename]`,
+  `ai_system_prompt.json`, `lib/{ai-chart,ai-db-catalog,db-query-tool,hdc-api-tool,excel-export-tool}.mjs`
+- `/person`, `/api/person`; `/api/import-status` + `components/importing-guard.jsx`
+  (only the report/AI pages used them — `lib/import-status.mjs` stays for
+  `/api/dashboard` and the cache daemon)
+- Redirects `/dashboard/person-target`, `/standard/dm-ht-count`,
+  `/target-group/kpi/dm-ht-count` were dropped (targets gone → plain 404).
+- `/dashboard/{hos-list,log-import,quality}/page.js` stay: they are the source files
+  re-exported by `/import-check/files-count`, `/import-check/log-import`, `/quality`.
+
 ## GIS module
 
-- `/gis` (label `GIS`, lucide `Map`) occupies the right-aligned `TABS_END` group in
-  `main-tab.jsx`; `.tabButton.tabButtonEnd { margin-left: auto }` pushes that group
-  and the trailing Add-On tab to the right edge of the tab bar.
+- `/gis` (label `GIS`, lucide `Map`) is the third tab of the left group in
+  `main-tab.jsx`. `<AddonTab />` is the last child of the nav and
+  `.addonTabWrap { margin-left: auto }` pushes it to the right edge of the tab bar.
+  An open Add-On menu uses `.addonTabButton.tabButtonActive` (panel background, not
+  the solid accent) so it never looks like the current module.
 - `/gis` is listed in `PROTECTED_PAGE_PREFIXES` in `webapp/proxy.js`, so anonymous
   visitors are sent to login and `guest` (role ID 4) is denied; `user`, `superuser`,
   and `admin` can access it. The read-only `/api/gis/*` endpoints remain public.
@@ -30,8 +61,7 @@
 ### Leaflet map
 
 - `webapp/components/gis-map.jsx` is a client component. `leaflet` is loaded with a
-  lazy `import("leaflet")` inside `useEffect` — the same idiom the Ask AI page uses
-  for chart.js — because Leaflet needs `window`. `leaflet/dist/leaflet.css` is a
+  lazy `import("leaflet")` inside `useEffect` because Leaflet needs `window`. `leaflet/dist/leaflet.css` is a
   static import in that file.
 - A `mapRef` guard keeps React StrictMode's double mount in dev from raising
   "Map container is already initialized"; the cleanup calls `map.remove()`.
@@ -284,11 +314,6 @@
   `postgis-migrate`, so a fresh host no longer depends on another project's
   container or a manual `pg_dump` transfer.
 
-## Ask AI menu
-
-- The `Ask AI` main-tab entry was removed on 2026-08-28. `/ai/chat`, its API, and
-  its breadcrumb entry are untouched — the page stays reachable by direct link.
-
 ## F43 importer: stalled `LOAD DATA` recovery
 
 - `webapp/lib/import_f43_load_data.js` tracks byte activity from the
@@ -378,9 +403,6 @@
   `href` และ `topic`; component เป็นเจ้าของ markup ของ bullet, ข้อความ และลูกศร
   เพื่อคงมาตรฐาน 14px น้ำหนักปกติ (400) ทุกชั้น
 
-- `/target-group/kpi/dm-ht` breadcrumb ต้องมี 3 ระดับ:
-  `กลุ่มเป้าหมาย` → `กลุ่มเป้าหมายตามตัวชี้วัด` → `จำนวนผู้ป่วย DM/HT`;
-  สองระดับแรกต้องเป็นลิงก์กลับไปยังหน้าดัชนีของแต่ละระดับ
 - Breadcrumb ใช้ component ร่วม `Breadcrumb` โดยส่ง prop `items` เป็น array ของ
   `{ href?, label }`; `module-header.jsx` รับผิดชอบเฉพาะการแปลง route เป็น items;
   ข้อความ breadcrumb ทุกระดับใช้ขนาด 15px
@@ -424,20 +446,6 @@ data flow: page (client) → `fetch("/api/...", { cache: "no-store" })` →
 API route อ่าน**ตารางสรุปของ transform** (ไม่ query ตารางดิบ) — หน้าใหม่
 ควรมี API + ตารางสรุปของตัวเอง ดู @handoff/hand-off-transform.md
 
-## Work Load
-
-- `/workload/visit-monthly` reads `s_visit` at
-  `hospcode + fiscal_year + month` grain and shows both `visit_person` (คน)
-  and `visit_count` (ครั้ง) for each fiscal month.
-- `/workload/ncdscreen-workload` filters every displayed topic (DM and HT),
-  summary, and monthly trend by `สังกัด`. The affiliation lookup comes from
-  `c_hostype.hostype_name` joined through `c_hospital.hostype_new`, with
-  `c_hospital.dep_name` as fallback.
-- Every Work Load datagrid has a top-right `ส่งออก Excel` action. Export routes
-  reuse the same filtered API handlers, so fiscal year, affiliation, hospital,
-  and the active NCD metric match the visible grid. Visit exports contain both
-  คน and ครั้ง columns for each fiscal month.
-
 ## การทดสอบ
 
 ```powershell
@@ -448,7 +456,6 @@ node --test tests\*.test.mjs
 ## Root landing page
 
 - `/` uses the standard `main dashboardMain > panel panelWide dashboardPanel > ModuleHeader` shell.
-- The page body presents four cards without a separate content heading: quality checking, target registry, gap tracking, and performance summary.
-- The introduction uses `webapp/public/ai.png` as a responsive supporting visual.
-- Keep the cards in a 2x2 grid before the AI image on desktop and one column on mobile.
+- The page body presents three cards, one per main tab: ปริมาณข้อมูล (`/import-check/index`), คุณภาพข้อมูล (`/quality`), GIS (`/gis`).
+- The cards stack in one column (icon left, title + text right) beside `LandingDistrictMap`; below 980px the map moves under the cards.
 - Focused source test: `webapp/tests/landing-page.test.mjs`.

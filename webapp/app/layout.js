@@ -16,8 +16,8 @@ const notoSansThai = Noto_Sans_Thai({
 });
 
 export const metadata = {
-  title: "SUB HDC",
-  description: "SUB HDC data import workspace",
+  title: "Data Hub",
+  description: "Data Hub — district health data workspace",
   icons: {
     icon: "/encrypted.png",
   },

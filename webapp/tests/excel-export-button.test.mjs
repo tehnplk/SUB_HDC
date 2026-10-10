@@ -7,11 +7,7 @@ const root = process.cwd();
 
 test("grid Excel exports use the shared ExcelExportButton", async () => {
   const files = [
-    "app/workload/visit-monthly/page.js",
-    "app/workload/ncdscreen-workload/page.js",
     "app/quality/person-dup/page.js",
-    "app/target-group/kpi/page.js",
-    "app/dashboard/report/page.js",
   ];
 
   const component = await readFile(path.join(root, "components", "excel-export-button.jsx"), "utf8");

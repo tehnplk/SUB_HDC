@@ -37,7 +37,7 @@ if (unauthorized) {
 
 ```powershell
 cd webapp
-node --test tests\standard-pages.test.mjs
+node --test tests\quality-person-dup.test.mjs
 ```
 
 ตรวจ endpoint ที่ใช้ pattern นี้: เรียกโดยไม่ login ต้องได้ 302 ไป

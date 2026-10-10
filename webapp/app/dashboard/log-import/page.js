@@ -205,14 +205,14 @@ export default function LogImportDashboard() {
                   color: "var(--foreground)",
                   font: "inherit",
                   fontSize: "15px",
-                  fontWeight: "650",
+                  fontWeight: "400",
                   padding: "0 40px 0 12px",
                   outline: "none",
-                  transition: "border-color 0.15s, box-shadow 0.15s, background 0.15s",
+                  transition: "border-color 0.15s",
                 }}
                 onFocus={(e) => {
                   e.target.style.borderColor = "var(--accent)";
-                  e.target.style.boxShadow = "0 0 0 4px var(--accent-glow)";
+                  e.target.style.boxShadow = "var(--focus-ring)";
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = "var(--border-strong)";

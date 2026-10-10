@@ -22,48 +22,12 @@ const BREADCRUMB_MODULES = [
     },
   },
   {
-    prefix: "/workload",
-    href: "/workload",
-    label: "Work Load",
-    pages: {
-      "/workload/ncdscreen-workload": "การคัดกรองเบาหวานความดัน",
-      "/workload/visit-monthly": "จำนวนให้บริการผู้ป่วยนอก",
-    },
-  },
-  {
-    prefix: "/standard",
-    href: "/standard/index",
-    label: "ข้อมูลมาตรฐาน",
-    pages: {
-      "/standard/person-typearea": "ประชากรแยกตาม TYPEAREA",
-      "/standard/person-pyramid": "ประชากรแยกช่วงอายุ 5 ปี",
-    },
-  },
-  {
     prefix: "/quality",
     href: "/quality",
     label: "คุณภาพ",
     pages: {
-      "/quality/person-dup": "ประเภทการอยู่อาศัยซ้ำกันข้ามหน่วยบริการ (PERSON - TYPEAREA)",
-      "/quality/service-instype-err": "รายการบริการที่ให้รหัสสิทธิรักษาที่ไม่มีในระบบ (SERVICE - INSTYPE)",
-      "/quality/specialpp-error": "บันทึกรหัสคัดกรอง SPECIAL PP ที่ไม่ตรงรหัสมาตรฐานหรือยกเลิกไปแล้ว (SPECIALPP - PPSPECIAL)",
-    },
+      "/quality/person-dup": "ประเภทการอยู่อาศัยซ้ำกันข้ามหน่วยบริการ (PERSON - TYPEAREA)",    },
   },
-  {
-    prefix: "/target-group",
-    href: "/target-group/index",
-    label: "กลุ่มเป้าหมาย",
-    pages: {
-      "/target-group/kpi": "กลุ่มเป้าหมายตามตัวชี้วัด",
-      "/target-group/kpi/dm-ht": [
-        { href: "/target-group/kpi", label: "กลุ่มเป้าหมายตามตัวชี้วัด" },
-        { label: "จำนวนผู้ป่วย DM/HT" },
-      ],
-    },
-  },
-  { prefix: "/report", href: "/report/index", label: "รายงาน" },
-  { prefix: "/dashboard/report", href: "/report/index", label: "รายงาน" },
-  { prefix: "/ai/chat", href: "/ai/chat", label: "Ask AI" },
   { prefix: "/upload", href: "/upload", label: "นำเข้าไฟล์" },
   { prefix: "/update-log", href: "/update-log", label: "ประวัติการปรับปรุง" },
   { prefix: "/admin/addon", href: "/admin/addon", label: "จัดการระบบ Add-On" },

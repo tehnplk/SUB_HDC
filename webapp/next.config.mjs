@@ -21,21 +21,6 @@ const nextConfig = {
         permanent: true,
       },
       {
-        source: "/dashboard/person-target",
-        destination: "/standard/person-typearea",
-        permanent: true,
-      },
-      {
-        source: "/standard/dm-ht-count",
-        destination: "/target-group/kpi/dm-ht",
-        permanent: true,
-      },
-      {
-        source: "/target-group/kpi/dm-ht-count",
-        destination: "/target-group/kpi/dm-ht",
-        permanent: true,
-      },
-      {
         source: "/dashbord/hos-list",
         destination: "/import-check/files-count",
         permanent: true,

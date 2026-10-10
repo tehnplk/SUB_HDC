@@ -3,14 +3,8 @@ import { auth } from "./auth";
 
 // /quality (portal) เปิดให้เห็น topic list ได้ — ป้องกันเฉพาะหน้าข้อมูลย่อยแทน
 const PROTECTED_PAGE_PREFIXES = [
-  "/person",
-  "/ai",
   "/gis",
-  "/dashboard/report",
-  "/report",
   "/quality/person-dup",
-  "/quality/service-instype-err",
-  "/quality/specialpp-error",
   "/admin",
 ];
 const GUEST_PROTECTED_MESSAGE = "กรุณาติดต่อผู้ดูแลระบบประจำอำเภอของท่าน\nเพื่อขอสิทธิระดับ User ขึ้นไปในการเข้าถึงข้อมูลนี้";
@@ -22,10 +16,7 @@ const ADMIN_ONLY_API_PREFIXES = ["/api/admin"];
 // /api/quality/* ป้องกันตัวเองใน route (requireApiJwt) — export เปิดตรงจาก browser
 // จึง redirect ไป /error/msg ไม่ได้ถ้าถูก proxy ตอบ 401 ตัดหน้า
 const PROTECTED_API_PREFIXES = [
-  "/api/ai",
-  "/api/person",
   "/api/raw-records",
-  "/api/report",
   "/api/admin",
 ];
 

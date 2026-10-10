@@ -28,6 +28,8 @@ test("dashboard API short-circuits with importing flag when an import is running
   assert.match(routeSource, /import \{ isImporting \} from "@\/lib\/import-status\.mjs"/);
   assert.match(routeSource, /if \(await isImporting\(conn\)\)/);
   assert.match(routeSource, /importing: true/);
+  const importStatusLib = readFileSync(new URL("../lib/import-status.mjs", import.meta.url), "utf8");
+  assert.match(importStatusLib, /status IN \('pending','processing'\)/);
   // the guard runs before the heavy per-file query path (the c_file lookup that
   // precedes reading the big tables — the last occurrence, not the summary block)
   const guardIdx = routeSource.indexOf("importing: true");
