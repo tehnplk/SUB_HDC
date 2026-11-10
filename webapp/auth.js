@@ -46,7 +46,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               name: providerUser.fullname || providerUser.providerId,
               fullname: providerUser.fullname,
               avatarInitial: providerUser.avatarInitial,
-              profile,
+              firstnameTh: typeof profile?.firstname_th === "string" ? profile.firstname_th : "",
               providerId: providerUser.providerId,
               hoscode: providerUser.hoscode,
               roleId: providerUser.roleId,
@@ -82,7 +82,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.hoscode = user.hoscode;
         token.fullname = user.fullname || user.name;
         token.avatarInitial = user.avatarInitial;
-        token.profile = user.profile;
+        token.firstnameTh = user.firstnameTh;
         token.roleId = user.roleId;
         token.isConfiguredUser = user.isConfiguredUser === true;
         token.role = user.role;
@@ -95,7 +95,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.hoscode = token.hoscode;
         session.user.fullname = token.fullname;
         session.user.avatarInitial = token.avatarInitial;
-        session.user.profile = token.profile;
+        session.user.firstnameTh = token.firstnameTh;
         session.user.roleId = token.roleId;
         session.user.isConfiguredUser = token.isConfiguredUser === true;
         session.user.role = token.role;

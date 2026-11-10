@@ -59,7 +59,7 @@ export default async function RootLayout({ children }) {
     getHospitalName(hoscode),
     getRoleDetails(session?.user?.roleId, session?.user?.role),
   ]);
-  const firstname = session?.user?.profile?.firstname_th;
+  const firstname = session?.user?.firstnameTh;
   const profileAvatarInitial = typeof firstname === "string" ? Array.from(firstname.trim())[0] || "" : "";
 
   return (
