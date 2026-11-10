@@ -86,9 +86,10 @@ test("ProviderID profile stores the upstream hash_cid without retaining a raw CI
   assert.match(providerAuthSource, /upstreamCidHash \|\|/);
   assert.match(providerAuthSource, /Array\.from\(firstText\(profile\?\.firstname_th\)\)/);
   assert.match(authSource, /avatarInitial: providerUser\.avatarInitial/);
-  assert.match(authSource, /token\.profile = user\.profile/);
-  assert.match(authSource, /session\.user\.profile = token\.profile/);
-  assert.match(layoutSource, /session\?\.user\?\.profile\?\.firstname_th/);
+  assert.match(authSource, /token\.firstnameTh = user\.firstnameTh/);
+  assert.match(authSource, /session\.user\.firstnameTh = token\.firstnameTh/);
+  assert.doesNotMatch(authSource, /token\.profile =/);
+  assert.match(layoutSource, /session\?\.user\?\.firstnameTh/);
 });
 
 test("ProviderID login counts the initial and returning successful logins", () => {
