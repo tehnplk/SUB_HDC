@@ -2,7 +2,7 @@
   {
     "version": "1.2.8",
     "update_date": "2026-11-11",
-    "issue": "แก้ปัญหาเข้าสู่ระบบด้วย ProviderID ไม่ได้เนื่องจาก cookie ของ session ใหญ่เกินไป โดยเก็บเฉพาะชื่อ (firstname_th) ไว้ใน session"
+    "issue": "แก้ปัญหาเข้าสู่ระบบด้วย ProviderID แล้วค้างที่หน้า 'กำลังปรับปรุงระบบ' (reverse proxy ตอบ 502 เพราะ cookie ของ session ใหญ่เกิน buffer): ลดขนาด session cookie โดยเก็บเฉพาะชื่อ (firstname_th) ของผู้ใช้ และขยาย proxy buffer ของ reverse proxy ให้รองรับ header ขนาดใหญ่"
   },
   {
     "version": "1.2.7",
